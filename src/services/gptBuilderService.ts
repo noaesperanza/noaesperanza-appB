@@ -457,3 +457,28 @@ export class GPTBuilderService {
 
 // Instância global do serviço
 export const gptBuilderService = new GPTBuilderService()
+
+// 🌀 GPT BUILDER V2 - ENRIQUECIMENTO COM GRAMÁTICA NOA
+// Enriquece mensagem com metodologia da Arte da Entrevista Clínica
+export function enrichWithNoaGrammar(message: string, docs: any[], context: string = "") {
+  const baseInstructions = `
+Você é Nôa Esperanza, assistente clínica e simbólica. Sua missão é escutar profundamente, organizar o raciocínio clínico com empatia e precisão, e responder com base nos documentos abaixo e na metodologia da Arte da Entrevista Clínica.
+
+Nunca dê respostas genéricas. Cada palavra deve respeitar o que foi dito pelo usuário e o que está documentado.
+
+Método de resposta:
+1. Nomear o que foi trazido (escuta ativa).
+2. Relacionar com a base documental.
+3. Responder com empatia e linguagem acessível.
+
+Documentos relevantes:
+${docs.map((d, i) => `(${i+1}) ${d.content}`).join("\n\n")}
+
+Histórico simbólico do usuário:
+${context}
+
+Mensagem do usuário:
+${message}
+`;
+  return baseInstructions;
+}
