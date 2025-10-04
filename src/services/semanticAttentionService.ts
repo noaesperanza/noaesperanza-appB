@@ -473,3 +473,36 @@ interface FocusedContext {
 }
 
 export const semanticAttentionService = new SemanticAttentionService()
+
+// 🌀 GPT BUILDER V2 - INTEGRAÇÃO SIMBÓLICA COM CHAT
+// Esta função integra attention semântica com a gramática clínica da Nôa
+export async function processUserMessage(message: string, userContext: string) {
+  // Lazy imports para evitar dependências circulares
+  const { enrichWithNoaGrammar } = await import('./gptBuilderService')
+  const { sendToOpenAI } = await import('./openaiService')
+  const { getVectorMatch } = await import('./supabase/embeddingClient')
+  
+  const matches = await getVectorMatch(message)
+  const symbolicPrompt = enrichWithNoaGrammar(message, matches, userContext)
+  const response = await sendToOpenAI(symbolicPrompt)
+  return response
+}
+
+// Função auxiliar para construir contexto simbólico do usuário
+// Exemplo de uso: const context = buildUserSymbolicContext(userId, conversationHistory)
+export function buildUserSymbolicContext(userId?: string, conversationHistory?: any[]): string {
+  let context = ''
+  
+  if (userId) {
+    context += `Usuário: ${userId}\n`
+  }
+  
+  if (conversationHistory && conversationHistory.length > 0) {
+    context += `Histórico recente:\n`
+    conversationHistory.slice(-3).forEach((msg: any, i: number) => {
+      context += `${i + 1}. ${msg.role}: ${msg.content.substring(0, 100)}...\n`
+    })
+  }
+  
+  return context || 'Novo usuário sem histórico'
+}
