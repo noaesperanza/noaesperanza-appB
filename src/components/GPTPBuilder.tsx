@@ -3710,24 +3710,24 @@ ${conversation.summary}
                         </div>
                         
                         <div className="space-y-4">
-                          {/* Avaliações Realizadas */}
+                          {/* Arte da Entrevista */}
                           <div className="bg-slate-600 rounded-lg p-4">
                             <div className="flex items-center justify-between mb-2">
-                              <span className="text-sm text-gray-300">Avaliações Hoje</span>
+                              <span className="text-sm text-gray-300">Arte da Entrevista</span>
                               <i className="fas fa-clipboard-list text-green-400"></i>
                             </div>
                             <div className="text-2xl font-bold text-white">23</div>
-                            <div className="text-xs text-green-400">Método Dr. Valença</div>
+                            <div className="text-xs text-green-400">Avaliações hoje</div>
                           </div>
 
-                          {/* Taxa Conclusão */}
+                          {/* Método Dr. Valença */}
                           <div className="bg-slate-600 rounded-lg p-4">
                             <div className="flex items-center justify-between mb-2">
                               <span className="text-sm text-gray-300">Taxa Conclusão</span>
                               <i className="fas fa-check-circle text-blue-400"></i>
                             </div>
                             <div className="text-2xl font-bold text-white">87%</div>
-                            <div className="text-xs text-gray-400">Avaliações completas</div>
+                            <div className="text-xs text-gray-400">Método validado</div>
                           </div>
 
                           {/* Tempo Médio */}
@@ -3737,17 +3737,17 @@ ${conversation.summary}
                               <i className="fas fa-clock text-yellow-400"></i>
                             </div>
                             <div className="text-2xl font-bold text-white">18min</div>
-                            <div className="text-xs text-gray-400">Por avaliação</div>
+                            <div className="text-xs text-gray-400">Por entrevista</div>
                           </div>
 
-                          {/* Queixas Principais */}
+                          {/* Escuta Figital */}
                           <div className="bg-slate-600 rounded-lg p-4">
                             <div className="flex items-center justify-between mb-2">
-                              <span className="text-sm text-gray-300">Top Queixa</span>
-                              <i className="fas fa-chart-bar text-purple-400"></i>
+                              <span className="text-sm text-gray-300">Escuta Figital</span>
+                              <i className="fas fa-headphones text-purple-400"></i>
                             </div>
-                            <div className="text-lg font-bold text-white">Dor Crônica</div>
-                            <div className="text-xs text-gray-400">32% das avaliações</div>
+                            <div className="text-lg font-bold text-white">Ativa</div>
+                            <div className="text-xs text-gray-400">Rastreabilidade total</div>
                           </div>
                         </div>
                       </div>
@@ -4328,44 +4328,74 @@ ${conversation.summary}
                       </div>
                     </div>
 
-                    {/* 📈 Gráficos e Análises */}
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+                    {/* 📈 Gráficos e Análises por Eixos Estruturais */}
+                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
                       
-                      {/* Gráfico de Sessões por Dia */}
+                      {/* ENSINO - Alunos */}
                       <div className="bg-slate-700 rounded-lg p-6 border border-slate-600">
-                        <h4 className="text-lg font-semibold text-white mb-4">📈 Sessões por Dia (Últimos 7 dias)</h4>
-                        <div className="h-48 bg-slate-600 rounded-lg flex items-center justify-center">
-                          <div className="text-center text-gray-400">
-                            <i className="fas fa-chart-line text-4xl mb-2"></i>
-                            <p>Gráfico de Sessões</p>
-                            <p className="text-sm">Integração com Chart.js</p>
+                        <h4 className="text-lg font-semibold text-white mb-4">🎓 Eixo ENSINO - Alunos</h4>
+                        <div className="space-y-3">
+                          <div className="flex items-center justify-between bg-slate-600 rounded-lg p-3">
+                            <span className="text-white">Arte da Entrevista</span>
+                            <span className="text-green-400 font-bold">23</span>
+                          </div>
+                          <div className="flex items-center justify-between bg-slate-600 rounded-lg p-3">
+                            <span className="text-white">Alunos Ativos</span>
+                            <span className="text-blue-400 font-bold">89</span>
+                          </div>
+                          <div className="flex items-center justify-between bg-slate-600 rounded-lg p-3">
+                            <span className="text-white">Aulas Concluídas</span>
+                            <span className="text-purple-400 font-bold">156</span>
+                          </div>
+                          <div className="flex items-center justify-between bg-slate-600 rounded-lg p-3">
+                            <span className="text-white">Testes com D-ID</span>
+                            <span className="text-yellow-400 font-bold">45</span>
                           </div>
                         </div>
                       </div>
 
-                      {/* Top Palavras-chave */}
+                      {/* PESQUISA - Profissionais */}
                       <div className="bg-slate-700 rounded-lg p-6 border border-slate-600">
-                        <h4 className="text-lg font-semibold text-white mb-4">🏷️ Top Palavras-chave Clínicas</h4>
+                        <h4 className="text-lg font-semibold text-white mb-4">🔬 Eixo PESQUISA - Profissionais</h4>
                         <div className="space-y-3">
                           <div className="flex items-center justify-between bg-slate-600 rounded-lg p-3">
-                            <span className="text-white">dor</span>
-                            <span className="text-blue-400 font-bold">247</span>
+                            <span className="text-white">LabPEC Ativos</span>
+                            <span className="text-blue-400 font-bold">12</span>
                           </div>
                           <div className="flex items-center justify-between bg-slate-600 rounded-lg p-3">
-                            <span className="text-white">ansiedade</span>
-                            <span className="text-blue-400 font-bold">189</span>
+                            <span className="text-white">Estudos com IA</span>
+                            <span className="text-green-400 font-bold">8</span>
                           </div>
                           <div className="flex items-center justify-between bg-slate-600 rounded-lg p-3">
-                            <span className="text-white">sono</span>
-                            <span className="text-blue-400 font-bold">156</span>
+                            <span className="text-white">Comunicação & Saúde</span>
+                            <span className="text-purple-400 font-bold">15</span>
                           </div>
                           <div className="flex items-center justify-between bg-slate-600 rounded-lg p-3">
-                            <span className="text-white">fadiga</span>
-                            <span className="text-blue-400 font-bold">134</span>
+                            <span className="text-white">Ciências de Dados</span>
+                            <span className="text-orange-400 font-bold">7</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* CLÍNICA - Pacientes */}
+                      <div className="bg-slate-700 rounded-lg p-6 border border-slate-600">
+                        <h4 className="text-lg font-semibold text-white mb-4">🏥 Eixo CLÍNICA - Pacientes</h4>
+                        <div className="space-y-3">
+                          <div className="flex items-center justify-between bg-slate-600 rounded-lg p-3">
+                            <span className="text-white">Avaliações Iniciais</span>
+                            <span className="text-green-400 font-bold">34</span>
                           </div>
                           <div className="flex items-center justify-between bg-slate-600 rounded-lg p-3">
-                            <span className="text-white">estresse</span>
-                            <span className="text-blue-400 font-bold">112</span>
+                            <span className="text-white">Consultas Retorno</span>
+                            <span className="text-blue-400 font-bold">67</span>
+                          </div>
+                          <div className="flex items-center justify-between bg-slate-600 rounded-lg p-3">
+                            <span className="text-white">Acompanhamento</span>
+                            <span className="text-purple-400 font-bold">23</span>
+                          </div>
+                          <div className="flex items-center justify-between bg-slate-600 rounded-lg p-3">
+                            <span className="text-white">Interconsultas</span>
+                            <span className="text-yellow-400 font-bold">12</span>
                           </div>
                         </div>
                       </div>
@@ -4428,31 +4458,30 @@ ${conversation.summary}
                       </div>
                     </div>
 
-                    {/* 📊 Resumo Executivo */}
+                    {/* 📊 Resumo Executivo por Eixos Estruturais */}
                     <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg p-6 text-white mt-6">
-                      <h4 className="text-xl font-bold mb-4">📊 Resumo Executivo - Nôa Esperanza</h4>
-                      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                      <h4 className="text-xl font-bold mb-4">📊 Resumo Executivo - Espinha Dorsal Nôa Esperanza</h4>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div className="text-center">
-                          <div className="text-3xl font-bold">1,247</div>
-                          <div className="text-sm opacity-90">Usuários Ativos</div>
+                          <div className="text-3xl font-bold">89</div>
+                          <div className="text-sm opacity-90">Alunos (ENSINO)</div>
+                          <div className="text-xs opacity-75">Arte da Entrevista Clínica</div>
                         </div>
                         <div className="text-center">
-                          <div className="text-3xl font-bold">87%</div>
-                          <div className="text-sm opacity-90">Taxa Conclusão</div>
+                          <div className="text-3xl font-bold">12</div>
+                          <div className="text-sm opacity-90">Profissionais (PESQUISA)</div>
+                          <div className="text-xs opacity-75">LabPEC & Comunicação</div>
                         </div>
                         <div className="text-center">
-                          <div className="text-3xl font-bold">94%</div>
-                          <div className="text-sm opacity-90">Precisão IA</div>
-                        </div>
-                        <div className="text-center">
-                          <div className="text-3xl font-bold">99.9%</div>
-                          <div className="text-sm opacity-90">Uptime</div>
+                          <div className="text-3xl font-bold">136</div>
+                          <div className="text-sm opacity-90">Pacientes (CLÍNICA)</div>
+                          <div className="text-xs opacity-75">Avaliações & Consultas</div>
                         </div>
                       </div>
                       <div className="mt-4 text-sm opacity-90">
-                        <p>💡 <strong>Insight:</strong> A plataforma Nôa Esperanza demonstra excelente performance operacional, 
-                        com alta taxa de conclusão de avaliações clínicas (87%) e precisão avançada da IA (94%). 
-                        O sistema de aprendizado automático está evoluindo consistentemente (+15% semanal).</p>
+                        <p>💡 <strong>Insight:</strong> A espinha dorsal da plataforma Nôa Esperanza (Ensino-Pesquisa-Clínica) 
+                        demonstra equilíbrio estrutural com 237 usuários ativos distribuídos nos três eixos fundamentais. 
+                        A Arte da Entrevista Clínica continua sendo o método central que conecta todos os eixos.</p>
                       </div>
                     </div>
                   </div>
@@ -4705,3 +4734,4 @@ ${conversation.summary}
 }
 
 export default GPTPBuilder
+
