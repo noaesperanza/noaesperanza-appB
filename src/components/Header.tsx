@@ -1,4 +1,5 @@
 import { Link, useNavigate, useLocation } from 'react-router-dom'
+import { useState } from 'react'
 import { Specialty } from '../App'
 import { useAuth } from '../contexts/AuthContext'
 
@@ -11,6 +12,7 @@ const Header = ({ currentSpecialty, setCurrentSpecialty }: HeaderProps) => {
   const auth = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
+  const [mobileOpen, setMobileOpen] = useState(false)
   
   // Verificação de segurança para evitar erros durante a inicialização
   const { user, signOut } = auth || { user: null, signOut: () => {} }
@@ -90,10 +92,6 @@ const Header = ({ currentSpecialty, setCurrentSpecialty }: HeaderProps) => {
               <i className="fas fa-graduation-cap text-xs"></i>
               <span className="text-xs">Estudante</span>
             </Link>
-            <Link to="/app/checkout" className="nav-item text-xs px-3 py-2">
-              <i className="fas fa-credit-card text-xs"></i>
-              <span className="text-xs">Pagar</span>
-            </Link>
             {/* Mostrar ADM/CONFIG apenas para administradores */}
             {user?.user_metadata?.role === 'admin' && (
               <Link to="/app/admin" className="nav-item text-xs px-3 py-2">
@@ -107,6 +105,14 @@ const Header = ({ currentSpecialty, setCurrentSpecialty }: HeaderProps) => {
         {/* Seção do Usuário - não mostrar na landing page */}
         {location.pathname !== '/landing' && (
           <div className="flex items-center gap-4">
+            {/* Botão Mobile Menu */}
+            <button
+              className="lg:hidden text-white/80 hover:text-white"
+              onClick={() => setMobileOpen(!mobileOpen)}
+              aria-label="Menu"
+            >
+              <i className="fas fa-bars"></i>
+            </button>
             {/* Avatar e Logout */}
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-green-500 rounded-full flex items-center justify-center">
@@ -125,6 +131,35 @@ const Header = ({ currentSpecialty, setCurrentSpecialty }: HeaderProps) => {
           </div>
         )}
       </div>
+      {/* Mobile Dropdown */}
+      {location.pathname !== '/landing' && mobileOpen && (
+        <div className="lg:hidden bg-gradient-to-r from-gray-900/95 via-purple-900/95 to-amber-600/95 border-t border-white/10">
+          <div className="px-4 py-3 flex flex-wrap gap-2">
+            <Link to="/app/paciente" className="nav-item text-xs px-3 py-2" onClick={() => setMobileOpen(false)}>
+              <i className="fas fa-user text-xs"></i>
+              <span className="text-xs ml-1">Paciente</span>
+            </Link>
+            <Link to="/app/avaliacao-inicial" className="nav-item text-xs px-3 py-2" onClick={() => setMobileOpen(false)}>
+              <i className="fas fa-clipboard-list text-xs"></i>
+              <span className="text-xs ml-1">Avaliação</span>
+            </Link>
+            <Link to="/app/medico" className="nav-item text-xs px-3 py-2" onClick={() => setMobileOpen(false)}>
+              <i className="fas fa-user-md text-xs"></i>
+              <span className="text-xs ml-1">Médico</span>
+            </Link>
+            <Link to="/app/estudante" className="nav-item text-xs px-3 py-2" onClick={() => setMobileOpen(false)}>
+              <i className="fas fa-graduation-cap text-xs"></i>
+              <span className="text-xs ml-1">Estudante</span>
+            </Link>
+            {user?.user_metadata?.role === 'admin' && (
+              <Link to="/app/admin" className="nav-item text-xs px-3 py-2" onClick={() => setMobileOpen(false)}>
+                <i className="fas fa-cog text-xs"></i>
+                <span className="text-xs ml-1">ADM/CONFIG</span>
+              </Link>
+            )}
+          </div>
+        </div>
+      )}
     </header>
   )
 }
