@@ -3,6 +3,7 @@ import { codeEditorAgent } from './codeEditorAgent'
 import { courseAdminAgent } from './courseAdminAgent'
 import { knowledgeBaseAgent } from './knowledgeBaseAgent'
 import { supabaseService } from '../services/supabaseService'
+import { gptBuilderService } from '../services/gptBuilderService'
 import { supabase } from '../integrations/supabase/client'
 import { clinicalAgent } from './clinicalAgent'
 import { symbolicAgent } from './symbolicAgent'
@@ -71,6 +72,33 @@ export class NoaGPT {
     } catch (error) {
       console.warn('⚠️ Erro ao acessar documentos do Dr. Ricardo:', error)
       return []
+    }
+  }
+
+  // 📖 LER/RESUMIR DOCUMENTOS MESTRES
+  private async readMasterDocument(query: string): Promise<string> {
+    try {
+      const docs = await gptBuilderService.searchDocuments(query)
+      if (docs && docs.length > 0) {
+        const doc = docs[0]
+        const preview = (doc.content || '').substring(0, 600)
+        return `📖 Documento Mestre encontrado: "${doc.title}"
+
+Resumo (início do conteúdo):
+${preview}${doc.content.length > 600 ? '...':''}
+
+Você quer que eu continue a leitura, gere um resumo ou busque por um tópico específico dentro deste documento?`
+      }
+      // Se não encontrou, listar os mais recentes
+      const all = await gptBuilderService.getDocuments()
+      if (all && all.length > 0) {
+        const lista = all.slice(0, 5).map((d: any, i: number) => `${i+1}. ${d.title}`).join('\n')
+        return `Não encontrei um documento que combine com "${query}".\n\n📚 Documentos disponíveis (top 5):\n${lista}\n\nDiga: "ler documento <título>" para abrir um deles.`
+      }
+      return 'Não localizei documentos na base de conhecimento neste momento.'
+    } catch (error) {
+      console.warn('⚠️ Erro ao ler Documento Mestre:', error)
+      return 'Tive um problema ao acessar os Documentos Mestres agora.'
     }
   }
 
@@ -456,11 +484,24 @@ export class NoaGPT {
       lower.includes('listar conhecimentos') ||
       lower.includes('base de dados') ||
       lower.includes('adicionar à base') ||
+      lower.includes('adicionar a base') ||
       lower.includes('conhecimentos') ||
       lower.includes('conhecimento') ||
       lower.includes('base de conhecimento')
     ) {
       return await knowledgeBaseAgent.executarAcao(message)
+    }
+
+    // 📖 Ler documento mestre por comando
+    if (
+      lower.startsWith('ler documento ') ||
+      lower.startsWith('abrir documento ') ||
+      lower.includes('ler o documento mestre') ||
+      lower.includes('documento mestre')
+    ) {
+      const titulo = message.replace(/^\s*(ler|abrir) documento\s*/i, '').trim()
+      const query = titulo || 'Documento Mestre Institucional'
+      return await this.readMasterDocument(query)
     }
 
     // 💬 RESPOSTAS ESPECÍFICAS PARA PERGUNTAS COMUNS (PRIORIDADE MÁXIMA)
