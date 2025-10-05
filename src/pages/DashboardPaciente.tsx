@@ -55,6 +55,13 @@ const DashboardPaciente = ({ currentSpecialty, addNotification }: DashboardPacie
   // Itens da sidebar para pacientes
   const sidebarItems = [
     {
+      id: 'avaliacao',
+      label: 'Avaliação Clínica Inicial',
+      icon: 'fa-clipboard-list',
+      color: 'green',
+      action: () => navigate('/app/avaliacao-inicial')
+    },
+    {
       id: 'perfil',
       label: 'Meu Perfil',
       icon: 'fa-user-circle',

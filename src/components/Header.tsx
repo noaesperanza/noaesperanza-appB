@@ -78,6 +78,10 @@ const Header = ({ currentSpecialty, setCurrentSpecialty }: HeaderProps) => {
               <i className="fas fa-user text-xs"></i>
               <span className="text-xs">Paciente</span>
             </Link>
+            <Link to="/app/avaliacao-inicial" className="nav-item text-xs px-3 py-2">
+              <i className="fas fa-clipboard-list text-xs"></i>
+              <span className="text-xs">Avaliação</span>
+            </Link>
             <Link to="/app/medico" className="nav-item text-xs px-3 py-2">
               <i className="fas fa-user-md text-xs"></i>
               <span className="text-xs">Médico</span>
