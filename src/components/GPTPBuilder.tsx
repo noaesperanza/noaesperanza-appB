@@ -3242,20 +3242,6 @@ ${conversation.summary}
           
           {/* Controles do Header */}
           <div className="flex items-center gap-3">
-            {/* Toggle Histórico de Conversas */}
-            <button
-              onClick={() => setShowConversationHistory(!showConversationHistory)}
-              className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
-                showConversationHistory
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-slate-700 text-gray-400 hover:text-white'
-              }`}
-              title={showConversationHistory ? 'Ocultar histórico' : 'Mostrar histórico'}
-            >
-              <i className="fas fa-history mr-2"></i>
-              Histórico
-            </button>
-            
             {/* Nova Conversa */}
             <button
               onClick={() => {
@@ -3327,199 +3313,198 @@ ${conversation.summary}
             <div className="flex-1 overflow-hidden">
               
               {activeTab === 'chat' ? (
-                /* CHAT MULTIMODAL COM HISTÓRICO FIXO */
+                /* CHAT MULTIMODAL SEM PAINEL DE HISTÓRICO */
                 <div className="h-full flex">
-                  {/* Área do Chat Principal */}
+                  {/* Área do Chat Principal - ocupa toda a largura */}
                   <div className="flex-1 flex flex-col">
-                  {/* Área de Mensagens */}
-                  <div 
-                    ref={chatRef}
-                    className="flex-1 overflow-y-auto p-4 space-y-4"
-                  >
-                    {chatMessages.map((message) => (
-                      <div
-                        key={message.id}
-                        id={message.id}
-                        className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
-                      >
+                    {/* Área de Mensagens */}
+                    <div 
+                      ref={chatRef}
+                      className="flex-1 overflow-y-auto p-4 space-y-4"
+                    >
+                      {chatMessages.map((message) => (
                         <div
-                          className={`max-w-[80%] p-3 rounded-lg ${
-                            message.role === 'user'
-                              ? 'bg-blue-600 text-white'
-                              : 'bg-slate-700 text-gray-100'
-                          }`}
+                          key={message.id}
+                          id={message.id}
+                          className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
                         >
-                          <div className="whitespace-pre-wrap text-sm">
-                            {message.content}
-                          </div>
-                          <div className="text-xs opacity-70 mt-2">
-                            {(() => {
-                              try {
-                                const rawTs: any = (message as any).timestamp
-                                const date = rawTs instanceof Date ? rawTs : new Date(rawTs)
-                                if (isNaN(date.getTime())) return ''
-                                return date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
-                              } catch {
-                                return ''
-                              }
-                            })()}
+                          <div
+                            className={`max-w-[80%] p-3 rounded-lg ${
+                              message.role === 'user'
+                                ? 'bg-blue-600 text-white'
+                                : 'bg-slate-700 text-gray-100'
+                            }`}
+                          >
+                            <div className="whitespace-pre-wrap text-sm">
+                              {message.content}
+                            </div>
+                            <div className="text-xs opacity-70 mt-2">
+                              {(() => {
+                                try {
+                                  const rawTs: any = (message as any).timestamp
+                                  const date = rawTs instanceof Date ? rawTs : new Date(rawTs)
+                                  if (isNaN(date.getTime())) return ''
+                                  return date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+                                } catch {
+                                  return ''
+                                }
+                              })()}
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    ))}
-                    
-                    {isTyping && (
-                      <div className="flex justify-start">
-                        <div className="bg-slate-700 text-gray-100 p-3 rounded-lg">
-                          <div className="flex items-center space-x-1">
-                            <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
-                            <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                            <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                      ))}
+                      
+                      {isTyping && (
+                        <div className="flex justify-start">
+                          <div className="bg-slate-700 text-gray-100 p-3 rounded-lg">
+                            <div className="flex items-center space-x-1">
+                              <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
+                              <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+                              <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Editor de Documentos Integrado ao Chat */}
+                    {isEditing && (
+                      <div className="border-t border-gray-600 bg-slate-800">
+                        <div className="p-4">
+                          <div className="flex items-center justify-between mb-4">
+                            <div>
+                              <h3 className="text-lg font-semibold text-white">Editor de Documentos</h3>
+                              <p className="text-sm text-gray-400">Edite documentos durante a conversa</p>
+                            </div>
+                            <div className="flex gap-2">
+                              {selectedDocument ? (
+                                <>
+                                  <button
+                                    onClick={saveDocument}
+                                    disabled={loading}
+                                    className="bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+                                  >
+                                    <i className="fas fa-save mr-2"></i>
+                                    Salvar
+                                  </button>
+                                  <button
+                                    onClick={() => {
+                                      setIsEditing(false)
+                                      setSelectedDocument(null)
+                                    }}
+                                    className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+                                  >
+                                    Fechar Editor
+                                  </button>
+                                </>
+                              ) : (
+                                <>
+                                  <button
+                                    onClick={createDocument}
+                                    disabled={loading || !newDocument.title || !newDocument.content}
+                                    className="bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+                                  >
+                                    <i className="fas fa-save mr-2"></i>
+                                    {loading ? 'Criando...' : 'Criar Documento'}
+                                  </button>
+                                  <button
+                                    onClick={() => {
+                                      setIsEditing(false)
+                                      setNewDocument({ title: '', content: '', type: 'knowledge', category: '', is_active: true })
+                                    }}
+                                    className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+                                  >
+                                    Cancelar
+                                  </button>
+                                </>
+                              )}
+                            </div>
+                          </div>
+
+                          {/* Formulário do Editor */}
+                          <div className="space-y-4">
+                            <div>
+                              <label className="block text-sm font-medium text-gray-300 mb-2">Título</label>
+                              <input
+                                type="text"
+                                value={selectedDocument?.title || newDocument.title || ''}
+                                onChange={(e) => {
+                                  if (selectedDocument) {
+                                    setSelectedDocument({...selectedDocument, title: e.target.value})
+                                  } else {
+                                    setNewDocument({...newDocument, title: e.target.value})
+                                  }
+                                }}
+                                className="w-full px-3 py-2 bg-slate-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-blue-500"
+                                placeholder="Digite o título do documento..."
+                              />
+                            </div>
+                            
+                            <div className="grid grid-cols-2 gap-4">
+                              <div>
+                                <label className="block text-sm font-medium text-gray-300 mb-2">Tipo</label>
+                                <select
+                                  value={selectedDocument?.type || newDocument.type || 'knowledge'}
+                                  onChange={(e) => {
+                                    if (selectedDocument) {
+                                      setSelectedDocument({...selectedDocument, type: e.target.value as any})
+                                    } else {
+                                      setNewDocument({...newDocument, type: e.target.value as any})
+                                    }
+                                  }}
+                                  className="w-full px-3 py-2 bg-slate-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-blue-500"
+                                >
+                                  <option value="knowledge">Base de Conhecimento</option>
+                                  <option value="personality">Personalidade</option>
+                                  <option value="greeting">Saudação</option>
+                                  <option value="expertise">Especialização</option>
+                                  <option value="workflow">Fluxo de Trabalho</option>
+                                </select>
+                              </div>
+
+                              <div>
+                                <label className="block text-sm font-medium text-gray-300 mb-2">Categoria</label>
+                                <input
+                                  type="text"
+                                  value={selectedDocument?.category || newDocument.category || ''}
+                                  onChange={(e) => {
+                                    if (selectedDocument) {
+                                      setSelectedDocument({...selectedDocument, category: e.target.value})
+                                    } else {
+                                      setNewDocument({...newDocument, category: e.target.value})
+                                    }
+                                  }}
+                                  className="w-full px-3 py-2 bg-slate-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-blue-500"
+                                  placeholder="Digite a categoria..."
+                                />
+                              </div>
+                            </div>
+
+                            <div>
+                              <label className="block text-sm font-medium text-gray-300 mb-2">Conteúdo</label>
+                              <textarea
+                                value={selectedDocument?.content || newDocument.content || ''}
+                                onChange={(e) => {
+                                  if (selectedDocument) {
+                                    setSelectedDocument({...selectedDocument, content: e.target.value})
+                                  } else {
+                                    setNewDocument({...newDocument, content: e.target.value})
+                                  }
+                                }}
+                                className="w-full h-40 p-4 bg-slate-700 border border-gray-600 rounded-lg text-white resize-none focus:outline-none focus:border-blue-500"
+                                placeholder="Digite o conteúdo do documento..."
+                              />
+                            </div>
                           </div>
                         </div>
                       </div>
                     )}
-                  </div>
-
-                  {/* Editor de Documentos Integrado ao Chat */}
-                  {isEditing && (
-                    <div className="border-t border-gray-600 bg-slate-800">
-                      <div className="p-4">
-                        <div className="flex items-center justify-between mb-4">
-                          <div>
-                            <h3 className="text-lg font-semibold text-white">Editor de Documentos</h3>
-                            <p className="text-sm text-gray-400">Edite documentos durante a conversa</p>
-                          </div>
-                          <div className="flex gap-2">
-                            {selectedDocument ? (
-                              <>
-                                <button
-                                  onClick={saveDocument}
-                                  disabled={loading}
-                                  className="bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
-                                >
-                                  <i className="fas fa-save mr-2"></i>
-                                  Salvar
-                                </button>
-                                <button
-                                  onClick={() => {
-                                    setIsEditing(false)
-                                    setSelectedDocument(null)
-                                  }}
-                                  className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
-                                >
-                                  Fechar Editor
-                                </button>
-                              </>
-                            ) : (
-                              <>
-                                <button
-                                  onClick={createDocument}
-                                  disabled={loading || !newDocument.title || !newDocument.content}
-                                  className="bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
-                                >
-                                  <i className="fas fa-save mr-2"></i>
-                                  {loading ? 'Criando...' : 'Criar Documento'}
-                                </button>
-                                <button
-                                  onClick={() => {
-                                    setIsEditing(false)
-                                    setNewDocument({ title: '', content: '', type: 'knowledge', category: '', is_active: true })
-                                  }}
-                                  className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
-                                >
-                                  Cancelar
-                                </button>
-                              </>
-                            )}
-                          </div>
-                        </div>
-
-                        {/* Formulário do Editor */}
-                        <div className="space-y-4">
-                          <div>
-                            <label className="block text-sm font-medium text-gray-300 mb-2">Título</label>
-                            <input
-                              type="text"
-                              value={selectedDocument?.title || newDocument.title || ''}
-                              onChange={(e) => {
-                                if (selectedDocument) {
-                                  setSelectedDocument({...selectedDocument, title: e.target.value})
-                                } else {
-                                  setNewDocument({...newDocument, title: e.target.value})
-                                }
-                              }}
-                              className="w-full px-3 py-2 bg-slate-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-blue-500"
-                              placeholder="Digite o título do documento..."
-                            />
-                          </div>
-                          
-                          <div className="grid grid-cols-2 gap-4">
-                            <div>
-                              <label className="block text-sm font-medium text-gray-300 mb-2">Tipo</label>
-                              <select
-                                value={selectedDocument?.type || newDocument.type || 'knowledge'}
-                                onChange={(e) => {
-                                  if (selectedDocument) {
-                                    setSelectedDocument({...selectedDocument, type: e.target.value as any})
-                                  } else {
-                                    setNewDocument({...newDocument, type: e.target.value as any})
-                                  }
-                                }}
-                                className="w-full px-3 py-2 bg-slate-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-blue-500"
-                              >
-                                <option value="knowledge">Base de Conhecimento</option>
-                                <option value="personality">Personalidade</option>
-                                <option value="greeting">Saudação</option>
-                                <option value="expertise">Especialização</option>
-                                <option value="workflow">Fluxo de Trabalho</option>
-                              </select>
-                            </div>
-
-                            <div>
-                              <label className="block text-sm font-medium text-gray-300 mb-2">Categoria</label>
-                              <input
-                                type="text"
-                                value={selectedDocument?.category || newDocument.category || ''}
-                                onChange={(e) => {
-                                  if (selectedDocument) {
-                                    setSelectedDocument({...selectedDocument, category: e.target.value})
-                                  } else {
-                                    setNewDocument({...newDocument, category: e.target.value})
-                                  }
-                                }}
-                                className="w-full px-3 py-2 bg-slate-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-blue-500"
-                                placeholder="Digite a categoria..."
-                              />
-                            </div>
-                          </div>
-
-                          <div>
-                            <label className="block text-sm font-medium text-gray-300 mb-2">Conteúdo</label>
-                            <textarea
-                              value={selectedDocument?.content || newDocument.content || ''}
-                              onChange={(e) => {
-                                if (selectedDocument) {
-                                  setSelectedDocument({...selectedDocument, content: e.target.value})
-                                } else {
-                                  setNewDocument({...newDocument, content: e.target.value})
-                                }
-                              }}
-                              className="w-full h-40 p-4 bg-slate-700 border border-gray-600 rounded-lg text-white resize-none focus:outline-none focus:border-blue-500"
-                              placeholder="Digite o conteúdo do documento..."
-                            />
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  )}
 
           {/* Input de Mensagem com Upload */}
           <div className="border-t border-gray-600 p-4">
             {/* Área de Botões de Ação */}
             <div className="mb-3">
               <div className="flex gap-2">
-                {/* Botão de Base de Conhecimento - Integrado com Upload e Verificação */}
                 <button
                   onClick={() => setActiveTab('knowledge-base')}
                   className="bg-purple-600 hover:bg-purple-700 text-white px-3 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
@@ -3527,8 +3512,6 @@ ${conversation.summary}
                   <i className="fas fa-database"></i>
                   Base de Conhecimento
                 </button>
-                
-                {/* Botão Editor de Documentos */}
                 <button
                   onClick={() => setIsEditing(true)}
                   className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
@@ -3536,18 +3519,6 @@ ${conversation.summary}
                   <i className="fas fa-edit"></i>
                   Editor de Documentos
                 </button>
-                
-                {/* 🧠 STATUS ATTENTION SEMÂNTICA (SEMPRE ATIVA) */}
-                {semanticAttentionActive && userContext && (
-                  <div className="bg-purple-900/30 border border-purple-500/50 rounded-lg px-3 py-2 flex items-center gap-2">
-                    <i className="fas fa-brain text-purple-400"></i>
-                    <span className="text-purple-300 text-sm font-medium">Attention Ativa</span>
-                    <div className="ml-auto flex items-center gap-1">
-                      <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-                      <span className="text-xs text-green-300">Dr. Ricardo</span>
-                    </div>
-                  </div>
-                )}
               </div>
             </div>
 
@@ -3563,26 +3534,7 @@ ${conversation.summary}
                   rows={3}
                   disabled={isTyping}
                 />
-                
-                {/* Upload de arquivo integrado */}
-                <div className="flex items-center gap-2">
-                  <label className="bg-gray-600 hover:bg-gray-500 text-white px-3 py-1 rounded text-xs cursor-pointer flex items-center gap-1">
-                    <i className="fas fa-paperclip"></i>
-                    <input
-                      type="file"
-                      accept=".pdf,.doc,.docx,.txt,.png,.jpg,.jpeg,.mp4,.gif"
-                      onChange={handleFileUpload}
-                      className="hidden"
-                      multiple
-                    />
-                    Anexar
-                  </label>
-                  <span className="text-xs text-gray-400">
-                    {attachedFiles.length > 0 && `${attachedFiles.length} arquivo(s) anexado(s)`}
-                  </span>
-                </div>
               </div>
-              
               <div className="flex gap-2">
                 <button
                   onClick={sendMessage}
@@ -3594,7 +3546,6 @@ ${conversation.summary}
               </div>
             </div>
             
-            {/* Área de Arquivos Anexados */}
             {attachedFiles.length > 0 && (
               <div className="mt-3 p-2 bg-gray-800 rounded-lg">
                 <div className="text-xs text-gray-400 mb-2">Arquivos anexados:</div>
