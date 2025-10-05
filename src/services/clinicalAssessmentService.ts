@@ -267,39 +267,41 @@ export class ClinicalAssessmentService {
     const habits = this.assessmentResponses.filter(r => r.category === 'habits')
     const medications = this.assessmentResponses.filter(r => r.category === 'medications')
 
-    const report = `
-RELATÓRIO DE AVALIAÇÃO CLÍNICA INICIAL
+    const patientName = this.assessmentResponses[0]?.answer || 'Não informado'
+    const mainComplaint = complaints.slice(-1)[0]?.answer || ''
+    const maternal = family.filter(f => f.question.includes('mãe')).map(f => f.answer).join(', ')
+    const paternal = family.filter(f => f.question.includes('pai')).map(f => f.answer).join(', ')
+    const regularMeds = medications.filter(m => m.question.includes('regularmente')).map(m => m.answer).join(', ')
+    const sporadicMeds = medications.filter(m => m.question.includes('esporadicamente')).map(m => m.answer).join(', ')
+    const allergies = medications.filter(m => m.question.includes('alergia')).map(m => m.answer).join(', ')
 
-PACIENTE: ${this.assessmentResponses[0]?.answer || 'Não informado'}
-
-QUEIXAS PRINCIPAIS:
-${complaints.map(c => `- ${c.answer}`).join('\n')}
-
-HISTÓRIA MÉDICA:
-${history.map(h => `- ${h.answer}`).join('\n')}
-
-HISTÓRIA FAMILIAR:
-Materna: ${family.filter(f => f.question.includes('mãe')).map(f => f.answer).join(', ')}
-Paterna: ${family.filter(f => f.question.includes('pai')).map(f => f.answer).join(', ')}
-
-HÁBITOS DE VIDA:
-${habits.map(h => `- ${h.answer}`).join('\n')}
-
-MEDICAÇÕES:
-Regular: ${medications.filter(m => m.question.includes('regularmente')).map(m => m.answer).join(', ')}
-Esporádica: ${medications.filter(m => m.question.includes('esporadicamente')).map(m => m.answer).join(', ')}
-
-ALERGIAS:
-${medications.filter(m => m.question.includes('alergia')).map(m => m.answer).join(', ')}
-
-Este é um relatório de avaliação inicial baseado no método desenvolvido pelo Dr. Ricardo Valença.
-    `
+    const narrative = [
+      `Este é o relatório da Avaliação Clínica Inicial de ${patientName}.`,
+      mainComplaint
+        ? `A queixa que mais o(a) incomoda é: ${mainComplaint}.`
+        : '',
+      complaints.length > 0
+        ? `Ao explorar a história atual, o(a) paciente relatou: ${complaints.map(c => c.answer).join('; ')}.`
+        : '',
+      history.length > 0
+        ? `Sobre a história patológica pregressa, mencionou: ${history.map(h => h.answer).join('; ')}.`
+        : '',
+      family.length > 0
+        ? `Na história familiar, por parte materna: ${maternal || 'sem dados'}; por parte paterna: ${paternal || 'sem dados'}.`
+        : '',
+      habits.length > 0
+        ? `Quanto aos hábitos de vida, citou: ${habits.map(h => h.answer).join('; ')}.`
+        : '',
+      (regularMeds || sporadicMeds || allergies)
+        ? `Alergias: ${allergies || 'não referidas'}. Medicações em uso: regulares (${regularMeds || 'não referidas'}) e esporádicas (${sporadicMeds || 'não referidas'}).`
+        : ''
+    ].filter(Boolean).join('\n\n')
 
     this.currentAssessment.finalReport = {
-      patientName: this.assessmentResponses[0]?.answer || 'Não informado',
+      patientName,
       mainComplaint: complaints[0]?.answer || '',
       complaintsList: complaints.map(c => c.answer),
-      developmentDetails: complaints.filter(c => c.question.includes('Onde')).map(c => c.answer).join(', '),
+      developmentDetails: complaints.filter(c => c.question.toLowerCase().includes('onde')).map(c => c.answer).join(', '),
       medicalHistory: history.map(h => h.answer),
       familyHistory: {
         maternal: family.filter(f => f.question.includes('mãe')).map(f => f.answer),
@@ -311,7 +313,7 @@ Este é um relatório de avaliação inicial baseado no método desenvolvido pel
         sporadic: medications.filter(m => m.question.includes('esporadicamente')).map(m => m.answer)
       },
       allergies: medications.filter(m => m.question.includes('alergia')).map(m => m.answer),
-      summary: report,
+      summary: `RELATÓRIO DE AVALIAÇÃO CLÍNICA INICIAL\n\n${narrative}\n\nEsta é uma avaliação inicial segundo o método do Dr. Ricardo Valença para aperfeiçoar o atendimento.`,
       recommendations: [
         'Agendar consulta com Dr. Ricardo Valença',
         'Manter acompanhamento regular',
@@ -319,7 +321,7 @@ Este é um relatório de avaliação inicial baseado no método desenvolvido pel
       ]
     }
 
-    return report
+    return this.currentAssessment.finalReport.summary
   }
 
   /**

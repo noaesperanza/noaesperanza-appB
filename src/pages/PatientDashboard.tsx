@@ -35,6 +35,7 @@ const PatientDashboard: React.FC<PatientDashboardProps> = ({ userEmail, onLogout
   const [sessionId] = useState(`patient_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`)
   const [patientName, setPatientName] = useState('')
   const [nftHash, setNftHash] = useState<string | null>(null)
+  const [lastAssessmentReport, setLastAssessmentReport] = useState<string | null>(null)
 
   // Inicializar contexto do paciente
   useEffect(() => {
@@ -67,6 +68,17 @@ const PatientDashboard: React.FC<PatientDashboardProps> = ({ userEmail, onLogout
       }
 
       logger.info('✅ Contexto do paciente inicializado', { userId: context.userId })
+
+      // Carregar último relatório salvo localmente (fallback)
+      try {
+        const saved = localStorage.getItem('kpi_last_assessment_report')
+        if (saved) {
+          const parsed = JSON.parse(saved)
+          setLastAssessmentReport(parsed?.summary || '')
+        }
+        const savedNft = localStorage.getItem('kpi_last_assessment_nft')
+        if (savedNft) setNftHash(savedNft)
+      } catch {}
     } catch (error) {
       logger.error('❌ Erro ao inicializar contexto do paciente', error)
     }
@@ -470,6 +482,31 @@ Obrigado por confiar na Nôa Esperanza para sua avaliação inicial!`,
                         disabled
                         className="w-full bg-slate-600 border border-slate-600 rounded-lg px-3 py-2 text-gray-400 cursor-not-allowed font-mono text-sm"
                       />
+                    </div>
+                  )}
+                  {lastAssessmentReport && (
+                    <div className="mt-4 p-3 bg-green-900/20 border border-green-500/30 rounded-lg">
+                      <h3 className="text-green-400 text-sm font-semibold mb-2">📄 Relatório da Avaliação Clínica Inicial</h3>
+                      <pre className="text-xs text-gray-200 whitespace-pre-wrap font-mono max-h-64 overflow-y-auto">{lastAssessmentReport}</pre>
+                      <div className="flex items-center gap-2 mt-2">
+                        <button
+                          className="px-3 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-xs"
+                          onClick={() => {
+                            const blob = new Blob([lastAssessmentReport], { type: 'text/plain;charset=utf-8' })
+                            const url = URL.createObjectURL(blob)
+                            const a = document.createElement('a')
+                            a.href = url
+                            a.download = 'relatorio_avaliacao_inicial.txt'
+                            a.click()
+                            URL.revokeObjectURL(url)
+                          }}
+                        >
+                          Baixar Relatório
+                        </button>
+                        {nftHash && (
+                          <span className="text-xs text-green-400 font-mono">NFT: {nftHash}</span>
+                        )}
+                      </div>
                     </div>
                   )}
                 </div>
