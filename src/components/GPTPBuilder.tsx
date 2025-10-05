@@ -63,7 +63,7 @@ const GPTPBuilder: React.FC<GPTPBuilderProps> = ({ onClose }) => {
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([])
   const [currentMessage, setCurrentMessage] = useState('')
   const [isTyping, setIsTyping] = useState(false)
-  const [activeTab, setActiveTab] = useState<'editor' | 'chat' | 'kpis' | 'cruzamentos' | 'trabalhos'>('chat')
+  const [activeTab, setActiveTab] = useState<'editor' | 'chat' | 'kpis' | 'cruzamentos' | 'trabalhos' | 'knowledge-base'>('chat')
   const [attachedFiles, setAttachedFiles] = useState<File[]>([])
   const [uploadedDocuments, setUploadedDocuments] = useState<any[]>([])
   
@@ -3135,17 +3135,28 @@ ${conversation.summary}
                 <i className="fas fa-comments mr-2"></i>
                 Chat Multimodal
               </button>
-              <button 
-                onClick={() => setActiveTab('editor')}
-                className={`px-4 py-3 text-sm font-medium transition-colors ${
-                  activeTab === 'editor' 
-                    ? 'text-white border-b-2 border-blue-500' 
-                    : 'text-gray-400 hover:text-white'
-                }`}
-              >
-                <i className="fas fa-edit mr-2"></i>
-                Editor de Documentos
-              </button>
+                <button 
+                  onClick={() => setActiveTab('knowledge-base')}
+                  className={`px-4 py-3 text-sm font-medium transition-colors ${
+                    activeTab === 'knowledge-base' 
+                      ? 'text-white border-b-2 border-blue-500' 
+                      : 'text-gray-400 hover:text-white'
+                  }`}
+                >
+                  <i className="fas fa-database mr-2"></i>
+                  Base de Conhecimento
+                </button>
+                <button 
+                  onClick={() => setActiveTab('editor')}
+                  className={`px-4 py-3 text-sm font-medium transition-colors ${
+                    activeTab === 'editor' 
+                      ? 'text-white border-b-2 border-blue-500' 
+                      : 'text-gray-400 hover:text-white'
+                  }`}
+                >
+                  <i className="fas fa-edit mr-2"></i>
+                  Editor de Documentos
+                </button>
               <button 
                 onClick={() => setActiveTab('kpis')}
                 className={`px-4 py-3 text-sm font-medium transition-colors ${
@@ -3233,6 +3244,139 @@ ${conversation.summary}
                     )}
                   </div>
 
+                  {/* Editor de Documentos Integrado ao Chat */}
+                  {isEditing && (
+                    <div className="border-t border-gray-600 bg-slate-800">
+                      <div className="p-4">
+                        <div className="flex items-center justify-between mb-4">
+                          <div>
+                            <h3 className="text-lg font-semibold text-white">Editor de Documentos</h3>
+                            <p className="text-sm text-gray-400">Edite documentos durante a conversa</p>
+                          </div>
+                          <div className="flex gap-2">
+                            {selectedDocument ? (
+                              <>
+                                <button
+                                  onClick={saveDocument}
+                                  disabled={loading}
+                                  className="bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+                                >
+                                  <i className="fas fa-save mr-2"></i>
+                                  Salvar
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    setIsEditing(false)
+                                    setSelectedDocument(null)
+                                  }}
+                                  className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+                                >
+                                  Fechar Editor
+                                </button>
+                              </>
+                            ) : (
+                              <>
+                                <button
+                                  onClick={createDocument}
+                                  disabled={loading || !newDocument.title || !newDocument.content}
+                                  className="bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+                                >
+                                  <i className="fas fa-save mr-2"></i>
+                                  {loading ? 'Criando...' : 'Criar Documento'}
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    setIsEditing(false)
+                                    setNewDocument({ title: '', content: '', type: 'knowledge', category: '', is_active: true })
+                                  }}
+                                  className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+                                >
+                                  Cancelar
+                                </button>
+                              </>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Formulário do Editor */}
+                        <div className="space-y-4">
+                          <div>
+                            <label className="block text-sm font-medium text-gray-300 mb-2">Título</label>
+                            <input
+                              type="text"
+                              value={selectedDocument?.title || newDocument.title || ''}
+                              onChange={(e) => {
+                                if (selectedDocument) {
+                                  setSelectedDocument({...selectedDocument, title: e.target.value})
+                                } else {
+                                  setNewDocument({...newDocument, title: e.target.value})
+                                }
+                              }}
+                              className="w-full px-3 py-2 bg-slate-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-blue-500"
+                              placeholder="Digite o título do documento..."
+                            />
+                          </div>
+                          
+                          <div className="grid grid-cols-2 gap-4">
+                            <div>
+                              <label className="block text-sm font-medium text-gray-300 mb-2">Tipo</label>
+                              <select
+                                value={selectedDocument?.type || newDocument.type || 'knowledge'}
+                                onChange={(e) => {
+                                  if (selectedDocument) {
+                                    setSelectedDocument({...selectedDocument, type: e.target.value as any})
+                                  } else {
+                                    setNewDocument({...newDocument, type: e.target.value as any})
+                                  }
+                                }}
+                                className="w-full px-3 py-2 bg-slate-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-blue-500"
+                              >
+                                <option value="knowledge">Base de Conhecimento</option>
+                                <option value="personality">Personalidade</option>
+                                <option value="greeting">Saudação</option>
+                                <option value="expertise">Especialização</option>
+                                <option value="workflow">Fluxo de Trabalho</option>
+                              </select>
+                            </div>
+
+                            <div>
+                              <label className="block text-sm font-medium text-gray-300 mb-2">Categoria</label>
+                              <input
+                                type="text"
+                                value={selectedDocument?.category || newDocument.category || ''}
+                                onChange={(e) => {
+                                  if (selectedDocument) {
+                                    setSelectedDocument({...selectedDocument, category: e.target.value})
+                                  } else {
+                                    setNewDocument({...newDocument, category: e.target.value})
+                                  }
+                                }}
+                                className="w-full px-3 py-2 bg-slate-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-blue-500"
+                                placeholder="Digite a categoria..."
+                              />
+                            </div>
+                          </div>
+
+                          <div>
+                            <label className="block text-sm font-medium text-gray-300 mb-2">Conteúdo</label>
+                            <textarea
+                              value={selectedDocument?.content || newDocument.content || ''}
+                              onChange={(e) => {
+                                if (selectedDocument) {
+                                  setSelectedDocument({...selectedDocument, content: e.target.value})
+                                } else {
+                                  setNewDocument({...newDocument, content: e.target.value})
+                                }
+                              }}
+                              className="w-full h-40 p-4 bg-slate-700 border border-gray-600 rounded-lg text-white resize-none focus:outline-none focus:border-blue-500"
+                              placeholder="Digite o conteúdo do documento..."
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
           {/* Input de Mensagem com Upload */}
           <div className="border-t border-gray-600 p-4">
             {/* Área de Upload de Arquivos */}
@@ -3246,11 +3390,20 @@ ${conversation.summary}
                 
                 {/* Botão de Base de Conhecimento */}
                 <button
-                  onClick={() => setActiveTab('editor')}
+                  onClick={() => setActiveTab('knowledge-base')}
                   className="bg-purple-600 hover:bg-purple-700 text-white px-3 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
                 >
                   <i className="fas fa-database"></i>
                   Base de Conhecimento
+                </button>
+                
+                {/* Botão Editor de Documentos */}
+                <button
+                  onClick={() => setIsEditing(true)}
+                  className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
+                >
+                  <i className="fas fa-edit"></i>
+                  Editor de Documentos
                 </button>
                 
                 <button
@@ -4083,6 +4236,144 @@ ${conversation.summary}
                         })}
                       </div>
                     </div>
+                  </div>
+                </div>
+              ) : activeTab === 'knowledge-base' ? (
+                /* BASE DE CONHECIMENTO - DOCUMENTOS ENVIADOS */
+                <div className="h-full flex flex-col">
+                  {/* Header */}
+                  <div className="p-4 border-b border-gray-600">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h3 className="text-lg font-semibold text-white">Base de Conhecimento</h3>
+                        <p className="text-sm text-gray-400">Documentos enviados para treinar a personalidade da Nôa</p>
+                      </div>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={async () => {
+                            try {
+                              await loadDocuments()
+                              alert('Base de conhecimento atualizada!')
+                            } catch (error) {
+                              console.error('Erro ao atualizar:', error)
+                              alert('Erro ao atualizar base de conhecimento')
+                            }
+                          }}
+                          className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg text-sm font-medium transition-colors"
+                        >
+                          <i className="fas fa-sync-alt mr-2"></i>
+                          Atualizar
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Filtros */}
+                  <div className="p-4 border-b border-gray-600">
+                    <div className="flex gap-4">
+                      <div className="flex-1">
+                        <input
+                          type="text"
+                          placeholder="Buscar documentos..."
+                          value={searchTerm}
+                          onChange={(e) => setSearchTerm(e.target.value)}
+                          className="w-full px-3 py-2 bg-slate-700 border border-gray-600 rounded-lg text-white text-sm placeholder-gray-400 focus:outline-none focus:border-blue-500"
+                        />
+                      </div>
+                      <div className="w-48">
+                        <select
+                          value={selectedType}
+                          onChange={(e) => setSelectedType(e.target.value)}
+                          className="w-full px-3 py-2 bg-slate-700 border border-gray-600 rounded-lg text-white text-sm focus:outline-none focus:border-blue-500"
+                        >
+                          <option value="all">Todos os tipos</option>
+                          <option value="knowledge">Base de Conhecimento</option>
+                          <option value="personality">Personalidade</option>
+                          <option value="greeting">Saudação</option>
+                          <option value="expertise">Especialização</option>
+                          <option value="workflow">Fluxo de Trabalho</option>
+                          <option value="uploaded-document">Documentos Enviados</option>
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Lista de Documentos */}
+                  <div className="flex-1 overflow-y-auto p-4">
+                    {loading ? (
+                      <div className="text-center text-gray-400 py-8">
+                        <i className="fas fa-spinner fa-spin text-2xl mb-2"></i>
+                        <p>Carregando documentos...</p>
+                      </div>
+                    ) : filteredDocuments.length > 0 ? (
+                      <div className="space-y-3">
+                        {filteredDocuments.map((doc) => (
+                          <div
+                            key={doc.id}
+                            onClick={() => {
+                              setSelectedDocument(doc)
+                              setIsEditing(true)
+                              setActiveTab('chat')
+                            }}
+                            className="p-4 rounded-lg cursor-pointer transition-colors bg-slate-700 hover:bg-slate-600 border border-transparent hover:border-blue-500"
+                          >
+                            <div className="flex items-start justify-between">
+                              <div className="flex-1">
+                                <div className="flex items-center gap-2 mb-2">
+                                  <i className={`fas fa-${documentTypes.find(t => t.value === doc.type)?.icon} text-${documentTypes.find(t => t.value === doc.type)?.color}-400`}></i>
+                                  <h4 className="text-white font-medium">{doc.title}</h4>
+                                  {doc.category && (
+                                    <span className="px-2 py-1 bg-blue-600 text-white text-xs rounded-full">
+                                      {doc.category}
+                                    </span>
+                                  )}
+                                </div>
+                                <p className="text-gray-400 text-sm mb-2 line-clamp-2">
+                                  {doc.content.substring(0, 150)}...
+                                </p>
+                                <div className="flex items-center gap-4 text-xs text-gray-500">
+                                  <span>
+                                    <i className="fas fa-calendar mr-1"></i>
+                                    {new Date(doc.updated_at).toLocaleDateString('pt-BR')}
+                                  </span>
+                                  <span>
+                                    <i className="fas fa-file mr-1"></i>
+                                    {documentTypes.find(t => t.value === doc.type)?.label}
+                                  </span>
+                                  <span>
+                                    <i className="fas fa-text-width mr-1"></i>
+                                    {doc.content.length.toLocaleString()} caracteres
+                                  </span>
+                                </div>
+                              </div>
+                              <div className="flex gap-2 ml-4">
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation()
+                                    setSelectedDocument(doc)
+                                    setIsEditing(true)
+                                    setActiveTab('chat')
+                                  }}
+                                  className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-xs transition-colors"
+                                >
+                                  <i className="fas fa-edit mr-1"></i>
+                                  Editar
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-center text-gray-400 py-8">
+                        <i className="fas fa-database text-4xl mb-4"></i>
+                        <h3 className="text-lg font-semibold mb-2">Base de Conhecimento Vazia</h3>
+                        <p className="text-sm mb-4">Nenhum documento encontrado na base de conhecimento.</p>
+                        <p className="text-xs text-gray-500">
+                          Envie documentos pelo chat ou use o editor para criar novos documentos.
+                        </p>
+                      </div>
+                    )}
                   </div>
                 </div>
               ) : (
