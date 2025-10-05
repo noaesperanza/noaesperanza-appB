@@ -1,0 +1,7 @@
+{
+  "rewrites": [
+    { "source": "/admin", "destination": "/app/admin" },
+    { "source": "/patient-dashboard", "destination": "/app/paciente" },
+    { "source": "/patient", "destination": "/app/paciente" }
+  ]
+}

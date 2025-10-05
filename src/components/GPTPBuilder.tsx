@@ -12,6 +12,7 @@ import { harmonyFormatService, HarmonyContext } from '../services/harmonyFormatS
 import ConversationHistorySidebar from './ConversationHistorySidebar'
 import IntelligentSidebar from './IntelligentSidebar'
 import { logger } from '../utils/logger'
+import { ClinicalAssessment } from './ClinicalAssessment'
 import { chatSimulator } from '../utils/chatSimulator'
 import { offlineChatService } from '../services/offlineChatService'
 import LocalStorageManager from '../utils/localStorageManager'
@@ -74,7 +75,7 @@ function GPTPBuilder(props: GPTPBuilderProps) {
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([])
   const [currentMessage, setCurrentMessage] = useState('')
   const [isTyping, setIsTyping] = useState(false)
-  const [activeTab, setActiveTab] = useState<'chat' | 'canvas' | 'kpis' | 'knowledge-base' | 'cruzamentos'>('chat')
+  const [activeTab, setActiveTab] = useState<'chat' | 'canvas' | 'kpis' | 'knowledge-base' | 'clinical-assessment' | 'cruzamentos'>('chat')
   const [attachedFiles, setAttachedFiles] = useState<File[]>([])
   const [uploadedDocuments, setUploadedDocuments] = useState<any[]>([])
   
@@ -112,7 +113,7 @@ function GPTPBuilder(props: GPTPBuilderProps) {
   const [allConversations, setAllConversations] = useState<any[]>([])
   const [developmentMilestones, setDevelopmentMilestones] = useState<any[]>([])
   const [localStorageData, setLocalStorageData] = useState<any>(null)
-  const [assessmentStats] = useState<AssessmentStats>({
+  const [assessmentStats, setAssessmentStats] = useState<AssessmentStats>({
     averageDuration: 45,
     totalAssessments: 0,
     completedAssessments: 0,
@@ -869,9 +870,9 @@ Criar uma **história ordenada** do desenvolvimento da Nôa Esperanza, onde cada
   const loadNoaConfig = async () => {
     try {
       const config = await gptBuilderService.getNoaConfig()
-      setNoaConfig(config)
+      if (config) setNoaConfig(config)
     } catch (error) {
-      console.error('Erro ao carregar configuração da Nôa:', error)
+      console.warn('Configuração da Nôa indisponível, usando padrão.')
     }
   }
 
@@ -1020,8 +1021,18 @@ ${recentMessages}
 
   // Função para detectar consultas à base de conhecimento
   const checkKnowledgeBaseQuery = (message: string): boolean => {
-    const lowerMessage = message.toLowerCase()
+    const lowerMessage = message.toLowerCase().trim()
     
+    // Evitar acionar KB em saudações ou identificação
+    const greetingPhrases = [
+      'olá, nôa. ricardo valença, aqui',
+      'olá, nôa',
+      'oi, nôa',
+      'olá',
+      'oi'
+    ]
+    if (greetingPhrases.some(g => lowerMessage.startsWith(g))) return false
+
     const knowledgeBaseKeywords = [
       'base de conhecimento',
       'consulte a base',
@@ -1035,8 +1046,7 @@ ${recentMessages}
       'protocolo',
       'roteiro',
       'avaliação clínica',
-      'entrevista',
-      'valença'
+      'entrevista'
     ]
     
     const hasKnowledgeKeyword = knowledgeBaseKeywords.some(keyword => 
@@ -1052,14 +1062,16 @@ ${recentMessages}
       'encontre',
       'mostre',
       'liste',
-      'acesse'
+      'acesse',
+      'pesquise'
     ]
     
     const hasConsultPhrase = consultPhrases.some(phrase => 
       lowerMessage.includes(phrase)
     )
     
-    return hasKnowledgeKeyword || (hasConsultPhrase && lowerMessage.length > 10)
+    // Requerir intenção mínima: frase de consulta + termo de documento, ou termo específico de KB
+    return hasKnowledgeKeyword || (hasConsultPhrase && lowerMessage.length > 15)
   }
 
   // Salvar conversa no sistema híbrido (Supabase + Local)
@@ -1527,6 +1539,28 @@ Detalhes do erro: ${error instanceof Error ? error.message : String(error)}
       const lowerMessage = messageToProcess.toLowerCase()
       // 🚀 DESABILITAR DETECÇÃO DE CONVERSA SIMPLES - CAUSA TRAVAMENTOS
       const isSimpleConversation = false // SEMPRE FALSE - evita travamentos
+
+      // ⚡ Reconhecimento imediato do Dr. Ricardo pela frase-código
+      if (lowerMessage.includes('olá, nôa. ricardo valença, aqui')) {
+        const recognizedMessage: ChatMessage = {
+          id: (Date.now() + 1).toString(),
+          role: 'assistant',
+          content: `👨‍⚕️ **Dr. Ricardo Valença reconhecido pela frase código!**\n\nOlá, Dr. Ricardo! Sou a Nôa Esperanza, sua mentora especializada. Estou pronta para conversar sobre medicina, tecnologia e desenvolvimento da nossa plataforma.\n\nComo posso ajudá-lo hoje?`,
+          timestamp: new Date(),
+          action: 'user_recognized',
+          data: { user: 'dr_ricardo_valenca' }
+        }
+
+        setChatMessages(prev => [...prev, recognizedMessage])
+
+        // Salvar conversa no sistema híbrido em background (não bloquear)
+        try {
+          await saveConversationHybrid(messageToProcess, recognizedMessage.content, 'user_recognized')
+        } catch (_) {}
+
+        setIsTyping(false)
+        return
+      }
       
       if (isSimpleConversation) {
         // 🚫 Detecção de conversa simples desabilitada temporariamente para evitar travamentos
@@ -1534,7 +1568,7 @@ Detalhes do erro: ${error instanceof Error ? error.message : String(error)}
       // 🚀 PROCESSAMENTO HÍBRIDO PROFISSIONAL
       console.log('💬 Processando com arquitetura híbrida...')
       
-      // 1. Verificar se é consulta à base de conhecimento
+      // 1. Verificar se é consulta à base de conhecimento (ajustado para evitar falsos positivos em saudações)
       const isKnowledgeBaseQuery = checkKnowledgeBaseQuery(messageToProcess)
       
       if (isKnowledgeBaseQuery) {
