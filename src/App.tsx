@@ -12,7 +12,6 @@ import DashboardMedico from './pages/DashboardMedico'
 import DashboardPaciente from './pages/DashboardPaciente'
 import DashboardProfissional from './pages/DashboardProfissional'
 import AdminDashboard from './pages/AdminDashboard'
-import PatientDashboard from './pages/PatientDashboard'
 import RelatorioNarrativo from './pages/RelatorioNarrativo'
 import Configuracoes from './pages/Configuracoes'
 import Perfil from './pages/Perfil'
@@ -166,15 +165,8 @@ function App() {
          <Route path="/admin" element={
            <AdminDashboard addNotification={addNotification} />
          } />
-         <Route path="/patient-dashboard" element={
-           <PatientDashboard 
-             userEmail={user?.email || ''}
-             onLogout={() => {/* Implementar logout */}}
-           />
-         } />
-         <Route path="/patient" element={
-           <PatientDashboard addNotification={addNotification} />
-         } />
+         <Route path="/patient-dashboard" element={<Navigate to="/app/paciente" replace />} />
+         <Route path="/patient" element={<Navigate to="/app/paciente" replace />} />
                     
                     <Route path="/payment" element={
                       <PaymentPage />

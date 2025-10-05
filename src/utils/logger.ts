@@ -70,11 +70,7 @@ class Logger {
     this.info(`🗄️ DATABASE: ${message}`, context)
   }
   
-  error(message: string, context?: any) {
-    if (this.shouldLog(LogLevel.ERROR)) {
-      console.error(this.formatMessage('ERROR', message, context))
-    }
-  }
+  // 'error' já definido acima; manter apenas uma implementação
 }
 
 // Instância global do logger
