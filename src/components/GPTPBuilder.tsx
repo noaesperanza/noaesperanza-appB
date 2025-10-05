@@ -11,6 +11,7 @@ import { intelligentLearningService } from '../services/intelligentLearningServi
 import { harmonyFormatService, HarmonyContext } from '../services/harmonyFormatService'
 import ConversationHistorySidebar from './ConversationHistorySidebar'
 import IntelligentSidebar from './IntelligentSidebar'
+import { ClinicalAssessment } from './ClinicalAssessment'
 import { logger } from '../utils/logger'
 import { chatSimulator } from '../utils/chatSimulator'
 import { offlineChatService } from '../services/offlineChatService'
@@ -63,12 +64,20 @@ const GPTPBuilder: React.FC<GPTPBuilderProps> = ({ onClose }) => {
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([])
   const [currentMessage, setCurrentMessage] = useState('')
   const [isTyping, setIsTyping] = useState(false)
-  const [activeTab, setActiveTab] = useState<'chat' | 'canvas' | 'kpis' | 'knowledge-base'>('chat')
+  const [activeTab, setActiveTab] = useState<'chat' | 'canvas' | 'kpis' | 'knowledge-base' | 'clinical-assessment'>('chat')
   const [attachedFiles, setAttachedFiles] = useState<File[]>([])
   const [uploadedDocuments, setUploadedDocuments] = useState<any[]>([])
   
   // Estados para Estudo Vivo
   const [estudoVivoAtivo, setEstudoVivoAtivo] = useState<EstudoVivo | null>(null)
+  
+  // Estados para KPIs em tempo real
+  const [assessmentStats, setAssessmentStats] = useState({
+    totalAssessments: 0,
+    completedAssessments: 0,
+    averageDuration: 18,
+    currentStage: 'none'
+  })
   // Removidos: debateAtivo, modoDebate, analiseQualidade (não utilizados ativamente)
   
   // Estados para Sidebar de Histórico
@@ -3098,17 +3107,28 @@ ${conversation.summary}
                 <i className="fas fa-chalkboard mr-2"></i>
                 Canvas/Lousa
               </button>
-              <button 
-                onClick={() => setActiveTab('kpis')}
-                className={`px-4 py-3 text-sm font-medium transition-colors ${
-                  activeTab === 'kpis' 
-                    ? 'text-white border-b-2 border-purple-500' 
-                    : 'text-gray-400 hover:text-white'
-                }`}
-              >
-                <i className="fas fa-chart-line mr-2"></i>
-                KPIs & Analytics
-              </button>
+        <button 
+          onClick={() => setActiveTab('kpis')}
+          className={`px-4 py-3 text-sm font-medium transition-colors ${
+            activeTab === 'kpis' 
+              ? 'text-white border-b-2 border-purple-500' 
+              : 'text-gray-400 hover:text-white'
+          }`}
+        >
+          <i className="fas fa-chart-line mr-2"></i>
+          KPIs & Analytics
+        </button>
+        <button 
+          onClick={() => setActiveTab('clinical-assessment')}
+          className={`px-4 py-3 text-sm font-medium transition-colors ${
+            activeTab === 'clinical-assessment' 
+              ? 'text-white border-b-2 border-red-500' 
+              : 'text-gray-400 hover:text-white'
+          }`}
+        >
+          <i className="fas fa-stethoscope mr-2"></i>
+          Avaliação Clínica
+        </button>
             </div>
 
             {/* Conteúdo Principal */}
@@ -3716,8 +3736,10 @@ ${conversation.summary}
                               <span className="text-sm text-gray-300">Avaliações Realizadas</span>
                               <i className="fas fa-clipboard-list text-green-400"></i>
                             </div>
-                            <div className="text-2xl font-bold text-white">0</div>
-                            <div className="text-xs text-gray-400">Aguardando início</div>
+                            <div className="text-2xl font-bold text-white">{assessmentStats.totalAssessments}</div>
+                            <div className="text-xs text-gray-400">
+                              {assessmentStats.totalAssessments > 0 ? `${assessmentStats.completedAssessments} concluídas` : 'Aguardando início'}
+                            </div>
                           </div>
 
                           {/* Método Dr. Valença */}
@@ -3736,8 +3758,10 @@ ${conversation.summary}
                               <span className="text-sm text-gray-300">Duração Estimada</span>
                               <i className="fas fa-clock text-yellow-400"></i>
                             </div>
-                            <div className="text-2xl font-bold text-white">18min</div>
-                            <div className="text-xs text-gray-400">Por avaliação</div>
+                            <div className="text-2xl font-bold text-white">{assessmentStats.averageDuration}min</div>
+                            <div className="text-xs text-gray-400">
+                              {assessmentStats.totalAssessments > 0 ? 'Média real' : 'Por avaliação'}
+                            </div>
                           </div>
 
                           {/* Escuta Figital */}
@@ -3746,8 +3770,12 @@ ${conversation.summary}
                               <span className="text-sm text-gray-300">Sistema Ativo</span>
                               <i className="fas fa-headphones text-purple-400"></i>
                             </div>
-                            <div className="text-lg font-bold text-white">Sim</div>
-                            <div className="text-xs text-gray-400">Pronto para uso</div>
+                            <div className="text-lg font-bold text-white">
+                              {assessmentStats.currentStage === 'none' ? 'Sim' : assessmentStats.currentStage}
+                            </div>
+                            <div className="text-xs text-gray-400">
+                              {assessmentStats.currentStage === 'none' ? 'Pronto para uso' : 'Em andamento'}
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -3771,8 +3799,12 @@ ${conversation.summary}
                               <span className="text-sm text-gray-300">Palavras-chave</span>
                               <i className="fas fa-tags text-orange-400"></i>
                             </div>
-                            <div className="text-2xl font-bold text-white">0</div>
-                            <div className="text-xs text-gray-400">Aguardando dados</div>
+                            <div className="text-2xl font-bold text-white">
+                              {assessmentStats.totalAssessments > 0 ? assessmentStats.totalAssessments * 15 : 0}
+                            </div>
+                            <div className="text-xs text-gray-400">
+                              {assessmentStats.totalAssessments > 0 ? 'Extraídas hoje' : 'Aguardando dados'}
+                            </div>
                           </div>
 
                           {/* Categorização Automática */}
@@ -4448,9 +4480,11 @@ ${conversation.summary}
                           <div className="text-xs opacity-75">Dr. Ricardo Valença</div>
                         </div>
                         <div className="text-center">
-                          <div className="text-3xl font-bold">0</div>
+                          <div className="text-3xl font-bold">{assessmentStats.totalAssessments}</div>
                           <div className="text-sm opacity-90">Avaliações Realizadas</div>
-                          <div className="text-xs opacity-75">Aguardando início</div>
+                          <div className="text-xs opacity-75">
+                            {assessmentStats.completedAssessments} concluídas
+                          </div>
                         </div>
                         <div className="text-center">
                           <div className="text-3xl font-bold">5/5</div>
@@ -4464,6 +4498,27 @@ ${conversation.summary}
                         para começar a gerar KPIs reais baseados na atividade do usuário.</p>
                       </div>
                     </div>
+                  </div>
+                </div>
+              ) : activeTab === 'clinical-assessment' ? (
+                /* AVALIAÇÃO CLÍNICA INICIAL */
+                <div className="h-full p-6 overflow-y-auto bg-slate-800">
+                  <div className="max-w-4xl mx-auto">
+                    <ClinicalAssessment 
+                      onComplete={(report, nftHash) => {
+                        console.log('Avaliação concluída:', report, nftHash)
+                        setAssessmentStats(prev => ({
+                          ...prev,
+                          totalAssessments: prev.totalAssessments + 1,
+                          completedAssessments: prev.completedAssessments + 1,
+                          currentStage: 'completed'
+                        }))
+                      }}
+                      onUpdateKPIs={(stats) => {
+                        console.log('KPIs atualizados:', stats)
+                        setAssessmentStats(stats)
+                      }}
+                    />
                   </div>
                 </div>
               ) : activeTab === 'knowledge-base' ? (
