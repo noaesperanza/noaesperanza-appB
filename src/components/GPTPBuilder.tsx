@@ -17,6 +17,8 @@ import { chatSimulator } from '../utils/chatSimulator'
 import { offlineChatService } from '../services/offlineChatService'
 import LocalStorageManager from '../utils/localStorageManager'
 import { realTimeConsultationService, ConsultationContext } from '../services/realTimeConsultationService'
+import { conversationManager, NamedConversation } from '../services/conversationManagerService'
+import { ConversationHistory } from './ConversationHistory'
 
 
 interface GPTPBuilderProps {
@@ -79,6 +81,10 @@ const GPTPBuilder: React.FC<GPTPBuilderProps> = ({}) => {
     averageDuration: 18,
     currentStage: 'none'
   })
+  
+  // Estados para gerenciamento de conversas
+  const [currentConversation, setCurrentConversation] = useState<NamedConversation | null>(null)
+  const [showConversationHistory, setShowConversationHistory] = useState(true)
   // Removidos: debateAtivo, modoDebate, analiseQualidade (não utilizados ativamente)
   
   // Estados para Sidebar de Histórico
@@ -129,6 +135,20 @@ const GPTPBuilder: React.FC<GPTPBuilderProps> = ({}) => {
           canvas.innerHTML = savedCanvasData || autoSavedData
         }
       }, 100)
+    }
+  }, [])
+
+  // 💬 Inicializar sistema de conversas
+  useEffect(() => {
+    // Inicializar conversa atual
+    const activeConversation = conversationManager.getCurrentConversation()
+    if (activeConversation) {
+      setCurrentConversation(activeConversation)
+      setChatMessages(activeConversation.messages)
+    } else {
+      // Criar nova conversa se não houver nenhuma
+      const newConversation = conversationManager.createConversation()
+      setCurrentConversation(newConversation)
     }
   }, [])
 
@@ -980,6 +1000,13 @@ ${recentMessages}
 - Sempre conecte com trabalhos e construções anteriores`
   }
 
+  // Função para lidar com seleção de conversas
+  const handleConversationSelect = (conversation: NamedConversation) => {
+    setCurrentConversation(conversation)
+    setChatMessages(conversation.messages)
+    conversationManager.setActiveConversation(conversation.id)
+  }
+
   // Função para detectar consultas à base de conhecimento
   const checkKnowledgeBaseQuery = (message: string): boolean => {
     const lowerMessage = message.toLowerCase()
@@ -1619,6 +1646,12 @@ Detalhes do erro: ${error instanceof Error ? error.message : String(error)}
       }
 
       setChatMessages(prev => [...prev, assistantMessage])
+
+      // Salvar mensagens na conversa atual
+      if (currentConversation) {
+        conversationManager.addMessage(userMessage)
+        conversationManager.addMessage(assistantMessage)
+      }
 
       // Salvar conversa no sistema híbrido
       await saveConversationHybrid(messageToProcess, response.message, response.action)
@@ -3163,6 +3196,36 @@ ${conversation.summary}
               <h2 className="text-xl font-bold text-white">GPT Builder - Nôa Esperanza</h2>
               <p className="text-sm text-gray-400">Configure e treine sua IA médica personalizada</p>
             </div>
+          </div>
+          
+          {/* Controles do Header */}
+          <div className="flex items-center gap-3">
+            {/* Toggle Histórico de Conversas */}
+            <button
+              onClick={() => setShowConversationHistory(!showConversationHistory)}
+              className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                showConversationHistory
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-slate-700 text-gray-400 hover:text-white'
+              }`}
+              title={showConversationHistory ? 'Ocultar histórico' : 'Mostrar histórico'}
+            >
+              <i className="fas fa-history mr-2"></i>
+              Histórico
+            </button>
+            
+            {/* Nova Conversa */}
+            <button
+              onClick={() => {
+                const newConversation = conversationManager.createConversation()
+                handleConversationSelect(newConversation)
+              }}
+              className="bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded-lg text-sm font-medium transition-colors"
+              title="Nova conversa"
+            >
+              <i className="fas fa-plus mr-2"></i>
+              Nova Conversa
+            </button>
           </div>
         </div>
 
@@ -4859,6 +4922,14 @@ ${conversation.summary}
               )}
             </div>
           </div>
+
+          {/* Histórico de Conversas - Lado Direito */}
+          {showConversationHistory && (
+            <ConversationHistory
+              onConversationSelect={handleConversationSelect}
+              currentConversationId={currentConversation?.id || null}
+            />
+          )}
         </div>
       </motion.div>
 
