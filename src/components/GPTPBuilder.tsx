@@ -239,21 +239,7 @@ function GPTPBuilder(props: GPTPBuilderProps) {
       
       console.log('✅ Attention semântica ativada com sucesso!')
       
-      // Adicionar mensagem inicial simplificada
-      const welcomeMessage: ChatMessage = {
-        id: Date.now().toString(),
-        role: 'assistant',
-        content: `👩‍⚕️ **Dr. Ricardo Valença, bem-vindo!**
-
-🧠 **Attention semântica ativada com sucesso!**
-🎯 **Sistema Nôa Esperanza operacional**
-📚 **Base de conhecimento carregada**
-
-Como posso ajudá-lo hoje?`,
-        timestamp: new Date(),
-        action: 'attention_semantica_ativa'
-      }
-      setChatMessages(prev => [...prev, welcomeMessage])
+      // Não adicionar mensagem automática no chat; manter interface limpa
       
     } catch (error) {
       console.error('Erro ao ativar attention semântica:', error)
