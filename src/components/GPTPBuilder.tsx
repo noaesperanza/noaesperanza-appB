@@ -3655,44 +3655,44 @@ ${conversation.summary}
                         </div>
                         
                         <div className="space-y-4">
-                          {/* Usuários Ativos */}
+                          {/* Sessões do Admin */}
                           <div className="bg-slate-600 rounded-lg p-4">
                             <div className="flex items-center justify-between mb-2">
-                              <span className="text-sm text-gray-300">Usuários Ativos (24h)</span>
-                              <i className="fas fa-users text-blue-400"></i>
+                              <span className="text-sm text-gray-300">Suas Sessões Hoje</span>
+                              <i className="fas fa-user text-blue-400"></i>
                             </div>
-                            <div className="text-2xl font-bold text-white">1,247</div>
-                            <div className="text-xs text-green-400">+12% vs ontem</div>
+                            <div className="text-2xl font-bold text-white">1</div>
+                            <div className="text-xs text-blue-400">Dr. Ricardo Valença</div>
                           </div>
 
-                          {/* Sessões Ativas */}
+                          {/* Tempo Online */}
                           <div className="bg-slate-600 rounded-lg p-4">
                             <div className="flex items-center justify-between mb-2">
-                              <span className="text-sm text-gray-300">Sessões Ativas</span>
-                              <i className="fas fa-play-circle text-green-400"></i>
+                              <span className="text-sm text-gray-300">Tempo Online</span>
+                              <i className="fas fa-clock text-green-400"></i>
                             </div>
-                            <div className="text-2xl font-bold text-white">89</div>
-                            <div className="text-xs text-blue-400">Agora online</div>
+                            <div className="text-2xl font-bold text-white">2h</div>
+                            <div className="text-xs text-gray-400">Sessão atual</div>
                           </div>
 
-                          {/* Uptime */}
+                          {/* Sistema Status */}
                           <div className="bg-slate-600 rounded-lg p-4">
                             <div className="flex items-center justify-between mb-2">
-                              <span className="text-sm text-gray-300">Uptime Sistema</span>
-                              <i className="fas fa-heartbeat text-red-400"></i>
+                              <span className="text-sm text-gray-300">Status Sistema</span>
+                              <i className="fas fa-heartbeat text-green-400"></i>
                             </div>
-                            <div className="text-2xl font-bold text-white">99.9%</div>
-                            <div className="text-xs text-green-400">Últimos 30 dias</div>
+                            <div className="text-2xl font-bold text-white">Online</div>
+                            <div className="text-xs text-green-400">Todos os serviços</div>
                           </div>
 
-                          {/* Registros Supabase */}
+                          {/* Logs Gerados */}
                           <div className="bg-slate-600 rounded-lg p-4">
                             <div className="flex items-center justify-between mb-2">
-                              <span className="text-sm text-gray-300">Registros Supabase</span>
-                              <i className="fas fa-database text-purple-400"></i>
+                              <span className="text-sm text-gray-300">Logs Hoje</span>
+                              <i className="fas fa-file-alt text-purple-400"></i>
                             </div>
-                            <div className="text-2xl font-bold text-white">45.2K</div>
-                            <div className="text-xs text-gray-400">Total acumulado</div>
+                            <div className="text-2xl font-bold text-white">0</div>
+                            <div className="text-xs text-gray-400">Aguardando dados</div>
                           </div>
                         </div>
                       </div>
@@ -3710,44 +3710,44 @@ ${conversation.summary}
                         </div>
                         
                         <div className="space-y-4">
-                          {/* Arte da Entrevista */}
+                          {/* Avaliações Realizadas */}
                           <div className="bg-slate-600 rounded-lg p-4">
                             <div className="flex items-center justify-between mb-2">
-                              <span className="text-sm text-gray-300">Arte da Entrevista</span>
+                              <span className="text-sm text-gray-300">Avaliações Realizadas</span>
                               <i className="fas fa-clipboard-list text-green-400"></i>
                             </div>
-                            <div className="text-2xl font-bold text-white">23</div>
-                            <div className="text-xs text-green-400">Avaliações hoje</div>
+                            <div className="text-2xl font-bold text-white">0</div>
+                            <div className="text-xs text-gray-400">Aguardando início</div>
                           </div>
 
                           {/* Método Dr. Valença */}
                           <div className="bg-slate-600 rounded-lg p-4">
                             <div className="flex items-center justify-between mb-2">
-                              <span className="text-sm text-gray-300">Taxa Conclusão</span>
+                              <span className="text-sm text-gray-300">Método Configurado</span>
                               <i className="fas fa-check-circle text-blue-400"></i>
                             </div>
-                            <div className="text-2xl font-bold text-white">87%</div>
-                            <div className="text-xs text-gray-400">Método validado</div>
+                            <div className="text-lg font-bold text-white">Pronto</div>
+                            <div className="text-xs text-gray-400">Arte da Entrevista</div>
                           </div>
 
                           {/* Tempo Médio */}
                           <div className="bg-slate-600 rounded-lg p-4">
                             <div className="flex items-center justify-between mb-2">
-                              <span className="text-sm text-gray-300">Tempo Médio</span>
+                              <span className="text-sm text-gray-300">Duração Estimada</span>
                               <i className="fas fa-clock text-yellow-400"></i>
                             </div>
                             <div className="text-2xl font-bold text-white">18min</div>
-                            <div className="text-xs text-gray-400">Por entrevista</div>
+                            <div className="text-xs text-gray-400">Por avaliação</div>
                           </div>
 
                           {/* Escuta Figital */}
                           <div className="bg-slate-600 rounded-lg p-4">
                             <div className="flex items-center justify-between mb-2">
-                              <span className="text-sm text-gray-300">Escuta Figital</span>
+                              <span className="text-sm text-gray-300">Sistema Ativo</span>
                               <i className="fas fa-headphones text-purple-400"></i>
                             </div>
-                            <div className="text-lg font-bold text-white">Ativa</div>
-                            <div className="text-xs text-gray-400">Rastreabilidade total</div>
+                            <div className="text-lg font-bold text-white">Sim</div>
+                            <div className="text-xs text-gray-400">Pronto para uso</div>
                           </div>
                         </div>
                       </div>
@@ -3771,38 +3771,38 @@ ${conversation.summary}
                               <span className="text-sm text-gray-300">Palavras-chave</span>
                               <i className="fas fa-tags text-orange-400"></i>
                             </div>
-                            <div className="text-2xl font-bold text-white">1.8K</div>
-                            <div className="text-xs text-blue-400">Extraídas hoje</div>
+                            <div className="text-2xl font-bold text-white">0</div>
+                            <div className="text-xs text-gray-400">Aguardando dados</div>
                           </div>
 
                           {/* Categorização Automática */}
                           <div className="bg-slate-600 rounded-lg p-4">
                             <div className="flex items-center justify-between mb-2">
-                              <span className="text-sm text-gray-300">Categorização</span>
+                              <span className="text-sm text-gray-300">IA Configurada</span>
                               <i className="fas fa-sitemap text-green-400"></i>
                             </div>
-                            <div className="text-2xl font-bold text-white">94%</div>
-                            <div className="text-xs text-green-400">Precisão IA</div>
+                            <div className="text-lg font-bold text-white">Sim</div>
+                            <div className="text-xs text-gray-400">Pronta para uso</div>
                           </div>
 
                           {/* Agentes Ativos */}
                           <div className="bg-slate-600 rounded-lg p-4">
                             <div className="flex items-center justify-between mb-2">
-                              <span className="text-sm text-gray-300">Agentes Ativos</span>
+                              <span className="text-sm text-gray-300">Agentes Configurados</span>
                               <i className="fas fa-robot text-blue-400"></i>
                             </div>
                             <div className="text-2xl font-bold text-white">5/5</div>
-                            <div className="text-xs text-gray-400">Modulares online</div>
+                            <div className="text-xs text-gray-400">Modulares prontos</div>
                           </div>
 
-                          {/* Aprendizado IA */}
+                          {/* Base de Conhecimento */}
                           <div className="bg-slate-600 rounded-lg p-4">
                             <div className="flex items-center justify-between mb-2">
-                              <span className="text-sm text-gray-300">Aprendizado</span>
-                              <i className="fas fa-graduation-cap text-purple-400"></i>
+                              <span className="text-sm text-gray-300">Base de Conhecimento</span>
+                              <i className="fas fa-database text-purple-400"></i>
                             </div>
-                            <div className="text-2xl font-bold text-white">+15%</div>
-                            <div className="text-xs text-green-400">Melhoria semanal</div>
+                            <div className="text-lg font-bold text-white">Carregada</div>
+                            <div className="text-xs text-gray-400">Documentos ativos</div>
                           </div>
                         </div>
                       </div>
@@ -4328,74 +4328,54 @@ ${conversation.summary}
                       </div>
                     </div>
 
-                    {/* 📈 Gráficos e Análises por Eixos Estruturais */}
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-6">
-                      
-                      {/* ENSINO - Alunos */}
-                      <div className="bg-slate-700 rounded-lg p-6 border border-slate-600">
-                        <h4 className="text-lg font-semibold text-white mb-4">🎓 Eixo ENSINO - Alunos</h4>
-                        <div className="space-y-3">
-                          <div className="flex items-center justify-between bg-slate-600 rounded-lg p-3">
-                            <span className="text-white">Arte da Entrevista</span>
-                            <span className="text-green-400 font-bold">23</span>
-                          </div>
-                          <div className="flex items-center justify-between bg-slate-600 rounded-lg p-3">
-                            <span className="text-white">Alunos Ativos</span>
-                            <span className="text-blue-400 font-bold">89</span>
-                          </div>
-                          <div className="flex items-center justify-between bg-slate-600 rounded-lg p-3">
-                            <span className="text-white">Aulas Concluídas</span>
-                            <span className="text-purple-400 font-bold">156</span>
-                          </div>
-                          <div className="flex items-center justify-between bg-slate-600 rounded-lg p-3">
-                            <span className="text-white">Testes com D-ID</span>
-                            <span className="text-yellow-400 font-bold">45</span>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* PESQUISA - Profissionais */}
-                      <div className="bg-slate-700 rounded-lg p-6 border border-slate-600">
-                        <h4 className="text-lg font-semibold text-white mb-4">🔬 Eixo PESQUISA - Profissionais</h4>
-                        <div className="space-y-3">
-                          <div className="flex items-center justify-between bg-slate-600 rounded-lg p-3">
-                            <span className="text-white">LabPEC Ativos</span>
-                            <span className="text-blue-400 font-bold">12</span>
-                          </div>
-                          <div className="flex items-center justify-between bg-slate-600 rounded-lg p-3">
-                            <span className="text-white">Estudos com IA</span>
-                            <span className="text-green-400 font-bold">8</span>
-                          </div>
-                          <div className="flex items-center justify-between bg-slate-600 rounded-lg p-3">
-                            <span className="text-white">Comunicação & Saúde</span>
-                            <span className="text-purple-400 font-bold">15</span>
-                          </div>
-                          <div className="flex items-center justify-between bg-slate-600 rounded-lg p-3">
-                            <span className="text-white">Ciências de Dados</span>
-                            <span className="text-orange-400 font-bold">7</span>
+                    {/* 📈 Configuração de Dados Primários */}
+                    <div className="bg-slate-700 rounded-lg p-6 border border-slate-600 mt-6">
+                      <h4 className="text-lg font-semibold text-white mb-4">⚙️ Configuração de Dados Primários</h4>
+                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        
+                        {/* Fonte de Dados Semânticos */}
+                        <div className="bg-slate-600 rounded-lg p-4">
+                          <h5 className="text-white font-medium mb-3">🧠 Dados Semânticos</h5>
+                          <div className="space-y-2">
+                            <div className="flex items-center justify-between">
+                              <span className="text-gray-300 text-sm">ChatGPT Responses</span>
+                              <span className="text-green-400 text-xs">✓ Configurado</span>
+                            </div>
+                            <div className="flex items-center justify-between">
+                              <span className="text-gray-300 text-sm">Palavras-chave IA</span>
+                              <span className="text-green-400 text-xs">✓ Configurado</span>
+                            </div>
+                            <div className="flex items-center justify-between">
+                              <span className="text-gray-300 text-sm">Categorização Auto</span>
+                              <span className="text-green-400 text-xs">✓ Configurado</span>
+                            </div>
+                            <div className="flex items-center justify-between">
+                              <span className="text-gray-300 text-sm">Base Conhecimento</span>
+                              <span className="text-green-400 text-xs">✓ Configurado</span>
+                            </div>
                           </div>
                         </div>
-                      </div>
 
-                      {/* CLÍNICA - Pacientes */}
-                      <div className="bg-slate-700 rounded-lg p-6 border border-slate-600">
-                        <h4 className="text-lg font-semibold text-white mb-4">🏥 Eixo CLÍNICA - Pacientes</h4>
-                        <div className="space-y-3">
-                          <div className="flex items-center justify-between bg-slate-600 rounded-lg p-3">
-                            <span className="text-white">Avaliações Iniciais</span>
-                            <span className="text-green-400 font-bold">34</span>
-                          </div>
-                          <div className="flex items-center justify-between bg-slate-600 rounded-lg p-3">
-                            <span className="text-white">Consultas Retorno</span>
-                            <span className="text-blue-400 font-bold">67</span>
-                          </div>
-                          <div className="flex items-center justify-between bg-slate-600 rounded-lg p-3">
-                            <span className="text-white">Acompanhamento</span>
-                            <span className="text-purple-400 font-bold">23</span>
-                          </div>
-                          <div className="flex items-center justify-between bg-slate-600 rounded-lg p-3">
-                            <span className="text-white">Interconsultas</span>
-                            <span className="text-yellow-400 font-bold">12</span>
+                        {/* Fonte de Dados Clínicos */}
+                        <div className="bg-slate-600 rounded-lg p-4">
+                          <h5 className="text-white font-medium mb-3">🏥 Dados Clínicos</h5>
+                          <div className="space-y-2">
+                            <div className="flex items-center justify-between">
+                              <span className="text-gray-300 text-sm">Avaliação Inicial</span>
+                              <span className="text-yellow-400 text-xs">⏳ Configurando</span>
+                            </div>
+                            <div className="flex items-center justify-between">
+                              <span className="text-gray-300 text-sm">Método Dr. Valença</span>
+                              <span className="text-green-400 text-xs">✓ Configurado</span>
+                            </div>
+                            <div className="flex items-center justify-between">
+                              <span className="text-gray-300 text-sm">Escuta Figital</span>
+                              <span className="text-green-400 text-xs">✓ Configurado</span>
+                            </div>
+                            <div className="flex items-center justify-between">
+                              <span className="text-gray-300 text-sm">Rastreabilidade</span>
+                              <span className="text-green-400 text-xs">✓ Configurado</span>
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -4458,30 +4438,30 @@ ${conversation.summary}
                       </div>
                     </div>
 
-                    {/* 📊 Resumo Executivo por Eixos Estruturais */}
+                    {/* 📊 Resumo Executivo - Estado Atual */}
                     <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg p-6 text-white mt-6">
-                      <h4 className="text-xl font-bold mb-4">📊 Resumo Executivo - Espinha Dorsal Nôa Esperanza</h4>
+                      <h4 className="text-xl font-bold mb-4">📊 Estado Atual - Dr. Ricardo Valença</h4>
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div className="text-center">
-                          <div className="text-3xl font-bold">89</div>
-                          <div className="text-sm opacity-90">Alunos (ENSINO)</div>
-                          <div className="text-xs opacity-75">Arte da Entrevista Clínica</div>
+                          <div className="text-3xl font-bold">1</div>
+                          <div className="text-sm opacity-90">Usuário Ativo</div>
+                          <div className="text-xs opacity-75">Dr. Ricardo Valença</div>
                         </div>
                         <div className="text-center">
-                          <div className="text-3xl font-bold">12</div>
-                          <div className="text-sm opacity-90">Profissionais (PESQUISA)</div>
-                          <div className="text-xs opacity-75">LabPEC & Comunicação</div>
+                          <div className="text-3xl font-bold">0</div>
+                          <div className="text-sm opacity-90">Avaliações Realizadas</div>
+                          <div className="text-xs opacity-75">Aguardando início</div>
                         </div>
                         <div className="text-center">
-                          <div className="text-3xl font-bold">136</div>
-                          <div className="text-sm opacity-90">Pacientes (CLÍNICA)</div>
-                          <div className="text-xs opacity-75">Avaliações & Consultas</div>
+                          <div className="text-3xl font-bold">5/5</div>
+                          <div className="text-sm opacity-90">Sistemas Configurados</div>
+                          <div className="text-xs opacity-75">Prontos para uso</div>
                         </div>
                       </div>
                       <div className="mt-4 text-sm opacity-90">
-                        <p>💡 <strong>Insight:</strong> A espinha dorsal da plataforma Nôa Esperanza (Ensino-Pesquisa-Clínica) 
-                        demonstra equilíbrio estrutural com 237 usuários ativos distribuídos nos três eixos fundamentais. 
-                        A Arte da Entrevista Clínica continua sendo o método central que conecta todos os eixos.</p>
+                        <p>💡 <strong>Status:</strong> Sistema configurado e pronto para receber dados primários. 
+                        A próxima fase será configurar a avaliação clínica inicial e conectar as fontes de dados semânticos e clínicos 
+                        para começar a gerar KPIs reais baseados na atividade do usuário.</p>
                       </div>
                     </div>
                   </div>
