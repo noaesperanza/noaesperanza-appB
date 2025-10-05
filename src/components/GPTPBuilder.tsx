@@ -16,6 +16,7 @@ import { logger } from '../utils/logger'
 import { chatSimulator } from '../utils/chatSimulator'
 import { offlineChatService } from '../services/offlineChatService'
 import LocalStorageManager from '../utils/localStorageManager'
+import { realTimeConsultationService, ConsultationContext } from '../services/realTimeConsultationService'
 
 
 interface GPTPBuilderProps {
@@ -979,6 +980,50 @@ ${recentMessages}
 - Sempre conecte com trabalhos e construções anteriores`
   }
 
+  // Função para detectar consultas à base de conhecimento
+  const checkKnowledgeBaseQuery = (message: string): boolean => {
+    const lowerMessage = message.toLowerCase()
+    
+    const knowledgeBaseKeywords = [
+      'base de conhecimento',
+      'consulte a base',
+      'documentos',
+      'informações',
+      'dados',
+      'conteúdo',
+      'documento mestre',
+      'instruções',
+      'método',
+      'protocolo',
+      'roteiro',
+      'avaliação clínica',
+      'entrevista',
+      'valença'
+    ]
+    
+    const hasKnowledgeKeyword = knowledgeBaseKeywords.some(keyword => 
+      lowerMessage.includes(keyword)
+    )
+    
+    // Detectar frases específicas de consulta
+    const consultPhrases = [
+      'consulte',
+      'verifique',
+      'busque',
+      'procure',
+      'encontre',
+      'mostre',
+      'liste',
+      'acesse'
+    ]
+    
+    const hasConsultPhrase = consultPhrases.some(phrase => 
+      lowerMessage.includes(phrase)
+    )
+    
+    return hasKnowledgeKeyword || (hasConsultPhrase && lowerMessage.length > 10)
+  }
+
   // Salvar conversa no sistema híbrido (Supabase + Local)
   const saveConversationHybrid = async (userMessage: string, aiResponse: string, action: string) => {
     try {
@@ -1458,31 +1503,90 @@ Detalhes do erro: ${error instanceof Error ? error.message : String(error)}
       // 🚀 PROCESSAMENTO HÍBRIDO PROFISSIONAL
       console.log('💬 Processando com arquitetura híbrida...')
       
-      // 1. Tentar processamento com IA real + contexto
-      try {
-        console.log('🧠 Tentando resposta com IA real + contexto...')
+      // 1. Verificar se é consulta à base de conhecimento
+      const isKnowledgeBaseQuery = checkKnowledgeBaseQuery(messageToProcess)
+      
+      if (isKnowledgeBaseQuery) {
+        console.log('📚 Consulta à base de conhecimento detectada...')
         
-        // Buscar contexto histórico do Supabase
-        const historicalContext = await getHistoricalContextSimple(messageToProcess)
-        
-        // Preparar contexto para OpenAI
-        const contextualPrompt = buildContextualPrompt(messageToProcess, historicalContext, chatMessages)
-        
-        // Chamar OpenAI com contexto
-        const aiResponse = await openAIService.getNoaResponse(messageToProcess, [
-          ...chatMessages.slice(-6).map(msg => ({
-            role: msg.role as 'user' | 'assistant' | 'system',
-            content: msg.content
-          }))
-        ])
-        
-        response = {
-          message: aiResponse,
-          action: 'resposta_contextualizada_ia',
-          data: { hasContext: true, contextLength: historicalContext?.length || 0 }
+        try {
+          const consultationContext: ConsultationContext = {
+            userQuery: messageToProcess,
+            userType: 'admin', // Dr. Ricardo é admin
+            conversationHistory: chatMessages.slice(-6).map(msg => ({
+              role: msg.role,
+              content: msg.content
+            }))
+          }
+          
+          const consultationResult = await realTimeConsultationService.consultKnowledgeBase(consultationContext)
+          
+          // Formatar resposta com informações da base de conhecimento
+          let formattedResponse = consultationResult.answer
+          
+          if (consultationResult.documents.length > 0) {
+            formattedResponse += `\n\n📚 **Documentos consultados:**\n`
+            consultationResult.documents.forEach((doc, index) => {
+              formattedResponse += `${index + 1}. **${doc.title}** (${doc.category})\n`
+            })
+            
+            formattedResponse += `\n🎯 **Confiança:** ${Math.round(consultationResult.confidence * 100)}%`
+          }
+          
+          response = {
+            message: formattedResponse,
+            action: 'consulta_base_conhecimento',
+            data: { 
+              documentsFound: consultationResult.documents.length,
+              confidence: consultationResult.confidence,
+              sources: consultationResult.sources
+            }
+          }
+          
+          console.log('✅ Resposta gerada via consulta à base de conhecimento')
+          
+        } catch (error) {
+          console.warn('⚠️ Erro na consulta à base de conhecimento, usando IA padrão:', error)
+          // Fallback para IA padrão
+          const aiResponse = await openAIService.getNoaResponse(messageToProcess, [
+            ...chatMessages.slice(-6).map(msg => ({
+              role: msg.role as 'user' | 'assistant' | 'system',
+              content: msg.content
+            }))
+          ])
+          
+          response = {
+            message: aiResponse,
+            action: 'fallback_ia_padrao',
+            data: { error: error instanceof Error ? error.message : String(error) }
+          }
         }
-        
-        console.log('✅ Resposta gerada com IA real + contexto')
+      } else {
+        // 2. Tentar processamento com IA real + contexto (processo original)
+        try {
+          console.log('🧠 Tentando resposta com IA real + contexto...')
+          
+          // Buscar contexto histórico do Supabase
+          const historicalContext = await getHistoricalContextSimple(messageToProcess)
+          
+          // Preparar contexto para OpenAI
+          const contextualPrompt = buildContextualPrompt(messageToProcess, historicalContext, chatMessages)
+          
+          // Chamar OpenAI com contexto
+          const aiResponse = await openAIService.getNoaResponse(messageToProcess, [
+            ...chatMessages.slice(-6).map(msg => ({
+              role: msg.role as 'user' | 'assistant' | 'system',
+              content: msg.content
+            }))
+          ])
+          
+          response = {
+            message: aiResponse,
+            action: 'resposta_contextualizada_ia',
+            data: { hasContext: true, contextLength: historicalContext?.length || 0 }
+          }
+          
+          console.log('✅ Resposta gerada com IA real + contexto')
         
       } catch (error) {
         console.warn('⚠️ Erro na IA real, usando fallback offline:', error)
