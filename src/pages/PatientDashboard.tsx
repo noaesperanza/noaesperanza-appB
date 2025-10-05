@@ -304,7 +304,7 @@ Obrigado por confiar na Nôa Esperanza para sua avaliação inicial!`,
               }`}
             >
               <i className="fas fa-clipboard-list mr-2"></i>
-              Coleta de Dados Clínicos Primários
+              Avaliação Clínica Inicial
             </button>
             <button
               onClick={() => setActiveTab('profile')}
