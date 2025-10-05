@@ -165,16 +165,16 @@ export const ClinicalAssessment: React.FC<ClinicalAssessmentProps> = ({
       <div className="bg-slate-800 rounded-lg p-6 border border-slate-600">
         <div className="text-center">
           <h3 className="text-xl font-semibold text-white mb-4">
-            🏥 Avaliação Clínica Inicial
+            📋 Coleta de Dados Clínicos Primários
           </h3>
           <p className="text-gray-400 mb-6">
-            Sistema baseado no método desenvolvido pelo Dr. Ricardo Valença
+            Coleta estruturada de dados clínicos primários para consultas médicas
           </p>
           <button
             onClick={startAssessment}
             className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium transition-colors"
           >
-            🚀 Iniciar Avaliação
+            🚀 Iniciar Coleta de Dados
           </button>
         </div>
       </div>

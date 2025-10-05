@@ -11,7 +11,6 @@ import { intelligentLearningService } from '../services/intelligentLearningServi
 import { harmonyFormatService, HarmonyContext } from '../services/harmonyFormatService'
 import ConversationHistorySidebar from './ConversationHistorySidebar'
 import IntelligentSidebar from './IntelligentSidebar'
-import { ClinicalAssessment } from './ClinicalAssessment'
 import { logger } from '../utils/logger'
 import { chatSimulator } from '../utils/chatSimulator'
 import { offlineChatService } from '../services/offlineChatService'
@@ -67,20 +66,13 @@ const GPTPBuilder: React.FC<GPTPBuilderProps> = ({}) => {
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([])
   const [currentMessage, setCurrentMessage] = useState('')
   const [isTyping, setIsTyping] = useState(false)
-  const [activeTab, setActiveTab] = useState<'chat' | 'canvas' | 'kpis' | 'knowledge-base' | 'clinical-assessment'>('chat')
+  const [activeTab, setActiveTab] = useState<'chat' | 'canvas' | 'kpis' | 'knowledge-base'>('chat')
   const [attachedFiles, setAttachedFiles] = useState<File[]>([])
   const [uploadedDocuments, setUploadedDocuments] = useState<any[]>([])
   
   // Estados para Estudo Vivo
   const [estudoVivoAtivo, setEstudoVivoAtivo] = useState<EstudoVivo | null>(null)
   
-  // Estados para KPIs em tempo real
-  const [assessmentStats, setAssessmentStats] = useState({
-    totalAssessments: 0,
-    completedAssessments: 0,
-    averageDuration: 18,
-    currentStage: 'none'
-  })
   
   // Estados para gerenciamento de conversas
   const [currentConversation, setCurrentConversation] = useState<NamedConversation | null>(null)
@@ -3279,17 +3271,6 @@ ${conversation.summary}
           <i className="fas fa-chart-line mr-2"></i>
           KPIs & Analytics
         </button>
-        <button 
-          onClick={() => setActiveTab('clinical-assessment')}
-          className={`px-4 py-3 text-sm font-medium transition-colors ${
-            activeTab === 'clinical-assessment' 
-              ? 'text-white border-b-2 border-red-500' 
-              : 'text-gray-400 hover:text-white'
-          }`}
-        >
-          <i className="fas fa-stethoscope mr-2"></i>
-          Avaliação Clínica
-        </button>
             </div>
 
             {/* Conteúdo Principal */}
@@ -4659,27 +4640,6 @@ ${conversation.summary}
                         para começar a gerar KPIs reais baseados na atividade do usuário.</p>
                       </div>
                     </div>
-                  </div>
-                </div>
-              ) : activeTab === 'clinical-assessment' ? (
-                /* AVALIAÇÃO CLÍNICA INICIAL */
-                <div className="h-full p-6 overflow-y-auto bg-slate-800">
-                  <div className="max-w-4xl mx-auto">
-                    <ClinicalAssessment 
-                      onComplete={(report, nftHash) => {
-                        console.log('Avaliação concluída:', report, nftHash)
-                        setAssessmentStats(prev => ({
-                          ...prev,
-                          totalAssessments: prev.totalAssessments + 1,
-                          completedAssessments: prev.completedAssessments + 1,
-                          currentStage: 'completed'
-                        }))
-                      }}
-                      onUpdateKPIs={(stats) => {
-                        console.log('KPIs atualizados:', stats)
-                        setAssessmentStats(stats)
-                      }}
-                    />
                   </div>
                 </div>
               ) : activeTab === 'knowledge-base' ? (

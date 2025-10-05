@@ -20,7 +20,7 @@ interface ChatMessage {
 
 const PatientDashboard: React.FC<PatientDashboardProps> = ({ userEmail, onLogout }) => {
   // Estados principais
-  const [activeTab, setActiveTab] = useState<'chat' | 'assessment' | 'profile' | 'security'>('chat')
+  const [activeTab, setActiveTab] = useState<'chat' | 'assessment' | 'profile' | 'security'>('assessment')
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([])
   const [currentMessage, setCurrentMessage] = useState('')
   const [isTyping, setIsTyping] = useState(false)
@@ -303,8 +303,8 @@ Obrigado por confiar na Nôa Esperanza para sua avaliação inicial!`,
                   : 'text-gray-400 hover:text-white'
               }`}
             >
-              <i className="fas fa-stethoscope mr-2"></i>
-              Avaliação Clínica
+              <i className="fas fa-clipboard-list mr-2"></i>
+              Coleta de Dados Clínicos Primários
             </button>
             <button
               onClick={() => setActiveTab('profile')}
