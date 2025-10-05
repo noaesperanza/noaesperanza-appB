@@ -25,6 +25,12 @@ const AdminDashboard = ({ addNotification }: AdminDashboardProps) => {
           </div>
           <div className="w-20"></div> {/* Spacer for centering */}
         </div>
+        <div className="mt-3 flex gap-2 justify-center">
+          <Link to="/app/paciente" className="text-xs text-green-400 hover:text-green-300">
+            <i className="fas fa-clipboard-list mr-1"></i>
+            Avaliação Clínica Inicial (Paciente)
+          </Link>
+        </div>
       </div>
 
       {/* GPT Builder Full Screen */}
