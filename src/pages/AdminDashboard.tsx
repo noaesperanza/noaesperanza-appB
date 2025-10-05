@@ -30,6 +30,10 @@ const AdminDashboard = ({ addNotification }: AdminDashboardProps) => {
             <i className="fas fa-clipboard-list mr-1"></i>
             Avaliação Clínica Inicial (Paciente)
           </Link>
+          <Link to="/app/avaliacao-inicial" className="text-xs text-blue-400 hover:text-blue-300">
+            <i className="fas fa-stethoscope mr-1"></i>
+            Acessar Avaliação (rota direta)
+          </Link>
         </div>
       </div>
 
