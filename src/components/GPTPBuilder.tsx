@@ -3107,16 +3107,6 @@ ${conversation.summary}
               </div>
             </div>
 
-            {/* Botão Novo Documento */}
-            <div className="p-4 border-t border-gray-600">
-              <button
-                onClick={createNewDocument}
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg text-sm font-medium transition-colors"
-              >
-                <i className="fas fa-plus mr-2"></i>
-                Novo Documento
-              </button>
-            </div>
           </div>
 
           {/* Área Principal - Editor */}
@@ -3379,16 +3369,10 @@ ${conversation.summary}
 
           {/* Input de Mensagem com Upload */}
           <div className="border-t border-gray-600 p-4">
-            {/* Área de Upload de Arquivos */}
+            {/* Área de Botões de Ação */}
             <div className="mb-3">
-              <div className="flex items-center gap-2 text-xs text-gray-400">
-                <i className="fas fa-paperclip"></i>
-                <span>Envie documentos, imagens ou cole texto diretamente</span>
-              </div>
-              <div className="flex gap-2 mt-2">
-                {/* Upload integrado ao chat - removido botão separado */}
-                
-                {/* Botão de Base de Conhecimento */}
+              <div className="flex gap-2">
+                {/* Botão de Base de Conhecimento - Integrado com Upload e Verificação */}
                 <button
                   onClick={() => setActiveTab('knowledge-base')}
                   className="bg-purple-600 hover:bg-purple-700 text-white px-3 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
@@ -3404,23 +3388,6 @@ ${conversation.summary}
                 >
                   <i className="fas fa-edit"></i>
                   Editor de Documentos
-                </button>
-                
-                <button
-                  onClick={async () => {
-                    try {
-                      const docs = await gptBuilderService.getDocuments()
-                      console.log('📚 Documentos na base:', docs)
-                      alert(`📚 Base de Conhecimento: ${docs.length} documentos encontrados\n\nDocumentos:\n${docs.map(d => `• ${d.title} (${d.category})`).join('\n')}`)
-                    } catch (error) {
-                      console.error('Erro ao verificar base:', error)
-                      alert(`❌ Erro ao acessar base: ${error instanceof Error ? error.message : String(error)}`)
-                    }
-                  }}
-                  className="bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
-                >
-                  <i className="fas fa-search"></i>
-                  Verificar Base
                 </button>
                 
                 {/* 🧠 STATUS ATTENTION SEMÂNTICA (SEMPRE ATIVA) */}
@@ -4249,6 +4216,34 @@ ${conversation.summary}
                         <p className="text-sm text-gray-400">Documentos enviados para treinar a personalidade da Nôa</p>
                       </div>
                       <div className="flex gap-2">
+                        {/* Botão Upload de Documentos */}
+                        <button
+                          onClick={createNewDocument}
+                          className="bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
+                        >
+                          <i className="fas fa-plus"></i>
+                          Novo Documento
+                        </button>
+                        
+                        {/* Botão Verificar Base */}
+                        <button
+                          onClick={async () => {
+                            try {
+                              const docs = await gptBuilderService.getDocuments()
+                              console.log('📚 Documentos na base:', docs)
+                              alert(`📚 Base de Conhecimento: ${docs.length} documentos encontrados\n\nDocumentos:\n${docs.map(d => `• ${d.title} (${d.category})`).join('\n')}`)
+                            } catch (error) {
+                              console.error('Erro ao verificar base:', error)
+                              alert(`❌ Erro ao acessar base: ${error instanceof Error ? error.message : String(error)}`)
+                            }
+                          }}
+                          className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
+                        >
+                          <i className="fas fa-search"></i>
+                          Verificar Base
+                        </button>
+                        
+                        {/* Botão Atualizar */}
                         <button
                           onClick={async () => {
                             try {
@@ -4259,7 +4254,7 @@ ${conversation.summary}
                               alert('Erro ao atualizar base de conhecimento')
                             }
                           }}
-                          className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg text-sm font-medium transition-colors"
+                          className="bg-purple-600 hover:bg-purple-700 text-white px-3 py-2 rounded-lg text-sm font-medium transition-colors"
                         >
                           <i className="fas fa-sync-alt mr-2"></i>
                           Atualizar
@@ -4268,8 +4263,13 @@ ${conversation.summary}
                     </div>
                   </div>
 
-                  {/* Filtros */}
-                  <div className="p-4 border-b border-gray-600">
+                  {/* Área de Upload e Orientação */}
+                  <div className="p-4 border-b border-gray-600 bg-slate-800/50">
+                    <div className="flex items-center gap-2 text-sm text-gray-300 mb-3">
+                      <i className="fas fa-info-circle text-blue-400"></i>
+                      <span>Envie documentos, imagens ou cole texto diretamente para treinar a personalidade da Nôa</span>
+                    </div>
+                    
                     <div className="flex gap-4">
                       <div className="flex-1">
                         <input

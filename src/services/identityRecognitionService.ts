@@ -234,7 +234,7 @@ export class IdentityRecognitionService {
         id: 'ricardo-valenca',
         name: 'Dr. Ricardo Valença',
         email: 'iaianoaesperanza@gmail.com',
-        role: 'clinico',
+        role: 'admin',
         accessLevel: 5,
         personalizedGreeting: 'Olá, Dr. Ricardo! Que bom ter você aqui. Como posso ajudar hoje?',
         voiceSettings: {
