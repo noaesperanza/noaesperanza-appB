@@ -19,7 +19,7 @@ import LocalStorageManager from '../utils/localStorageManager'
 
 
 interface GPTPBuilderProps {
-  onClose: () => void
+  // Props opcionais podem ser adicionadas aqui se necessário
 }
 
 interface ChatMessage {
@@ -32,7 +32,7 @@ interface ChatMessage {
   attachedFiles?: File[]
 }
 
-const GPTPBuilder: React.FC<GPTPBuilderProps> = ({ onClose }) => {
+const GPTPBuilder: React.FC<GPTPBuilderProps> = ({}) => {
   const [documents, setDocuments] = useState<DocumentMaster[]>([])
   const [selectedDocument, setSelectedDocument] = useState<DocumentMaster | null>(null)
   const [isEditing, setIsEditing] = useState(false)
@@ -3060,12 +3060,6 @@ ${conversation.summary}
               <p className="text-sm text-gray-400">Configure e treine sua IA médica personalizada</p>
             </div>
           </div>
-          <button
-            onClick={onClose}
-            className="text-gray-400 hover:text-white p-2"
-          >
-            <i className="fas fa-times text-xl"></i>
-          </button>
         </div>
 
         <div className="flex-1 flex overflow-hidden">
