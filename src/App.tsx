@@ -163,18 +163,9 @@ function App() {
                       />
                     } />
                     
-         <Route path="/admin" element={
-           <AdminDashboard addNotification={addNotification} />
-         } />
-         <Route path="/patient-dashboard" element={
-           <PatientDashboard 
-             userEmail={user?.email || ''}
-             onLogout={() => {/* Implementar logout */}}
-           />
-         } />
-         <Route path="/patient" element={
-           <PatientDashboard addNotification={addNotification} />
-         } />
+        <Route path="/admin" element={
+          <AdminDashboard addNotification={addNotification} />
+        } />
                     
                     <Route path="/payment" element={
                       <PaymentPage />
