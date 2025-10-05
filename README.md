@@ -100,3 +100,7 @@ Para dúvidas ou problemas, verifique:
 2. Scripts SQL executados
 3. APIs funcionando
 4. Console do navegador para erros
+
+## 📄 Relatórios de Implementação
+
+- [RELATORIO_IMPLEMENTACAO_DASHBOARD_PACIENTE_2025-10-05.md](./RELATORIO_IMPLEMENTACAO_DASHBOARD_PACIENTE_2025-10-05.md)
