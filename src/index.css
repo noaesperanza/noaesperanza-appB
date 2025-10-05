@@ -417,6 +417,7 @@ body {
   .nav-item span {
     @apply hidden;
   }
+  .nav-item { @apply px-2 py-2; }
 }
 
 /* ============================================
