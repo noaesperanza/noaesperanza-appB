@@ -4908,13 +4908,7 @@ ${conversation.summary}
             </div>
           </div>
 
-          {/* Histórico de Conversas - Lado Direito */}
-          {showConversationHistory && (
-            <ConversationHistory
-              onConversationSelect={handleConversationSelect}
-              currentConversationId={currentConversation?.id || null}
-            />
-          )}
+          {/* Histórico removido: manter somente painel de conversas */}
         </div>
       </motion.div>
 
