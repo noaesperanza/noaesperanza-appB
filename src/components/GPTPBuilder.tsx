@@ -3679,8 +3679,13 @@ ${conversation.summary}
                           chatMessages.forEach((msg, index) => {
                             if (msg.role === 'user') {
                               // Verificar se deve criar nova conversa
+                              const toMs = (t: any) => {
+                                const d = t instanceof Date ? t : new Date(t)
+                                const ms = d.getTime()
+                                return isNaN(ms) ? 0 : ms
+                              }
                               const shouldCreateNew = !currentConversation || 
-                                (msg.timestamp.getTime() - currentConversation.lastTimestamp.getTime() > sessionTimeout)
+                                (toMs(msg.timestamp) - toMs(currentConversation.lastTimestamp) > sessionTimeout)
                               
                               if (shouldCreateNew) {
                                 // Salvar conversa anterior
