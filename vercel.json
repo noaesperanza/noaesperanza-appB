@@ -1,11 +1,18 @@
 {
+  "framework": "vite",
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist",
+  "build": {
+    "env": {
+      "HUSKY": "0",
+      "CYPRESS_INSTALL_BINARY": "0",
+      "CI": "1"
+    }
+  },
   "rewrites": [
-    // Preserva atalhos antigos
     { "source": "/admin", "destination": "/app/admin" },
     { "source": "/patient-dashboard", "destination": "/app/paciente" },
     { "source": "/patient", "destination": "/app/paciente" },
-
-    // Fallback SPA para rotas do React Router
     { "source": "/app", "destination": "/index.html" },
     { "source": "/app/(.*)", "destination": "/index.html" },
     { "source": "/(login|register|landing)", "destination": "/index.html" }
