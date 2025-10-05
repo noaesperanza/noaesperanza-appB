@@ -63,7 +63,7 @@ const GPTPBuilder: React.FC<GPTPBuilderProps> = ({ onClose }) => {
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([])
   const [currentMessage, setCurrentMessage] = useState('')
   const [isTyping, setIsTyping] = useState(false)
-  const [activeTab, setActiveTab] = useState<'editor' | 'chat' | 'kpis' | 'cruzamentos' | 'trabalhos' | 'knowledge-base'>('chat')
+  const [activeTab, setActiveTab] = useState<'chat' | 'canvas' | 'kpis' | 'knowledge-base'>('chat')
   const [attachedFiles, setAttachedFiles] = useState<File[]>([])
   const [uploadedDocuments, setUploadedDocuments] = useState<any[]>([])
   
@@ -106,6 +106,21 @@ const GPTPBuilder: React.FC<GPTPBuilderProps> = ({ onClose }) => {
       loadAllDataForCrossing()
     }
   }, [activeTab])
+
+  // 🎨 Carregar conteúdo salvo do canvas
+  useEffect(() => {
+    const savedCanvasData = localStorage.getItem('canvas-data')
+    const autoSavedData = localStorage.getItem('canvas-auto-save')
+    
+    if (savedCanvasData || autoSavedData) {
+      setTimeout(() => {
+        const canvas = document.getElementById('canvas-area')
+        if (canvas && (savedCanvasData || autoSavedData)) {
+          canvas.innerHTML = savedCanvasData || autoSavedData
+        }
+      }, 100)
+    }
+  }, [])
 
   const loadAllDataForCrossing = async () => {
     try {
@@ -3045,71 +3060,7 @@ ${conversation.summary}
         </div>
 
         <div className="flex-1 flex overflow-hidden">
-          {/* Sidebar - Base de Conhecimento */}
-          <div className="w-80 bg-slate-700 border-r border-gray-600 flex flex-col">
-            
-            {/* Filtros */}
-            <div className="p-4 border-b border-gray-600">
-              <div className="mb-3">
-                <input
-                  type="text"
-                  placeholder="Buscar documentos..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full px-3 py-2 bg-slate-600 border border-gray-500 rounded-lg text-white text-sm placeholder-gray-400"
-                />
-              </div>
-              
-              <select
-                value={selectedType}
-                onChange={(e) => setSelectedType(e.target.value)}
-                className="w-full px-3 py-2 bg-slate-600 border border-gray-500 rounded-lg text-white text-sm"
-              >
-                <option value="all">Todos os tipos</option>
-                {documentTypes.map(type => (
-                  <option key={type.value} value={type.value}>{type.label}</option>
-                ))}
-              </select>
-            </div>
-
-            {/* Lista de Documentos */}
-            <div className="flex-1 overflow-y-auto p-4">
-              <div className="space-y-2">
-                {loading ? (
-                  <div className="text-center text-gray-400 py-4">Carregando...</div>
-                ) : filteredDocuments.length > 0 ? (
-                  filteredDocuments.map((doc) => (
-                    <div
-                      key={doc.id}
-                      onClick={() => setSelectedDocument(doc)}
-                      className={`p-3 rounded-lg cursor-pointer transition-colors ${
-                        selectedDocument?.id === doc.id
-                          ? 'bg-blue-600 border border-blue-500'
-                          : 'bg-slate-600 hover:bg-slate-500 border border-transparent'
-                      }`}
-                    >
-                      <div className="flex items-center gap-2 mb-1">
-                        <i className={`fas fa-${documentTypes.find(t => t.value === doc.type)?.icon} text-${documentTypes.find(t => t.value === doc.type)?.color}-400`}></i>
-                        <span className="text-white font-medium text-sm">{doc.title}</span>
-                      </div>
-                      <p className="text-gray-400 text-xs line-clamp-2">{doc.content.substring(0, 100)}...</p>
-                      <div className="flex items-center justify-between mt-2">
-                        <span className="text-xs text-gray-500">{doc.category}</span>
-                        <span className="text-xs text-gray-500">
-                          {new Date(doc.updated_at).toLocaleDateString('pt-BR')}
-                        </span>
-                      </div>
-                    </div>
-                  ))
-                ) : (
-                  <div className="text-center text-gray-400 py-4">Nenhum documento encontrado</div>
-                )}
-              </div>
-            </div>
-
-          </div>
-
-          {/* Área Principal - Editor */}
+          {/* Área Principal - Workstation Expandida */}
           <div className="flex-1 flex flex-col">
             
             {/* Tabs */}
@@ -3136,49 +3087,27 @@ ${conversation.summary}
                   <i className="fas fa-database mr-2"></i>
                   Base de Conhecimento
                 </button>
-                <button 
-                  onClick={() => setActiveTab('editor')}
-                  className={`px-4 py-3 text-sm font-medium transition-colors ${
-                    activeTab === 'editor' 
-                      ? 'text-white border-b-2 border-blue-500' 
-                      : 'text-gray-400 hover:text-white'
-                  }`}
-                >
-                  <i className="fas fa-edit mr-2"></i>
-                  Editor de Documentos
-                </button>
+              <button 
+                onClick={() => setActiveTab('canvas')}
+                className={`px-4 py-3 text-sm font-medium transition-colors ${
+                  activeTab === 'canvas' 
+                    ? 'text-white border-b-2 border-green-500' 
+                    : 'text-gray-400 hover:text-white'
+                }`}
+              >
+                <i className="fas fa-chalkboard mr-2"></i>
+                Canvas/Lousa
+              </button>
               <button 
                 onClick={() => setActiveTab('kpis')}
                 className={`px-4 py-3 text-sm font-medium transition-colors ${
                   activeTab === 'kpis' 
-                    ? 'text-white border-b-2 border-blue-500' 
+                    ? 'text-white border-b-2 border-purple-500' 
                     : 'text-gray-400 hover:text-white'
                 }`}
               >
                 <i className="fas fa-chart-line mr-2"></i>
-                KPIs
-              </button>
-              <button 
-                onClick={() => setActiveTab('cruzamentos')}
-                className={`px-4 py-3 text-sm font-medium transition-colors ${
-                  activeTab === 'cruzamentos' 
-                    ? 'text-white border-b-2 border-blue-500' 
-                    : 'text-gray-400 hover:text-white'
-                }`}
-              >
-                <i className="fas fa-project-diagram mr-2"></i>
-                Cruzamentos
-              </button>
-              <button 
-                onClick={() => setActiveTab('trabalhos')}
-                className={`px-4 py-3 text-sm font-medium transition-colors ${
-                  activeTab === 'trabalhos' 
-                    ? 'text-white border-b-2 border-blue-500' 
-                    : 'text-gray-400 hover:text-white'
-                }`}
-              >
-                <i className="fas fa-file-medical mr-2"></i>
-                Trabalhos
+                KPIs & Analytics
               </button>
             </div>
 
@@ -3630,6 +3559,75 @@ ${conversation.summary}
                       </div>
             </div>
           </div>
+                </div>
+              ) : activeTab === 'canvas' ? (
+                /* CANVAS/LOUSA PARA IDEIAS E ESBOÇOS */
+                <div className="h-full flex flex-col bg-slate-800">
+                  {/* Header do Canvas */}
+                  <div className="p-4 border-b border-gray-600 bg-slate-700">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h3 className="text-lg font-semibold text-white">Canvas/Lousa</h3>
+                        <p className="text-sm text-gray-400">Esboços e ideias do chat para registro e desenvolvimento</p>
+                      </div>
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => {
+                            const canvas = document.getElementById('canvas-area')
+                            if (canvas) {
+                              canvas.innerHTML = ''
+                              alert('Canvas limpo!')
+                            }
+                          }}
+                          className="bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
+                        >
+                          <i className="fas fa-eraser"></i>
+                          Limpar
+                        </button>
+                        <button
+                          onClick={() => {
+                            const canvas = document.getElementById('canvas-area')
+                            if (canvas) {
+                              const data = canvas.innerHTML
+                              localStorage.setItem('canvas-data', data)
+                              alert('Canvas salvo!')
+                            }
+                          }}
+                          className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
+                        >
+                          <i className="fas fa-save"></i>
+                          Salvar
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Área do Canvas */}
+                  <div className="flex-1 p-4">
+                    <div 
+                      id="canvas-area"
+                      contentEditable
+                      className="w-full h-full bg-white rounded-lg border-2 border-dashed border-gray-300 p-4 text-gray-800 focus:outline-none focus:border-green-500 overflow-y-auto"
+                      style={{ minHeight: '500px' }}
+                      placeholder="Comece a escrever suas ideias, esboços ou anotações aqui..."
+                      onInput={(e) => {
+                        // Auto-save functionality
+                        const content = e.currentTarget.innerHTML
+                        localStorage.setItem('canvas-auto-save', content)
+                      }}
+                    >
+                      {/* Conteúdo inicial do canvas */}
+                      <div className="text-gray-500 italic">
+                        <p>🎨 <strong>Canvas/Lousa do GPT Builder</strong></p>
+                        <p>• Registre ideias importantes do chat</p>
+                        <p>• Faça esboços de funcionalidades</p>
+                        <p>• Anote insights e descobertas</p>
+                        <p>• Desenvolva conceitos e fluxos</p>
+                        <br/>
+                        <p className="text-sm">💡 <em>Use esta área como uma lousa digital para capturar e desenvolver ideias valiosas!</em></p>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               ) : activeTab === 'kpis' ? (
                 /* KPIs E MÉTRICAS */
