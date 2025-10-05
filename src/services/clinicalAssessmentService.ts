@@ -54,6 +54,8 @@ export type AssessmentStage =
   | 'final_report'
   | 'completed'
 
+import { supabase } from '../integrations/supabase/client'
+
 export class ClinicalAssessmentService {
   private currentAssessment: ClinicalAssessmentData | null = null
   private assessmentResponses: AssessmentResponse[] = []
@@ -333,6 +335,27 @@ Este é um relatório de avaliação inicial baseado no método desenvolvido pel
     
     this.currentAssessment.nftHash = nftHash
     this.currentAssessment.status = 'completed'
+
+    // Persistir no Supabase (quando disponível) para métricas globais
+    try {
+      const payload: any = {
+        id: this.currentAssessment.id,
+        user_id: this.currentAssessment.userId,
+        session_id: this.currentAssessment.id,
+        status: 'completed',
+        etapa_atual: this.currentAssessment.stage,
+        dados: this.currentAssessment.finalReport ? JSON.stringify(this.currentAssessment.finalReport) : null,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      }
+      await supabase.from('avaliacoes_iniciais').upsert(payload, { onConflict: 'id' })
+    } catch (e) {
+      // Fallback local: incrementar contador para uso no Admin
+      try {
+        const total = Number(localStorage.getItem('kpi_total_assessments') || '0') + 1
+        localStorage.setItem('kpi_total_assessments', String(total))
+      } catch {}
+    }
 
     return {
       report: this.currentAssessment.finalReport,
