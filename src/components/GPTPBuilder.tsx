@@ -3367,10 +3367,16 @@ ${conversation.summary}
                             {message.content}
                           </div>
                           <div className="text-xs opacity-70 mt-2">
-                            {message.timestamp.toLocaleTimeString('pt-BR', { 
-                              hour: '2-digit', 
-                              minute: '2-digit' 
-                            })}
+                            {(() => {
+                              try {
+                                const rawTs: any = (message as any).timestamp
+                                const date = rawTs instanceof Date ? rawTs : new Date(rawTs)
+                                if (isNaN(date.getTime())) return ''
+                                return date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+                              } catch {
+                                return ''
+                              }
+                            })()}
                           </div>
                         </div>
                       </div>

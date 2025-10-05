@@ -22,7 +22,7 @@ class OpenAIService {
   constructor() {
     this.apiKey = import.meta.env.VITE_OPENAI_API_KEY
     if (!this.apiKey) {
-      console.error('OpenAI API Key não encontrada')
+      console.warn('OpenAI API Key não encontrada - ativando modo offline')
     }
   }
 
@@ -45,6 +45,10 @@ class OpenAIService {
       // Adiciona mensagens da conversa
       requestMessages.push(...messages)
 
+      if (!this.apiKey) {
+        return this.offlineResponse(messages)
+      }
+
       const response = await fetch(`${this.baseURL}/chat/completions`, {
         method: 'POST',
         headers: {
@@ -62,6 +66,10 @@ class OpenAIService {
 
       if (!response.ok) {
         const errorData = await response.json()
+        if (response.status === 401) {
+          console.warn('OpenAI 401 - usando fallback offline')
+          return this.offlineResponse(messages)
+        }
         throw new Error(`OpenAI API Error: ${errorData.error?.message || 'Erro desconhecido'}`)
       }
 
@@ -75,7 +83,7 @@ class OpenAIService {
       
     } catch (error) {
       console.error('Erro ao comunicar com OpenAI:', error)
-      throw error
+      return this.offlineResponse(messages)
     }
   }
 
@@ -97,6 +105,10 @@ class OpenAIService {
       // Adiciona mensagens da conversa
       requestMessages.push(...messages)
 
+      if (!this.apiKey) {
+        return this.offlineResponse(messages)
+      }
+
       const response = await fetch(`${this.baseURL}/chat/completions`, {
         method: 'POST',
         headers: {
@@ -114,6 +126,10 @@ class OpenAIService {
 
       if (!response.ok) {
         const errorData = await response.json()
+        if (response.status === 401) {
+          console.warn('OpenAI 401 - usando fallback offline')
+          return this.offlineResponse(messages)
+        }
         throw new Error(`OpenAI API Error: ${errorData.error?.message || 'Erro desconhecido'}`)
       }
 
@@ -127,7 +143,7 @@ class OpenAIService {
       
     } catch (error) {
       console.error('Erro ao comunicar com OpenAI:', error)
-      throw error
+      return this.offlineResponse(messages)
     }
   }
 
@@ -308,6 +324,15 @@ IMPORTANTE: Sempre deixe claro que você é uma IA e que consultas médicas deve
     ]
 
     return this.sendMessage(messages, systemPrompt)
+  }
+
+  // Fallback totalmente offline/local para quando a API estiver indisponível
+  private offlineResponse(messages: ChatMessage[]): string {
+    const lastUser = [...messages].reverse().find(m => m.role === 'user')
+    const userText = lastUser?.content || ''
+    const base = 'Sou a Nôa Esperanza em modo offline. Posso orientar com base no material local e boas práticas gerais, mas algumas integrações (OpenAI) estão indisponíveis agora.'
+    if (!userText) return base
+    return `${base}\n\nVocê disse: "${userText}"\n\nSugestões: descreva seus sintomas, duração, fatores de melhora/piora, histórico e objetivos para que eu organize o raciocínio clínico.`
   }
 }
 

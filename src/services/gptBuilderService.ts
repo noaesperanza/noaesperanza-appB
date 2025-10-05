@@ -156,7 +156,25 @@ export class GPTBuilderService {
         .eq('id', 'main')
         .single()
 
-      if (error) throw error
+      if (error) {
+        // 403 (RLS) ou 406 (preferência de cabeçalho) → usar defaults silenciosamente
+        // @ts-ignore - alguns drivers expõem .code
+        const code = (error as any)?.code
+        if (code === 'PGRST116' || code === 'PGRST301' || code === '42501') {
+          return {
+            personality: '',
+            greeting: '',
+            expertise: '',
+            tone: 'professional',
+            recognition: {
+              drRicardoValenca: true,
+              autoGreeting: true,
+              personalizedResponse: true
+            }
+          }
+        }
+        throw error
+      }
       return data?.config || {
         personality: '',
         greeting: '',
@@ -170,7 +188,18 @@ export class GPTBuilderService {
       }
     } catch (error) {
       console.error('Erro ao obter configuração da Nôa:', error)
-      throw error
+      // Fallback final – mantém app funcional
+      return {
+        personality: '',
+        greeting: '',
+        expertise: '',
+        tone: 'professional',
+        recognition: {
+          drRicardoValenca: true,
+          autoGreeting: true,
+          personalizedResponse: true
+        }
+      }
     }
   }
 
