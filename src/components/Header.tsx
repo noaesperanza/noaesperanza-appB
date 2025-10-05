@@ -74,7 +74,7 @@ const Header = ({ currentSpecialty, setCurrentSpecialty }: HeaderProps) => {
         {/* Menu de Tipos de Usuário - não mostrar na landing page */}
         {location.pathname !== '/landing' && (
           <nav className="hidden lg:flex gap-1">
-            <Link to="/patient-dashboard" className="nav-item text-xs px-3 py-2">
+            <Link to="/admin" className="nav-item text-xs px-3 py-2">
               <i className="fas fa-user text-xs"></i>
               <span className="text-xs">Paciente</span>
             </Link>
