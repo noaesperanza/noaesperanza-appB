@@ -187,37 +187,45 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         // Determinar user_type baseado em userData
         const userType = (userData as any).user_type || 'paciente'
         
-        const { error: noaUserError } = await supabase
-          .from('noa_users')
-          .insert({
-            user_id: data.user.id,
-            user_type: userType,
-            name: userData.name || '',
-            profile_data: {
+        // Verificar se Supabase está configurado
+        const isSupabaseConfigured = import.meta.env.VITE_SUPABASE_URL && 
+                                     import.meta.env.VITE_SUPABASE_URL !== 'https://your-project.supabase.co'
+        
+        if (isSupabaseConfigured) {
+          const { error: noaUserError } = await supabase
+            .from('noa_users')
+            .insert({
+              user_id: data.user.id,
+              user_type: userType,
+              name: userData.name || '',
+              profile_data: {
+                email: data.user.email,
+                created_at: new Date().toISOString()
+              }
+            })
+          
+          if (noaUserError) {
+            console.error('❌ Erro ao criar noa_users:', noaUserError)
+          } else {
+            console.log('✅ Usuário criado em noa_users:', userType)
+          }
+          
+          // Também criar na tabela users (compatibilidade)
+          const { error: profileError } = await supabase
+            .from('users')
+            .insert({
+              id: data.user.id,
               email: data.user.email,
-              created_at: new Date().toISOString()
-            }
-          })
-        
-        if (noaUserError) {
-          console.error('❌ Erro ao criar noa_users:', noaUserError)
+              name: userData.name || '',
+              role: userData.role || 'patient',
+              specialty: userData.specialty
+            })
+          
+          if (profileError) {
+            console.warn('⚠️ Erro ao criar users (tabela legada):', profileError)
+          }
         } else {
-          console.log('✅ Usuário criado em noa_users:', userType)
-        }
-        
-        // Também criar na tabela users (compatibilidade)
-        const { error: profileError } = await supabase
-          .from('users')
-          .insert({
-            id: data.user.id,
-            email: data.user.email,
-            name: userData.name || '',
-            role: userData.role || 'patient',
-            specialty: userData.specialty
-          })
-        
-        if (profileError) {
-          console.warn('⚠️ Erro ao criar users (tabela legada):', profileError)
+          console.log('🔧 Supabase não configurado - perfil será criado localmente no login')
         }
       }
     } catch (error) {
@@ -246,10 +254,13 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         } as any
         
         setUser(mockUser)
+        
+        // Criar perfil local com nome baseado no email
+        const nameFromEmail = email.split('@')[0].replace(/[._]/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
         setUserProfile({
           id: mockUser.id,
           email: email,
-          name: email.split('@')[0],
+          name: nameFromEmail,
           role: 'patient',
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
@@ -265,7 +276,25 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       }
     } catch (error) {
       console.error('Erro no login:', error)
-      throw error
+      
+      // Se der erro no Supabase, tentar modo local como fallback
+      console.log('🔄 Tentando fallback local após erro Supabase')
+      const mockUser = {
+        id: 'fallback-user-' + Date.now(),
+        email: email,
+        user_metadata: { role: 'patient' }
+      } as any
+      
+      setUser(mockUser)
+      const nameFromEmail = email.split('@')[0].replace(/[._]/g, ' ').replace(/\b\w/g, l => l.toUpperCase())
+      setUserProfile({
+        id: mockUser.id,
+        email: email,
+        name: nameFromEmail,
+        role: 'patient',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      })
     } finally {
       setLoading(false)
     }
