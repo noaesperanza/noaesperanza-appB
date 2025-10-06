@@ -63,6 +63,15 @@ export class IdentityRecognitionService {
       /olá\s*ricardo\s*valença/i
     ]
 
+    // Padrões de reconhecimento para Eduardo Faveret
+    const eduardoPatterns = [
+      /olá,?\s*nôa[.,]?\s*eduardo\s*faveret,?\s*aqui/i,
+      /oi\s*nôa[.,]?\s*eduardo\s*faveret/i,
+      /olá,?\s*nôa\.?\s*eduardo\s*faveret,?\s*aqui/i,
+      /dr\.?\s*eduardo\s*faveret/i,
+      /eduardo\s*faveret[.,]?\s*aqui/i
+    ]
+
     // Verificar Pedro
     for (const pattern of pedroPatterns) {
       if (pattern.test(message)) {
@@ -92,6 +101,23 @@ export class IdentityRecognitionService {
             greeting: "Olá, Dr. Ricardo! Que bom ter você aqui. Como posso ajudar hoje?",
             shouldActivateAdminMode: true,
             availableCommands: this.getAvailableCommands(user.role)
+          }
+        }
+      }
+    }
+
+    // Verificar Eduardo Faveret
+    for (const pattern of eduardoPatterns) {
+      if (pattern.test(message)) {
+        const user = await this.getUserProfile('eduardo.faveret@noaesperanza.app')
+        if (user) {
+          return {
+            recognized: true,
+            user: { ...user, name: 'Dr. Eduardo Faveret' },
+            confidence: 0.97,
+            greeting: "Olá, Dr. Eduardo! Acesso administrativo liberado. Como deseja prosseguir?",
+            shouldActivateAdminMode: true,
+            availableCommands: this.getAvailableCommands('admin')
           }
         }
       }
@@ -244,6 +270,25 @@ export class IdentityRecognitionService {
           volume: 0.8
         },
         permissions: ['read', 'write', 'execute', 'admin', 'clinical'],
+        isActive: true
+      }
+    }
+
+    if (email === 'eduardo.faveret@noaesperanza.app') {
+      return {
+        id: 'eduardo-faveret',
+        name: 'Dr. Eduardo Faveret',
+        email: 'eduardo.faveret@noaesperanza.app',
+        role: 'admin',
+        accessLevel: 5,
+        personalizedGreeting: 'Olá, Dr. Eduardo! Acesso administrativo liberado. Como deseja prosseguir?',
+        voiceSettings: {
+          voice: 'Microsoft Maria - Portuguese (Brazil)',
+          rate: 0.85,
+          pitch: 1.1,
+          volume: 0.8
+        },
+        permissions: ['read', 'write', 'execute', 'admin', 'clinical', 'gpt_builder'],
         isActive: true
       }
     }
