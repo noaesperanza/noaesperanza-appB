@@ -1078,9 +1078,9 @@ Como posso ajudá-lo hoje?`
     }
 
 
-    // 💬 RESPOSTA NATURAL PARA CONVERSAS GERAIS
+  // 💬 RESPOSTA NATURAL PARA CONVERSAS GERAIS
     // Se chegou até aqui, deixa o OpenAI responder
-    const fallbackResponse = 'OPENAI_FALLBACK'
+  const fallbackResponse = 'OPENAI_FALLBACK'
     
     // Salvar interação não reconhecida para aprendizado
     await this.saveConversationToLearning(message, fallbackResponse, 'unrecognized_command', 'fallback')

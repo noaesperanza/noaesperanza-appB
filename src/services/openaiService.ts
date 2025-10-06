@@ -330,9 +330,13 @@ IMPORTANTE: Sempre deixe claro que você é uma IA e que consultas médicas deve
   private offlineResponse(messages: ChatMessage[]): string {
     const lastUser = [...messages].reverse().find(m => m.role === 'user')
     const userText = lastUser?.content || ''
-    const base = 'Sou a Nôa Esperanza em modo offline. Posso orientar com base no material local e boas práticas gerais, mas algumas integrações (OpenAI) estão indisponíveis agora.'
-    if (!userText) return base
-    return `${base}\n\nVocê disse: "${userText}"\n\nSugestões: descreva seus sintomas, duração, fatores de melhora/piora, histórico e objetivos para que eu organize o raciocínio clínico.`
+    const base = 'Sou a Nôa Esperanza em modo offline. Posso orientar com base no material local e no roteiro clínico, enquanto algumas integrações (OpenAI) estão indisponíveis.'
+    if (!userText) return `${base}\n\nPara começarmos, descreva sua queixa principal e há quanto tempo ela ocorre.`
+    const lower = userText.toLowerCase()
+    if (lower.includes('origem') || lower.includes('história') || lower.includes('historia') || lower.includes('quem é você') || lower.includes('quem e voce')) {
+      return `${base}\n\nMinha função aqui é clínica: conduzir a Avaliação Clínica Inicial (método do Dr. Ricardo Valença), organizar os indícios e orientar os próximos passos. Quando desejar, podemos iniciar pelo: "O que trouxe você hoje?"`
+    }
+    return `${base}\n\nVamos seguir o roteiro clínico. Primeiro: qual é a sua queixa principal? Em seguida diremos quando começou, como é, o que melhora e o que piora.`
   }
 }
 
