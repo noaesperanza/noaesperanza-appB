@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import CollaborativeDevelopmentPanel from './CollaborativeDevelopmentPanel'
+import { personalizedProfilesService, PersonalizedProfile } from '../services/personalizedProfilesService'
 import { gptBuilderService, DocumentMaster, NoaConfig } from '../services/gptBuilderService'
 import { openAIService } from '../services/openaiService'
 import { supabase } from '../integrations/supabase/client'
@@ -1641,21 +1642,20 @@ Detalhes do erro: ${error instanceof Error ? error.message : String(error)}
       // 🚀 DESABILITAR DETECÇÃO DE CONVERSA SIMPLES - CAUSA TRAVAMENTOS
       const isSimpleConversation = false // SEMPRE FALSE - evita travamentos
 
-      // ⚡ Reconhecimento imediato do Dr. Ricardo pela frase-código (com variações de escrita)
-      const ricardoPatterns = [
-        /olá,?\s*n[oôõ]a[.,]?\s*ricardo\s*val[eéè]n[çc]a,?\s*aqui/i,
-        /oi\s*n[oôõ]a[.,]?\s*ricardo\s*aqui/i,
-        /ricardo\s*val[eéè]n[çc]a[.,]?\s*aqui/i,
-        /dr\.?\s*ricardo\s*val[eéè]n[çc]a/i
-      ]
+      // ⚡ RECONHECIMENTO DE PERFIS PERSONALIZADOS
+      const detectedProfile = personalizedProfilesService.detectProfile(messageToProcess)
       
-      const isRicardoRecognized = ricardoPatterns.some(pattern => pattern.test(messageToProcess))
-      
-      if (isRicardoRecognized) {
-        // Salvar contexto de reconhecimento
+      if (detectedProfile) {
+        console.log('👤 Perfil detectado:', detectedProfile.name)
+        
+        // Salvar perfil ativo
+        personalizedProfilesService.saveActiveProfile(detectedProfile)
+        
+        // Salvar também no formato antigo para compatibilidade
         localStorage.setItem('noa_recognized_user', JSON.stringify({
-          name: 'Dr. Ricardo Valença',
-          role: 'admin',
+          name: detectedProfile.name,
+          role: detectedProfile.role,
+          profileId: detectedProfile.id,
           accessLevel: 5,
           recognizedAt: new Date().toISOString()
         }))
@@ -1663,73 +1663,19 @@ Detalhes do erro: ${error instanceof Error ? error.message : String(error)}
         const recognizedMessage: ChatMessage = {
           id: (Date.now() + 1).toString(),
           role: 'assistant',
-          content: `👨‍⚕️ **Dr. Ricardo Valença reconhecido pela frase código!**
-
-Olá, Dr. Ricardo! Sou a Nôa Esperanza, sua mentora especializada.
-Todas as ferramentas avançadas estão disponíveis:
-🔧 Ferramentas Médicas
-🧠 Reasoning Layer
-🎯 Harmony Format
-💻 Desenvolvimento Colaborativo
-
-Como posso ajudá-lo hoje?`,
+          content: detectedProfile.greeting,
           timestamp: new Date(),
           action: 'user_recognized',
-          data: { user: 'dr_ricardo_valenca', recognizedAs: 'Dr. Ricardo Valença' },
+          data: { 
+            profileId: detectedProfile.id,
+            profileName: detectedProfile.name,
+            recognizedAs: detectedProfile.name 
+          },
         }
 
         pushChatMessage(recognizedMessage)
 
-        // Salvar conversa no sistema híbrido em background (não bloquear)
-        try {
-          await saveConversationHybrid(
-            messageToProcess,
-            recognizedMessage.content,
-            'user_recognized'
-          )
-        } catch (_) {}
-
-        setIsTyping(false)
-        return
-      }
-      
-      // ⚡ Reconhecimento do Dr. Eduardo Faveret
-      const eduardoPatterns = [
-        /olá,?\s*n[oôõ]a[.,]?\s*eduardo\s*faveret,?\s*aqui/i,
-        /oi\s*n[oôõ]a[.,]?\s*eduardo\s*faveret/i,
-        /eduardo\s*faveret[.,]?\s*aqui/i,
-        /eduardo\s*de\s*sá\s*campello\s*faveret/i,
-        /dr\.?\s*eduardo\s*faveret/i
-      ]
-      
-      const isEduardoRecognized = eduardoPatterns.some(pattern => pattern.test(messageToProcess))
-      
-      if (isEduardoRecognized) {
-        // Salvar contexto de reconhecimento
-        localStorage.setItem('noa_recognized_user', JSON.stringify({
-          name: 'Dr. Eduardo Faveret',
-          role: 'admin',
-          accessLevel: 5,
-          recognizedAt: new Date().toISOString()
-        }))
-        
-        const recognizedMessage: ChatMessage = {
-          id: (Date.now() + 1).toString(),
-          role: 'assistant',
-          content: `👨‍⚕️ **Dr. Eduardo Faveret reconhecido!**
-
-Bem-vindo, Dr. Eduardo! Acesso administrativo concedido.
-Todas as funcionalidades do GPT Builder estão disponíveis.
-
-Como posso auxiliá-lo?`,
-          timestamp: new Date(),
-          action: 'user_recognized',
-          data: { user: 'dr_eduardo_faveret', recognizedAs: 'Dr. Eduardo Faveret' },
-        }
-
-        pushChatMessage(recognizedMessage)
-
-        // Salvar conversa no sistema híbrido em background (não bloquear)
+        // Salvar conversa no sistema híbrido em background
         try {
           await saveConversationHybrid(
             messageToProcess,
@@ -3689,6 +3635,14 @@ ${conversation.summary}
                   <i className="fas fa-code mr-2"></i>
                   Desenvolvimento Colaborativo
                 </button>
+                <a
+                  href="/ide"
+                  target="_blank"
+                  className="px-4 py-3 text-sm font-medium transition-colors text-gray-400 hover:text-white border border-emerald-500/30 hover:border-emerald-500 rounded-lg mx-2"
+                >
+                  <i className="fas fa-terminal mr-2"></i>
+                  Abrir IDE Completo
+                </a>
                 <button
                   onClick={() => setActiveTab('canvas')}
                   className={`px-4 py-3 text-sm font-medium transition-colors ${

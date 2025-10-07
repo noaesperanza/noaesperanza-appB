@@ -1,5 +1,6 @@
 // Serviço para comunicação com OpenAI API
 import { getNoaSystemPrompt } from '../config/noaSystemPrompt'
+import { personalizedProfilesService } from './personalizedProfilesService'
 
 export interface ChatMessage {
   role: 'user' | 'assistant' | 'system'
@@ -263,26 +264,44 @@ class OpenAIService {
     try {
       console.log('🎯 Usando modelo padrão com base de conhecimento própria')
       
-      // Verificar se há usuário reconhecido no localStorage
-      let recognizedUser = null
-      try {
-        const stored = localStorage.getItem('noa_recognized_user')
-        if (stored) {
-          recognizedUser = JSON.parse(stored)
-        }
-      } catch (e) {
-        console.warn('Erro ao carregar usuário reconhecido:', e)
-      }
+      // Verificar se há perfil ativo
+      const activeProfile = personalizedProfilesService.getActiveProfile()
       
       // Construir prompt com sistema completo da Nôa Esperanza V2.0
-      let systemPrompt = getNoaSystemPrompt(recognizedUser ? {
-        name: recognizedUser.name,
-        role: recognizedUser.role,
-        recognizedAs: recognizedUser.name
-      } : {
-        name: 'Usuário',
-        role: 'user'
-      })
+      let systemPrompt = ''
+      
+      if (activeProfile) {
+        // Usar prompt personalizado do perfil
+        systemPrompt = `${getNoaSystemPrompt({
+          name: activeProfile.name,
+          role: activeProfile.role,
+          recognizedAs: activeProfile.name
+        })}\n\n${activeProfile.systemPrompt}`
+      } else {
+        // Verificar formato antigo para compatibilidade
+        try {
+          const stored = localStorage.getItem('noa_recognized_user')
+          if (stored) {
+            const recognizedUser = JSON.parse(stored)
+            systemPrompt = getNoaSystemPrompt({
+              name: recognizedUser.name,
+              role: recognizedUser.role,
+              recognizedAs: recognizedUser.name
+            })
+          } else {
+            systemPrompt = getNoaSystemPrompt({
+              name: 'Usuário',
+              role: 'user'
+            })
+          }
+        } catch (e) {
+          console.warn('Erro ao carregar usuário reconhecido:', e)
+          systemPrompt = getNoaSystemPrompt({
+            name: 'Usuário',
+            role: 'user'
+          })
+        }
+      }
 
       // Adicionar base de conhecimento se fornecida
       if (knowledgeBase) {
@@ -308,26 +327,42 @@ class OpenAIService {
 
   // Método fallback tradicional
   private async getNoaResponseFallback(userMessage: string, conversationHistory: ChatMessage[] = []): Promise<string> {
-    // Verificar se há usuário reconhecido no localStorage
-    let recognizedUser = null
-    try {
-      const stored = localStorage.getItem('noa_recognized_user')
-      if (stored) {
-        recognizedUser = JSON.parse(stored)
-      }
-    } catch (e) {
-      console.warn('Erro ao carregar usuário reconhecido:', e)
-    }
+    // Verificar se há perfil ativo
+    const activeProfile = personalizedProfilesService.getActiveProfile()
     
     // Usar prompt do sistema V2.0
-    const systemPrompt = getNoaSystemPrompt(recognizedUser ? {
-      name: recognizedUser.name,
-      role: recognizedUser.role,
-      recognizedAs: recognizedUser.name
-    } : {
-      name: 'Usuário',
-      role: 'user'
-    })
+    let systemPrompt = ''
+    
+    if (activeProfile) {
+      systemPrompt = `${getNoaSystemPrompt({
+        name: activeProfile.name,
+        role: activeProfile.role,
+        recognizedAs: activeProfile.name
+      })}\n\n${activeProfile.systemPrompt}`
+    } else {
+      try {
+        const stored = localStorage.getItem('noa_recognized_user')
+        if (stored) {
+          const recognizedUser = JSON.parse(stored)
+          systemPrompt = getNoaSystemPrompt({
+            name: recognizedUser.name,
+            role: recognizedUser.role,
+            recognizedAs: recognizedUser.name
+          })
+        } else {
+          systemPrompt = getNoaSystemPrompt({
+            name: 'Usuário',
+            role: 'user'
+          })
+        }
+      } catch (e) {
+        console.warn('Erro ao carregar usuário reconhecido:', e)
+        systemPrompt = getNoaSystemPrompt({
+          name: 'Usuário',
+          role: 'user'
+        })
+      }
+    }
 
     const messages: ChatMessage[] = [
       ...conversationHistory,
