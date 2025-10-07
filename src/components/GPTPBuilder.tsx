@@ -1206,21 +1206,14 @@ Sou a **Nôa Esperanza**, sua mentora especializada. Estou pronta para conversar
 
   // 📁 FUNÇÕES DE UPLOAD E GERENCIAMENTO DE ARQUIVOS
 
-  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(event.target.files || []) as File[]
+  const handleFileUpload = async (file: File) => {
+    console.log('📁 Processando arquivo:', file.name)
     
-    for (const file of files) {
-      console.log('📁 Processando arquivo:', file.name)
-      
-      // Adicionar arquivo à lista de anexados
-      setAttachedFiles(prev => [...prev, file])
-      
-      // Processar conteúdo do arquivo
-      await processUploadedFile(file)
-    }
+    // Adicionar arquivo à lista de anexados
+    setAttachedFiles(prev => [...prev, file])
     
-    // Limpar input
-    event.target.value = ''
+    // Processar conteúdo do arquivo
+    await processUploadedFile(file)
   }
 
   const processUploadedFile = async (file: File) => {
@@ -4661,14 +4654,14 @@ ${conversation.summary}
                   </div>
                 </div>
               ) : activeTab === 'knowledge-base' ? (
-                /* BASE DE CONHECIMENTO - DOCUMENTOS ENVIADOS */
+                /* BASE DE CONHECIMENTO UNIFICADA */
                 <div className="h-full flex flex-col">
                   {/* Header */}
                   <div className="p-4 border-b border-gray-600">
                     <div className="flex items-center justify-between">
                       <div>
                         <h3 className="text-lg font-semibold text-white">Base de Conhecimento</h3>
-                        <p className="text-sm text-gray-400">Documentos enviados para treinar a personalidade da Nôa</p>
+                        <p className="text-sm text-gray-400">Documentos, imagens, vídeos e textos para treinar a Nôa Esperanza</p>
                       </div>
                       <div className="flex gap-2">
                         {/* Botão Upload de Documentos */}
@@ -4722,10 +4715,32 @@ ${conversation.summary}
                   <div className="p-4 border-b border-gray-600 bg-slate-800/50">
                     <div className="flex items-center gap-2 text-sm text-gray-300 mb-3">
                       <i className="fas fa-info-circle text-blue-400"></i>
-                      <span>Envie documentos, imagens ou cole texto diretamente para treinar a personalidade da Nôa</span>
+                      <span>Envie documentos, imagens, vídeos ou cole texto diretamente para treinar a personalidade da Nôa</span>
                     </div>
                     
                     <div className="flex gap-4">
+                      {/* Botão Upload de Arquivos */}
+                      <div className="flex-shrink-0">
+                        <label className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors cursor-pointer flex items-center gap-2">
+                          <i className="fas fa-upload"></i>
+                          Upload Arquivos
+                          <input
+                            type="file"
+                            accept=".pdf,.doc,.docx,.txt,.png,.jpg,.jpeg,.gif,.mp4,.avi,.mov,.wav,.mp3"
+                            onChange={async (e) => {
+                              const files = e.target.files
+                              if (files && files.length > 0) {
+                                for (let i = 0; i < files.length; i++) {
+                                  await handleFileUpload(files[i])
+                                }
+                              }
+                            }}
+                            className="hidden"
+                            multiple
+                          />
+                        </label>
+                      </div>
+                      
                       <div className="flex-1">
                         <input
                           type="text"
@@ -4832,7 +4847,7 @@ ${conversation.summary}
                   </div>
                 </div>
               ) : (
-                /* EDITOR DE DOCUMENTOS */
+                /* EDITOR DE DOCUMENTOS INTEGRADO */
                 <div className="h-full p-4 overflow-y-auto">
                   {selectedDocument ? (
                     <div className="h-full flex flex-col">
@@ -4897,9 +4912,16 @@ ${conversation.summary}
                   ) : (
                     <div className="h-full flex items-center justify-center">
                       <div className="text-center text-gray-400">
-                        <i className="fas fa-file-alt text-4xl mb-4"></i>
-                        <p className="text-lg mb-2">Selecione um documento para editar</p>
-                        <p className="text-sm">ou crie um novo documento na barra lateral</p>
+                        <i className="fas fa-database text-4xl mb-4"></i>
+                        <p className="text-lg mb-2">Base de Conhecimento Unificada</p>
+                        <p className="text-sm">Todos os documentos estão na aba "Base de Conhecimento"</p>
+                        <button
+                          onClick={() => setActiveTab('knowledge-base')}
+                          className="mt-4 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+                        >
+                          <i className="fas fa-database mr-2"></i>
+                          Ir para Base de Conhecimento
+                        </button>
                       </div>
                     </div>
                   )}

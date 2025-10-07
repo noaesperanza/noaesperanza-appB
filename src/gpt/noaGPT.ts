@@ -1426,7 +1426,26 @@ REFINE a resposta imediata para ser mais precisa, médica e alinhada com a metod
 
     // 📚 DOCUMENTOS E CONHECIMENTO
     if (lower.includes('documento') || lower.includes('artigo') || lower.includes('pesquisa') ||
-        lower.includes('estudo') || lower.includes('metodologia') || lower.includes('arte da entrevista')) {
+        lower.includes('estudo') || lower.includes('metodologia') || lower.includes('arte da entrevista') ||
+        lower.includes('base de conhecimento') || lower.includes('conhecimento')) {
+      
+      // Buscar na base de conhecimento
+      try {
+        const relevantDocs = await gptBuilderService.searchDocuments(message)
+        if (relevantDocs && relevantDocs.length > 0) {
+          const topDoc = relevantDocs[0]
+          return `📚 **Base de Conhecimento Encontrada!**
+
+Encontrei informações relevantes em: **${topDoc.title}**
+
+${topDoc.content.substring(0, 200)}...
+
+Posso auxiliar com mais detalhes sobre este documento ou outros da base de conhecimento. O que você gostaria de saber?`
+        }
+      } catch (error) {
+        console.warn('Erro ao buscar na base de conhecimento:', error)
+      }
+      
       return 'Tenho acesso aos documentos e metodologias do Dr. Ricardo Valença, incluindo a "Arte da Entrevista Clínica". Posso auxiliar com informações baseadas nesses conhecimentos. O que você gostaria de saber?'
     }
 
