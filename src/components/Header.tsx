@@ -93,7 +93,11 @@ const Header = ({ currentSpecialty, setCurrentSpecialty }: HeaderProps) => {
               <span className="text-xs">Estudante</span>
             </Link>
             {/* Mostrar ADM/CONFIG apenas para administradores */}
-            {user?.user_metadata?.role === 'admin' && (
+            {(user?.user_metadata?.role === 'admin' || 
+              user?.email === 'eduardoscfaveret@gmail.com' ||
+              user?.email === 'eduardo.faveret@noaesperanza.app' ||
+              user?.email === 'iaianoaesperanza@gmail.com' ||
+              user?.email === 'phpg69@gmail.com') && (
               <Link to="/app/admin" className="nav-item text-xs px-3 py-2">
                 <i className="fas fa-cog text-xs"></i>
                 <span className="text-xs">ADM/CONFIG</span>
@@ -151,7 +155,11 @@ const Header = ({ currentSpecialty, setCurrentSpecialty }: HeaderProps) => {
               <i className="fas fa-graduation-cap text-xs"></i>
               <span className="text-xs ml-1">Estudante</span>
             </Link>
-            {user?.user_metadata?.role === 'admin' && (
+            {(user?.user_metadata?.role === 'admin' || 
+              user?.email === 'eduardoscfaveret@gmail.com' ||
+              user?.email === 'eduardo.faveret@noaesperanza.app' ||
+              user?.email === 'iaianoaesperanza@gmail.com' ||
+              user?.email === 'phpg69@gmail.com') && (
               <Link to="/app/admin" className="nav-item text-xs px-3 py-2" onClick={() => setMobileOpen(false)}>
                 <i className="fas fa-cog text-xs"></i>
                 <span className="text-xs ml-1">ADM/CONFIG</span>
