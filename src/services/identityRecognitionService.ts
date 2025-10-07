@@ -69,7 +69,9 @@ export class IdentityRecognitionService {
       /oi\s*nôa[.,]?\s*eduardo\s*faveret/i,
       /olá,?\s*nôa\.?\s*eduardo\s*faveret,?\s*aqui/i,
       /dr\.?\s*eduardo\s*faveret/i,
-      /eduardo\s*faveret[.,]?\s*aqui/i
+      /eduardo\s*faveret[.,]?\s*aqui/i,
+      /eduardo\s*de\s*sá\s*campello\s*faveret/i,
+      /dr\.?\s*eduardo\s*de\s*sá\s*campello\s*faveret/i
     ]
 
     // Verificar Pedro
@@ -109,11 +111,15 @@ export class IdentityRecognitionService {
     // Verificar Eduardo Faveret
     for (const pattern of eduardoPatterns) {
       if (pattern.test(message)) {
-        const user = await this.getUserProfile('eduardo.faveret@noaesperanza.app')
+        // Tentar primeiro o email original, depois o novo
+        let user = await this.getUserProfile('eduardo.faveret@noaesperanza.app')
+        if (!user) {
+          user = await this.getUserProfile('eduardoscfaveret@gmail.com')
+        }
         if (user) {
           return {
             recognized: true,
-            user: { ...user, name: 'Dr. Eduardo Faveret' },
+            user: { ...user, name: 'Dr. Eduardo de Sá Campello Faveret' },
             confidence: 0.97,
             greeting: "Olá, Dr. Eduardo! Acesso administrativo liberado. Como deseja prosseguir?",
             shouldActivateAdminMode: true,
@@ -274,11 +280,11 @@ export class IdentityRecognitionService {
       }
     }
 
-    if (email === 'eduardo.faveret@noaesperanza.app') {
+    if (email === 'eduardo.faveret@noaesperanza.app' || email === 'eduardoscfaveret@gmail.com') {
       return {
         id: 'eduardo-faveret',
-        name: 'Dr. Eduardo Faveret',
-        email: 'eduardo.faveret@noaesperanza.app',
+        name: 'Dr. Eduardo de Sá Campello Faveret',
+        email: email,
         role: 'admin',
         accessLevel: 5,
         personalizedGreeting: 'Olá, Dr. Eduardo! Acesso administrativo liberado. Como deseja prosseguir?',

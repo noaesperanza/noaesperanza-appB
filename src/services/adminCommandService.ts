@@ -28,7 +28,13 @@ export class AdminCommandService {
       const normalizedPassword = password.toLowerCase().trim()
       
       // 🔒 VERIFICAÇÃO DE EMAIL OBRIGATÓRIA
-      const allowedEmails = ['phpg69@gmail.com', 'ricardo.valenca@email.com', 'iaianoaesperanza@gmail.com']
+      const allowedEmails = [
+        'phpg69@gmail.com', 
+        'ricardo.valenca@email.com', 
+        'iaianoaesperanza@gmail.com',
+        'eduardo.faveret@noaesperanza.app',
+        'eduardoscfaveret@gmail.com'
+      ]
       if (!userEmail || !allowedEmails.includes(userEmail.toLowerCase())) {
         console.log('🚫 Email não autorizado para admin:', userEmail)
         return false
@@ -43,7 +49,13 @@ export class AdminCommandService {
                        normalizedPassword.includes('ricardo admin') ||
                        normalizedPassword.includes('modo admin ricardo')
       
-      if (isPedro || isRicardo) {
+      const isEduardo = normalizedPassword.includes('admin eduardo') || 
+                       normalizedPassword.includes('eduardo admin') ||
+                       normalizedPassword.includes('modo admin eduardo') ||
+                       normalizedPassword.includes('eduardo faveret') ||
+                       normalizedPassword.includes('eduardo de sá campello')
+      
+      if (isPedro || isRicardo || isEduardo) {
         // Define chave baseado no nome
         if (isPedro) {
           this.adminKey = 'admin_pedro_valenca_2025'
@@ -51,6 +63,9 @@ export class AdminCommandService {
         } else if (isRicardo) {
           this.adminKey = 'admin_ricardo_valenca_2025'
           console.log('🔑 Tentando autenticar Ricardo...')
+        } else if (isEduardo) {
+          this.adminKey = 'admin_eduardo_faveret_2025'
+          console.log('🔑 Tentando autenticar Eduardo...')
         }
         
         // Valida no banco (com fallback local)
