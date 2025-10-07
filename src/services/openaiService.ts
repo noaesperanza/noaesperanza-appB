@@ -1,6 +1,7 @@
 // Serviço para comunicação com OpenAI API
 import { getNoaSystemPrompt } from '../config/noaSystemPrompt'
 import { personalizedProfilesService } from './personalizedProfilesService'
+import { loadNoaPrompt, logPromptInitialization } from './noaPromptLoader'
 
 export interface ChatMessage {
   role: 'user' | 'assistant' | 'system'
@@ -27,6 +28,9 @@ class OpenAIService {
     if (!this.apiKey) {
       console.warn('OpenAI API Key não encontrada - ativando modo offline')
     }
+    
+    // Log de inicialização do prompt mestre
+    logPromptInitialization()
   }
 
   // Método para usar modelo padrão (não fine-tuned)
