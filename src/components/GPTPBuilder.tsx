@@ -3069,12 +3069,29 @@ Como posso ajudá-lo hoje?`,
       )
 
       if (hasDevelopmentIntent) {
-        return {
-          message: `🔧 **Desenvolvimento ativado!**
+        // Auto-mudar para Canvas se não estiver embutido
+        if (!embedded) {
+          setTimeout(() => setActiveTab('canvas'), 1000)
+        }
 
-O que você quer criar ou modificar?`,
+        return {
+          message: `🚀 **Excelente! Vamos desenvolver juntos!**
+
+Detectei que você quer trabalhar em desenvolvimento. Use o **Canvas/Lousa** para:
+• 📝 Esboçar suas ideias
+• 🔧 Estruturar funcionalidades  
+• 📋 Criar checklists de tarefas
+• 💬 Capturar nossa conversa
+
+**Como proceder:**
+1. Vá para a aba "Canvas/Lousa" (ícone de quadro verde)
+2. Use os botões de ferramentas para estruturar
+3. Desenvolva suas ideias na lousa digital
+4. Capture nossa conversa quando relevante
+
+**O que você quer desenvolver?** Descreva sua ideia e vamos construir juntos! 🎨`,
           action: 'development_mode',
-          data: { intent: 'development' },
+          data: { suggestCanvas: true, intent: 'development', autoSwitchCanvas: !embedded },
         }
       }
 
@@ -4096,18 +4113,48 @@ ${conversation.summary}
                   </div>
                 </div>
               ) : activeTab === 'canvas' ? (
-                /* CANVAS/LOUSA PARA IDEIAS E ESBOÇOS */
+                /* CANVAS/LOUSA PARA DESENVOLVIMENTO COLABORATIVO */
                 <div className="h-full flex flex-col bg-slate-800">
                   {/* Header do Canvas */}
                   <div className="p-4 border-b border-gray-600 bg-slate-700">
                     <div className="flex items-center justify-between">
                       <div>
-                        <h3 className="text-lg font-semibold text-white">Canvas/Lousa</h3>
+                        <h3 className="text-lg font-semibold text-white">
+                          🎨 Canvas/Lousa - Desenvolvimento Colaborativo
+                        </h3>
                         <p className="text-sm text-gray-400">
-                          Esboços e ideias do chat para registro e desenvolvimento
+                          Desenvolva funcionalidades, esboce ideias e construa junto com a Nôa
                         </p>
                       </div>
                       <div className="flex gap-2">
+                        <button
+                          onClick={() => {
+                            // Capturar última conversa relevante
+                            const lastUserMessage = chatMessages
+                              .filter(m => m.role === 'user')
+                              .slice(-1)[0]
+                            const lastAssistantMessage = chatMessages
+                              .filter(m => m.role === 'assistant')
+                              .slice(-1)[0]
+
+                            const canvas = document.getElementById('canvas-area')
+                            if (canvas && (lastUserMessage || lastAssistantMessage)) {
+                              const timestamp = new Date().toLocaleString()
+                              const newContent = `
+                                <div class="mb-4 p-3 bg-blue-50 border-l-4 border-blue-400 rounded">
+                                  <h4 class="font-semibold text-blue-800">💬 Última Conversa - ${timestamp}</h4>
+                                  ${lastUserMessage ? `<p class="text-sm text-gray-700"><strong>Você:</strong> ${lastUserMessage.content}</p>` : ''}
+                                  ${lastAssistantMessage ? `<p class="text-sm text-gray-700"><strong>Nôa:</strong> ${lastAssistantMessage.content}</p>` : ''}
+                                </div>
+                              `
+                              canvas.innerHTML += newContent
+                            }
+                          }}
+                          className="bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
+                        >
+                          <i className="fas fa-comments"></i>
+                          Capturar Chat
+                        </button>
                         <button
                           onClick={() => {
                             const canvas = document.getElementById('canvas-area')
@@ -4139,6 +4186,121 @@ ${conversation.summary}
                     </div>
                   </div>
 
+                  {/* Ferramentas de Desenvolvimento */}
+                  <div className="p-3 border-b border-gray-600 bg-slate-700">
+                    <div className="flex gap-2 flex-wrap">
+                      <button
+                        onClick={() => {
+                          const canvas = document.getElementById('canvas-area')
+                          if (canvas) {
+                            const timestamp = new Date().toLocaleString()
+                            const newContent = `
+                              <div class="mb-4 p-3 bg-yellow-50 border-l-4 border-yellow-400 rounded">
+                                <h4 class="font-semibold text-yellow-800">💡 Ideia - ${timestamp}</h4>
+                                <p class="text-sm text-gray-700">[Digite sua ideia aqui]</p>
+                              </div>
+                            `
+                            canvas.innerHTML += newContent
+                          }
+                        }}
+                        className="bg-yellow-600 hover:bg-yellow-700 text-white px-3 py-1 rounded text-sm flex items-center gap-1"
+                      >
+                        <i className="fas fa-lightbulb"></i>
+                        Nova Ideia
+                      </button>
+                      <button
+                        onClick={() => {
+                          const canvas = document.getElementById('canvas-area')
+                          if (canvas) {
+                            const timestamp = new Date().toLocaleString()
+                            const newContent = `
+                              <div class="mb-4 p-3 bg-purple-50 border-l-4 border-purple-400 rounded">
+                                <h4 class="font-semibold text-purple-800">🔧 Funcionalidade - ${timestamp}</h4>
+                                <p class="text-sm text-gray-700"><strong>Objetivo:</strong> [O que queremos construir?]</p>
+                                <p class="text-sm text-gray-700"><strong>Como:</strong> [Como implementar?]</p>
+                                <p class="text-sm text-gray-700"><strong>Status:</strong> [Em desenvolvimento]</p>
+                              </div>
+                            `
+                            canvas.innerHTML += newContent
+                          }
+                        }}
+                        className="bg-purple-600 hover:bg-purple-700 text-white px-3 py-1 rounded text-sm flex items-center gap-1"
+                      >
+                        <i className="fas fa-code"></i>
+                        Funcionalidade
+                      </button>
+                      <button
+                        onClick={() => {
+                          const canvas = document.getElementById('canvas-area')
+                          if (canvas) {
+                            const timestamp = new Date().toLocaleString()
+                            const newContent = `
+                              <div class="mb-4 p-3 bg-indigo-50 border-l-4 border-indigo-400 rounded">
+                                <h4 class="font-semibold text-indigo-800">📋 Checklist - ${timestamp}</h4>
+                                <ul class="text-sm text-gray-700 list-disc list-inside">
+                                  <li>[ ] Item 1</li>
+                                  <li>[ ] Item 2</li>
+                                  <li>[ ] Item 3</li>
+                                </ul>
+                              </div>
+                            `
+                            canvas.innerHTML += newContent
+                          }
+                        }}
+                        className="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1 rounded text-sm flex items-center gap-1"
+                      >
+                        <i className="fas fa-check-square"></i>
+                        Checklist
+                      </button>
+                      <button
+                        onClick={() => {
+                          const canvas = document.getElementById('canvas-area')
+                          if (canvas) {
+                            const timestamp = new Date().toLocaleString()
+                            const newContent = `
+                              <div class="mb-4 p-3 bg-gray-50 border-l-4 border-gray-400 rounded">
+                                <h4 class="font-semibold text-gray-800">💻 Código - ${timestamp}</h4>
+                                <pre class="text-sm text-gray-700 bg-gray-100 p-2 rounded mt-2 font-mono">
+// Seu código aqui
+function exemplo() {
+  return "Hello, Nôa!"
+}
+                                </pre>
+                              </div>
+                            `
+                            canvas.innerHTML += newContent
+                          }
+                        }}
+                        className="bg-gray-600 hover:bg-gray-700 text-white px-3 py-1 rounded text-sm flex items-center gap-1"
+                      >
+                        <i className="fas fa-code"></i>
+                        Código
+                      </button>
+                      <button
+                        onClick={() => {
+                          const canvas = document.getElementById('canvas-area')
+                          if (canvas) {
+                            const timestamp = new Date().toLocaleString()
+                            const newContent = `
+                              <div class="mb-4 p-3 bg-pink-50 border-l-4 border-pink-400 rounded">
+                                <h4 class="font-semibold text-pink-800">🎯 Objetivo - ${timestamp}</h4>
+                                <p class="text-sm text-gray-700"><strong>Meta:</strong> [O que queremos alcançar?]</p>
+                                <p class="text-sm text-gray-700"><strong>Prazo:</strong> [Quando?]</p>
+                                <p class="text-sm text-gray-700"><strong>Recursos:</strong> [O que precisamos?]</p>
+                                <p class="text-sm text-gray-700"><strong>Resultado:</strong> [Como saberemos que deu certo?]</p>
+                              </div>
+                            `
+                            canvas.innerHTML += newContent
+                          }
+                        }}
+                        className="bg-pink-600 hover:bg-pink-700 text-white px-3 py-1 rounded text-sm flex items-center gap-1"
+                      >
+                        <i className="fas fa-target"></i>
+                        Objetivo
+                      </button>
+                    </div>
+                  </div>
+
                   {/* Área do Canvas */}
                   <div className="flex-1 p-4">
                     <div
@@ -4155,19 +4317,28 @@ ${conversation.summary}
                       {/* Conteúdo inicial do canvas */}
                       <div className="text-gray-500 italic">
                         <p>
-                          🎨 <strong>Canvas/Lousa do GPT Builder</strong>
+                          🎨 <strong>Canvas/Lousa - Desenvolvimento Colaborativo</strong>
                         </p>
-                        <p>• Registre ideias importantes do chat</p>
-                        <p>• Faça esboços de funcionalidades</p>
-                        <p>• Anote insights e descobertas</p>
-                        <p>• Desenvolva conceitos e fluxos</p>
+                        <p>• 🧠 Registre ideias e insights importantes</p>
+                        <p>• 🔧 Esboce funcionalidades e soluções</p>
+                        <p>• 📋 Crie checklists de desenvolvimento</p>
+                        <p>• 💬 Capture conversas relevantes</p>
+                        <p>• 🚀 Desenvolva conceitos e fluxos</p>
+                        <br />
+                        <div className="bg-blue-50 p-3 rounded border-l-4 border-blue-400">
+                          <p className="text-sm font-medium text-blue-800">
+                            💡 <strong>Como usar:</strong>
+                          </p>
+                          <ul className="text-sm text-blue-700 mt-1 list-disc list-inside">
+                            <li>Use os botões acima para criar estruturas</li>
+                            <li>Digite livremente para desenvolver ideias</li>
+                            <li>Clique em "Capturar Chat" para salvar conversas</li>
+                            <li>Seu trabalho é salvo automaticamente</li>
+                          </ul>
+                        </div>
                         <br />
                         <p className="text-sm">
-                          💡{' '}
-                          <em>
-                            Use esta área como uma lousa digital para capturar e desenvolver ideias
-                            valiosas!
-                          </em>
+                          <em>Esta é sua lousa digital para desenvolver junto com a Nôa! 🚀</em>
                         </p>
                       </div>
                     </div>
