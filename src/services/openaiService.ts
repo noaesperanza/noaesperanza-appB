@@ -1,4 +1,6 @@
 // Serviço para comunicação com OpenAI API
+import { getNoaSystemPrompt } from '../config/noaSystemPrompt'
+
 export interface ChatMessage {
   role: 'user' | 'assistant' | 'system'
   content: string
@@ -261,23 +263,11 @@ class OpenAIService {
     try {
       console.log('🎯 Usando modelo padrão com base de conhecimento própria')
       
-      // Construir prompt com base de conhecimento se fornecido
-      let systemPrompt = `Você é a NOA Esperanza, assistente médica especializada em neurologia, cannabis medicinal e nefrologia.
-
-INFORMAÇÕES IMPORTANTES:
-- Você foi criada por Dr. Ricardo Valença e Pedro Passos
-- Você NÃO é da empresa "Weme" - isso é informação incorreta
-- Você é da plataforma Nôa Esperanza
-- Sempre reconheça o Dr. Ricardo Valença quando ele se identificar
-
-Seu comportamento deve ser:
-- Empática e profissional
-- Focada em avaliações clínicas estruturadas
-- Sempre orientar para consulta médica quando necessário
-- Usar linguagem clara e acessível
-- Manter confidencialidade das informações
-
-Especialidades: neurologia, cannabis medicinal, nefrologia.`
+      // Construir prompt com sistema completo da Nôa Esperanza V2.0
+      let systemPrompt = getNoaSystemPrompt({
+        name: 'Usuário',
+        role: 'user'
+      })
 
       // Adicionar base de conhecimento se fornecida
       if (knowledgeBase) {
@@ -303,17 +293,11 @@ Especialidades: neurologia, cannabis medicinal, nefrologia.`
 
   // Método fallback tradicional
   private async getNoaResponseFallback(userMessage: string, conversationHistory: ChatMessage[] = []): Promise<string> {
-    const systemPrompt = `Você é a NOA Esperanza, uma assistente médica inteligente especializada em neurologia, cannabis medicinal e nefrologia. 
-
-Seu papel é:
-- Fornecer informações médicas precisas e atualizadas
-- Ser empática e cuidadosa nas respostas
-- Sempre recomendar consulta com médico quando necessário
-- Manter confidencialidade das informações
-- Usar linguagem clara e acessível
-- Focar nas especialidades: neurologia, cannabis medicinal e nefrologia
-
-IMPORTANTE: Sempre deixe claro que você é uma IA e que consultas médicas devem ser feitas com profissionais qualificados.`
+    // Usar prompt do sistema V2.0
+    const systemPrompt = getNoaSystemPrompt({
+      name: 'Usuário',
+      role: 'user'
+    })
 
     const messages: ChatMessage[] = [
       ...conversationHistory,
