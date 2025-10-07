@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react'
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { gptBuilderService, DocumentMaster, NoaConfig } from '../services/gptBuilderService'
 import { openAIService } from '../services/openaiService'
@@ -22,7 +22,13 @@ import { ConversationHistory } from './ConversationHistory'
 
 
 interface GPTPBuilderProps {
-  // Props opcionais podem ser adicionadas aqui se necessário
+  /**
+   * Quando verdadeiro, o builder é renderizado de forma embutida, sem modal full-screen.
+   */
+  embedded?: boolean
+  userId?: string | null
+  userName?: string | null
+  userType?: 'paciente' | 'aluno' | 'profissional' | 'admin' | 'medico'
 }
 
 interface ChatMessage {
@@ -43,7 +49,66 @@ interface AssessmentStats {
   currentStage: string
 }
 
-function GPTPBuilder(props: GPTPBuilderProps) {
+function GPTPBuilder({ embedded = false, userId, userName, userType }: GPTPBuilderProps) {
+  const resolvedUserType = userType || 'admin'
+  const personaMap = useMemo(() => ({
+    paciente: {
+      defaultName: 'Paciente',
+      tone: 'acolhedor',
+      focus: 'cuidado personalizado'
+    },
+    aluno: {
+      defaultName: 'Aluno',
+      tone: 'didático',
+      focus: 'aprendizado guiado'
+    },
+    profissional: {
+      defaultName: 'Profissional',
+      tone: 'colaborativo',
+      focus: 'planejamento clínico'
+    },
+    medico: {
+      defaultName: 'Profissional de Saúde',
+      tone: 'especializado',
+      focus: 'gestão de casos clínicos'
+    },
+    admin: {
+      defaultName: 'Dr. Ricardo Valença',
+      tone: 'estratégico',
+      focus: 'orquestração da plataforma'
+    }
+  }), [])
+
+  const persona = personaMap[resolvedUserType] || personaMap.admin
+  const resolvedUserName = userName?.trim() || persona.defaultName
+  const shortName = useMemo(() => resolvedUserName.split(' ')[0] || resolvedUserName, [resolvedUserName])
+  const activeUserId = useMemo(() => {
+    const trimmed = userId?.trim()
+    if (trimmed && trimmed.length > 0) {
+      return trimmed
+    }
+    if (resolvedUserType === 'admin') {
+      return 'dr-ricardo-valenca'
+    }
+    return `noa-${resolvedUserType}-guest`
+  }, [userId, resolvedUserType])
+
+  const personalizeText = useCallback((text: string) => {
+    if (!text) {
+      return text
+    }
+
+    return text
+      .replace(/Dr\.\s?Ricardo Valença/gi, resolvedUserName)
+      .replace(/Dr\.\s?Ricardo/gi, resolvedUserName)
+      .replace(/Ricardo Valença/gi, resolvedUserName)
+      .replace(/Ricardo/gi, shortName)
+  }, [resolvedUserName, shortName])
+
+  const personalizeMessage = useCallback((message: ChatMessage): ChatMessage => ({
+    ...message,
+    content: personalizeText(message.content)
+  }), [personalizeText])
   const [documents, setDocuments] = useState<DocumentMaster[]>([])
   const [selectedDocument, setSelectedDocument] = useState<DocumentMaster | null>(null)
   const [isEditing, setIsEditing] = useState(false)
@@ -73,6 +138,13 @@ function GPTPBuilder(props: GPTPBuilderProps) {
 
   // Estados para chat multimodal
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([])
+  const pushChatMessage = useCallback((message: ChatMessage) => {
+    setChatMessages(prev => [...prev, personalizeMessage(message)])
+  }, [personalizeMessage])
+
+  const replaceChatMessages = useCallback((messages: ChatMessage[]) => {
+    setChatMessages(messages.map(personalizeMessage))
+  }, [personalizeMessage])
   const [currentMessage, setCurrentMessage] = useState('')
   const [isTyping, setIsTyping] = useState(false)
   const [activeTab, setActiveTab] = useState<'chat' | 'canvas' | 'kpis' | 'knowledge-base' | 'clinical-assessment' | 'cruzamentos'>('chat')
@@ -123,6 +195,10 @@ function GPTPBuilder(props: GPTPBuilderProps) {
   const editorRef = useRef<HTMLTextAreaElement>(null)
   const chatRef = useRef<HTMLDivElement>(null)
 
+  useEffect(() => {
+    conversationManager.setUserContext(activeUserId)
+  }, [activeUserId])
+
   // 📊 Carregar TODOS os dados para cruzamento quando abrir a aba
   // Corrigido: 'cruzamentos' não está no tipo de activeTab, então não será igual nunca
   // Se quiser adicionar a aba 'cruzamentos', inclua no tipo de activeTab:
@@ -156,13 +232,13 @@ function GPTPBuilder(props: GPTPBuilderProps) {
     const activeConversation = conversationManager.getCurrentConversation()
     if (activeConversation) {
       setCurrentConversation(activeConversation)
-      setChatMessages(activeConversation.messages)
+      replaceChatMessages(activeConversation.messages)
     } else {
       // Criar nova conversa se não houver nenhuma
       const newConversation = conversationManager.createConversation()
       setCurrentConversation(newConversation)
     }
-  }, [])
+  }, [activeUserId, replaceChatMessages])
 
   const loadAllDataForCrossing = async () => {
     try {
@@ -254,7 +330,7 @@ Sistema inicializado. Como posso ajudá-lo hoje?`,
         timestamp: new Date(),
         action: 'fallback'
       }
-      setChatMessages(prev => [...prev, fallbackMessage])
+      pushChatMessage(fallbackMessage)
     }
   }
   
@@ -307,7 +383,7 @@ Sistema inicializado. Como posso ajudá-lo hoje?`,
       const { data: conversationHistory } = await supabase
         .from('conversation_history')
         .select('*')
-        .eq('user_id', 'dr-ricardo-valenca')
+        .eq('user_id', activeUserId)
         .textSearch('content', message)
         .order('relevance_score', { ascending: false })
         .limit(3)
@@ -327,7 +403,7 @@ Sistema inicializado. Como posso ajudá-lo hoje?`,
       const { data: memoriaViva } = await supabase
         .from('memoria_viva_cientifica')
         .select('*')
-        .eq('user_id', 'dr-ricardo-valenca')
+        .eq('user_id', activeUserId)
         .textSearch('content', message)
         .order('relevance', { ascending: false })
         .limit(2)
@@ -347,7 +423,7 @@ Sistema inicializado. Como posso ajudá-lo hoje?`,
       const { data: documentos } = await supabase
         .from('documentos_mestres')
         .select('*')
-        .eq('user_id', 'dr-ricardo-valenca')
+        .eq('user_id', activeUserId)
         .textSearch('content', message)
         .limit(2)
       
@@ -366,7 +442,7 @@ Sistema inicializado. Como posso ajudá-lo hoje?`,
       const { data: vectorMemory } = await supabase
         .from('vector_memory')
         .select('*')
-        .eq('user_id', 'dr-ricardo-valenca')
+        .eq('user_id', activeUserId)
         .order('created_at', { ascending: false })
         .limit(2)
       
@@ -404,7 +480,7 @@ Sistema inicializado. Como posso ajudá-lo hoje?`,
       await supabase
         .from('conversation_history')
         .insert({
-          user_id: 'dr-ricardo-valenca',
+          user_id: activeUserId,
           content: userMessage,
           response: aiResponse,
           focused_context: processedInput.focusedContext,
@@ -419,7 +495,7 @@ Sistema inicializado. Como posso ajudá-lo hoje?`,
         await supabase
           .from('vector_memory')
           .insert({
-            user_id: 'dr-ricardo-valenca',
+            user_id: activeUserId,
             content: userMessage,
             vector_embedding: processedInput.semanticFeatures?.vector || [],
             metadata: {
@@ -437,7 +513,7 @@ Sistema inicializado. Como posso ajudá-lo hoje?`,
       await supabase
         .from('memoria_viva_cientifica')
         .insert({
-          user_id: 'dr-ricardo-valenca',
+          user_id: activeUserId,
           title: `Conversa ${new Date().toLocaleDateString()}`,
           content: userMessage,
           context_type: 'conversa',
@@ -475,7 +551,7 @@ Sistema inicializado. Como posso ajudá-lo hoje?`,
       await supabase
         .from('conversation_history')
         .insert({
-          user_id: 'dr-ricardo-valenca',
+          user_id: activeUserId,
           content: message,
           response: response,
           relevance_score: 0.95,
@@ -512,7 +588,7 @@ ${result.errors.length > 0 ? `**Erros encontrados:**\n${result.errors.map(e => `
         action: 'test_fluidity'
       }
       
-      setChatMessages(prev => [...prev, testMessage])
+      pushChatMessage(testMessage)
       
     } catch (error) {
       console.error('Erro no teste de fluidez:', error)
@@ -528,7 +604,7 @@ ${result.errors.length > 0 ? `**Erros encontrados:**\n${result.errors.map(e => `
       await supabase
         .from('conversation_history')
         .insert({
-          user_id: 'dr-ricardo-valenca',
+          user_id: activeUserId,
           content: message,
           response: response,
           relevance_score: 0.95,
@@ -947,7 +1023,7 @@ Criar uma **história ordenada** do desenvolvimento da Nôa Esperanza, onde cada
       const { data, error } = await supabase
         .from('conversation_history')
         .select('content, response, created_at')
-        .eq('user_id', 'dr-ricardo-valenca')
+        .eq('user_id', activeUserId)
         .order('created_at', { ascending: false })
         .limit(5)
       
@@ -1001,7 +1077,7 @@ ${recentMessages}
   // Função para lidar com seleção de conversas
   const handleConversationSelect = (conversation: NamedConversation) => {
     setCurrentConversation(conversation)
-    setChatMessages(conversation.messages)
+    replaceChatMessages(conversation.messages)
     conversationManager.setActiveConversation(conversation.id)
   }
 
@@ -1070,7 +1146,7 @@ ${recentMessages}
         const { error: supabaseError } = await supabase
           .from('conversation_history')
           .insert({
-            user_id: 'dr-ricardo-valenca',
+            user_id: activeUserId,
             content: userMessage,
             response: aiResponse,
             created_at: new Date().toISOString()
@@ -1129,7 +1205,7 @@ ${recentMessages}
       const { data: recentConversations, error } = await supabase
         .from('conversation_history')
         .select('*')
-        .eq('user_id', 'dr-ricardo-valenca')
+        .eq('user_id', activeUserId)
         .order('created_at', { ascending: false })
         .limit(10)
       
@@ -1160,47 +1236,47 @@ ${recentMessages}
       
       // 2. Adicionar mensagem de boas-vindas se não há conversas
       if (chatMessages.length === 0) {
-        const welcomeMessage: ChatMessage = {
+        const welcomeMessage = personalizeMessage({
           id: 'welcome',
-          role: 'assistant',
-          content: `👩‍⚕️ **Olá, Dr. Ricardo Valença!**
+          role: 'assistant' as const,
+          content: `👩‍⚕️ **Olá, ${resolvedUserName}!**
 
-Sou a **Nôa Esperanza**, sua mentora especializada. Estou pronta para conversar sobre medicina, tecnologia e desenvolvimento da plataforma.
+Sou a **Nôa Esperanza**, sua mentora especializada. Estou pronta para apoiar ${persona.focus}.
 
 **Como posso ajudá-lo hoje?**`,
           timestamp: new Date()
-        }
+        })
         chatMessages = [welcomeMessage]
       } else {
         // Adicionar mensagem de continuação se há histórico
-        const continueMessage: ChatMessage = {
+        const continueMessage = personalizeMessage({
           id: 'continue',
-          role: 'assistant',
-          content: `👩‍⚕️ **Dr. Ricardo, continuemos nossa conversa!**
+          role: 'assistant' as const,
+          content: `👩‍⚕️ **Vamos continuar, ${resolvedUserName}!**
 
-Vejo que temos um histórico de ${Math.floor(chatMessages.length / 2)} conversas anteriores. Como posso ajudá-lo hoje?`,
+Já registramos ${Math.floor(chatMessages.length / 2)} interações recentes. Em que posso ajudar agora?`,
           timestamp: new Date()
-        }
+        })
         chatMessages.push(continueMessage)
       }
       
-      setChatMessages(chatMessages)
+      replaceChatMessages(chatMessages)
       
     } catch (error) {
       console.error('Erro ao carregar conversas:', error)
       
       // Fallback: mensagem de boas-vindas simples
-      const welcomeMessage: ChatMessage = {
+      const welcomeMessage = personalizeMessage({
         id: 'welcome',
-        role: 'assistant',
-        content: `👩‍⚕️ **Olá, Dr. Ricardo Valença!**
+        role: 'assistant' as const,
+        content: `👩‍⚕️ **Olá, ${resolvedUserName}!**
 
-Sou a **Nôa Esperanza**, sua mentora especializada. Estou pronta para conversar sobre medicina, tecnologia e desenvolvimento da plataforma.
+Sou a **Nôa Esperanza**, sua mentora especializada. Estou pronta para apoiar ${persona.focus}.
 
 **Como posso ajudá-lo hoje?**`,
         timestamp: new Date()
-      }
-      setChatMessages([welcomeMessage])
+      })
+      replaceChatMessages([welcomeMessage])
     }
   }
 
@@ -1317,7 +1393,7 @@ Sou a **Nôa Esperanza**, sua mentora especializada. Estou pronta para conversar
         timestamp: new Date()
       }
 
-        setChatMessages(prev => [...prev, confirmationMessage])
+        pushChatMessage(confirmationMessage)
         
       } catch (saveError) {
         console.error('❌ Erro ao salvar documento:', saveError)
@@ -1338,7 +1414,7 @@ Tente novamente ou envie o arquivo em um formato diferente.`,
         timestamp: new Date()
       }
 
-      setChatMessages(prev => [...prev, errorMessage])
+      pushChatMessage(errorMessage)
     }
   }
 
@@ -1487,7 +1563,7 @@ Detalhes do erro: ${error instanceof Error ? error.message : String(error)}
 • Verifique o tamanho do arquivo`,
             timestamp: new Date()
           }
-          setChatMessages(prev => [...prev, errorMessage])
+          pushChatMessage(errorMessage)
         }
       }
       setAttachedFiles([])
@@ -1503,7 +1579,7 @@ Detalhes do erro: ${error instanceof Error ? error.message : String(error)}
       timestamp: new Date()
     }
 
-    setChatMessages(prev => [...prev, userMessage])
+    pushChatMessage(userMessage)
     const messageToProcess = currentMessage
     setCurrentMessage('')
     setIsTyping(true)
@@ -1530,7 +1606,7 @@ Detalhes do erro: ${error instanceof Error ? error.message : String(error)}
           data: { user: 'dr_ricardo_valenca' }
         }
 
-        setChatMessages(prev => [...prev, recognizedMessage])
+        pushChatMessage(recognizedMessage)
 
         // Salvar conversa no sistema híbrido em background (não bloquear)
         try {
@@ -1663,7 +1739,7 @@ Detalhes do erro: ${error instanceof Error ? error.message : String(error)}
         data: response.data
       }
 
-      setChatMessages(prev => [...prev, assistantMessage])
+      pushChatMessage(assistantMessage)
 
       // Salvar mensagens na conversa atual
       if (currentConversation) {
@@ -1684,7 +1760,7 @@ Detalhes do erro: ${error instanceof Error ? error.message : String(error)}
           action: 'erro_salvar_conversa',
           data: { error }
         }
-        setChatMessages(prev => [...prev, errorMessage])
+        pushChatMessage(errorMessage)
       }
     } catch (error) {
       console.error('❌ Erro em sendMessage:', error)
@@ -1696,7 +1772,7 @@ Detalhes do erro: ${error instanceof Error ? error.message : String(error)}
         action: 'erro_envio_mensagem',
         data: { error }
       }
-      setChatMessages(prev => [...prev, errorMessage])
+      pushChatMessage(errorMessage)
     } finally {
       setIsTyping(false)
     }
@@ -3013,7 +3089,7 @@ ${estudo.implicacoesClinicas.recomendacoes.map(rec => `• ${rec}`).join('\n')}`
           action: 'estudo_vivo'
         }
         
-        setChatMessages(prev => [...prev, estudoMessage])
+        pushChatMessage(estudoMessage)
       } else {
         const errorMessage: ChatMessage = {
           id: Date.now().toString(),
@@ -3021,7 +3097,7 @@ ${estudo.implicacoesClinicas.recomendacoes.map(rec => `• ${rec}`).join('\n')}`
           content: '⚠️ Não foi possível gerar o estudo vivo. Verifique se há documentos na base de conhecimento.',
           timestamp: new Date()
         }
-        setChatMessages(prev => [...prev, errorMessage])
+        pushChatMessage(errorMessage)
       }
       
       setIsTyping(false)
@@ -3071,7 +3147,7 @@ ${debate.sugestoesMelhoria.map(sugestao => `• ${sugestao}`).join('\n')}
           action: 'debate_cientifico'
         }
         
-        setChatMessages(prev => [...prev, debateMessage])
+        pushChatMessage(debateMessage)
       } else {
         const errorMessage: ChatMessage = {
           id: Date.now().toString(),
@@ -3079,7 +3155,7 @@ ${debate.sugestoesMelhoria.map(sugestao => `• ${sugestao}`).join('\n')}
           content: '⚠️ Não foi possível iniciar o debate científico. Documento não encontrado.',
           timestamp: new Date()
         }
-        setChatMessages(prev => [...prev, errorMessage])
+        pushChatMessage(errorMessage)
       }
       
       setIsTyping(false)
@@ -3156,7 +3232,7 @@ ${analise.recomendacoes.map(rec => `• ${rec}`).join('\n')}
           action: 'analise_qualidade'
         }
         
-        setChatMessages(prev => [...prev, analiseMessage])
+        pushChatMessage(analiseMessage)
       }
       
       setIsTyping(false)
@@ -3195,7 +3271,7 @@ ${conversation.summary}
       action: 'conversation_selected'
     }
     
-    setChatMessages(prev => [...prev, conversationMessage])
+    pushChatMessage(conversationMessage)
     setSidebarOpen(false)
   }
 
@@ -3213,16 +3289,34 @@ ${conversation.summary}
     { value: 'examples', label: 'Exemplos', icon: 'fa-lightbulb', color: 'yellow' }
   ]
 
+  const containerClasses = embedded
+    ? 'relative w-full h-full flex flex-col'
+    : 'fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4'
+
+  const panelClasses = embedded
+    ? 'bg-slate-900/80 rounded-3xl w-full h-full flex flex-col border border-white/10 shadow-2xl backdrop-blur-sm'
+    : 'bg-slate-800 rounded-xl w-full max-w-6xl h-[90vh] flex flex-col'
+
+  const motionInitial = embedded ? false : { opacity: 0, scale: 0.9 }
+  const motionAnimate = { opacity: 1, scale: 1 }
+  const motionExit = embedded ? undefined : { opacity: 0, scale: 0.9 }
+
+  const headerClasses = embedded
+    ? 'flex items-center justify-between p-6 border-b border-white/10 backdrop-blur'
+    : 'flex items-center justify-between p-4 border-b border-gray-600'
+
+  const headerActionsClasses = embedded ? 'hidden' : 'flex items-center gap-3'
+
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
+    <div className={containerClasses}>
       <motion.div
-        initial={{ opacity: 0, scale: 0.9 }}
-        animate={{ opacity: 1, scale: 1 }}
-        exit={{ opacity: 0, scale: 0.9 }}
-        className="bg-slate-800 rounded-xl w-full max-w-6xl h-[90vh] flex flex-col"
+        initial={motionInitial}
+        animate={motionAnimate}
+        exit={motionExit}
+        className={panelClasses}
       >
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-gray-600">
+        <div className={headerClasses}>
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-gradient-to-r from-purple-500 to-blue-500 rounded-lg flex items-center justify-center">
               <i className="fas fa-robot text-white text-lg"></i>
@@ -3232,9 +3326,9 @@ ${conversation.summary}
               <p className="text-sm text-gray-400">Configure e treine sua IA médica personalizada</p>
             </div>
           </div>
-          
+
           {/* Controles do Header */}
-          <div className="flex items-center gap-3">
+          <div className={headerActionsClasses}>
             {/* Nova Conversa */}
             <button
               onClick={() => {
@@ -3253,54 +3347,56 @@ ${conversation.summary}
         <div className="flex-1 flex overflow-hidden">
           {/* Área Principal - Workstation Expandida */}
           <div className="flex-1 flex flex-col">
-            
+
             {/* Tabs */}
-            <div className="flex border-b border-gray-600">
-              <button 
-                onClick={() => setActiveTab('chat')}
-                className={`px-4 py-3 text-sm font-medium transition-colors ${
-                  activeTab === 'chat' 
-                    ? 'text-white border-b-2 border-blue-500' 
-                    : 'text-gray-400 hover:text-white'
-                }`}
-              >
-                <i className="fas fa-comments mr-2"></i>
-                Chat Multimodal
-              </button>
-                <button 
+            {!embedded && (
+              <div className="flex border-b border-gray-600">
+                <button
+                  onClick={() => setActiveTab('chat')}
+                  className={`px-4 py-3 text-sm font-medium transition-colors ${
+                    activeTab === 'chat'
+                      ? 'text-white border-b-2 border-blue-500'
+                      : 'text-gray-400 hover:text-white'
+                  }`}
+                >
+                  <i className="fas fa-comments mr-2"></i>
+                  Chat Multimodal
+                </button>
+                <button
                   onClick={() => setActiveTab('knowledge-base')}
                   className={`px-4 py-3 text-sm font-medium transition-colors ${
-                    activeTab === 'knowledge-base' 
-                      ? 'text-white border-b-2 border-blue-500' 
+                    activeTab === 'knowledge-base'
+                      ? 'text-white border-b-2 border-blue-500'
                       : 'text-gray-400 hover:text-white'
                   }`}
                 >
                   <i className="fas fa-database mr-2"></i>
                   Base de Conhecimento
                 </button>
-              <button 
-                onClick={() => setActiveTab('canvas')}
-                className={`px-4 py-3 text-sm font-medium transition-colors ${
-                  activeTab === 'canvas' 
-                    ? 'text-white border-b-2 border-green-500' 
-                    : 'text-gray-400 hover:text-white'
-                }`}
-              >
-                <i className="fas fa-chalkboard mr-2"></i>
-                Canvas/Lousa
-              </button>
-        <button 
-          onClick={() => setActiveTab('kpis')}
-          className={`px-4 py-3 text-sm font-medium transition-colors ${
-            activeTab === 'kpis' 
-              ? 'text-white border-b-2 border-purple-500' 
-              : 'text-gray-400 hover:text-white'
-          }`}
-        >
-          <i className="fas fa-chart-line mr-2"></i>
-          KPIs & Analytics
-        </button>
-            </div>
+                <button
+                  onClick={() => setActiveTab('canvas')}
+                  className={`px-4 py-3 text-sm font-medium transition-colors ${
+                    activeTab === 'canvas'
+                      ? 'text-white border-b-2 border-green-500'
+                      : 'text-gray-400 hover:text-white'
+                  }`}
+                >
+                  <i className="fas fa-chalkboard mr-2"></i>
+                  Canvas/Lousa
+                </button>
+                <button
+                  onClick={() => setActiveTab('kpis')}
+                  className={`px-4 py-3 text-sm font-medium transition-colors ${
+                    activeTab === 'kpis'
+                      ? 'text-white border-b-2 border-purple-500'
+                      : 'text-gray-400 hover:text-white'
+                  }`}
+                >
+                  <i className="fas fa-chart-line mr-2"></i>
+                  KPIs & Analytics
+                </button>
+              </div>
+            )}
 
             {/* Conteúdo Principal */}
             <div className="flex-1 overflow-hidden">
@@ -3576,7 +3672,7 @@ ${conversation.summary}
                         </h3>
                         <button
                           onClick={() => {
-                            setChatMessages([])
+                            replaceChatMessages([])
                             setCurrentMessage('')
                             // Adicionar mensagem de boas-vindas
                             const welcomeMessage: ChatMessage = {
@@ -3585,7 +3681,7 @@ ${conversation.summary}
                               content: '👋 **Nova conversa iniciada!**\n\nComo posso ajudá-lo?',
                               timestamp: new Date()
                             }
-                            setChatMessages([welcomeMessage])
+                            replaceChatMessages([welcomeMessage])
                           }}
                           className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 rounded-lg text-xs font-medium transition-colors flex items-center gap-1"
                           title="Iniciar nova conversa"

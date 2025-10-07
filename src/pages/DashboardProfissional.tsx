@@ -1,38 +1,48 @@
+import { useEffect } from 'react'
 import { Link } from 'react-router-dom'
+import GPTPBuilder from '../components/GPTPBuilder'
+import { useAuth } from '../contexts/AuthContext'
 import { Specialty } from '../App'
+
+type NotificationType = 'info' | 'success' | 'warning' | 'error'
 
 interface DashboardProfissionalProps {
   currentSpecialty: Specialty
-  addNotification: (message: string, type?: 'info' | 'success' | 'warning' | 'error') => void
+  addNotification: (message: string, type?: NotificationType) => void
 }
 
-const DashboardProfissional = ({ currentSpecialty, addNotification }: DashboardProfissionalProps) => {
+const DashboardProfissional = ({ addNotification }: DashboardProfissionalProps) => {
+  const { user, userProfile } = useAuth()
+  const builderUserId = user?.id || 'noa-profissional-guest'
+  const builderUserName = userProfile?.name || user?.email || 'Profissional Nôa'
+
+  useEffect(() => {
+    addNotification('Workspace profissional conectado à Nôa Esperanza.', 'info')
+  }, [addNotification])
+
   return (
-    <div className="h-full overflow-hidden flex items-center justify-center">
-      <div className="max-w-4xl mx-auto px-6 w-full">
-        <div className="premium-card text-center">
-          <Link to="/" className="inline-block text-yellow-400 hover:text-yellow-300 mb-6">
-            <i className="fas fa-arrow-left text-xl"></i> Voltar
-          </Link>
-          
-          <h1 className="text-3xl font-bold text-premium mb-4">Dashboard Profissional</h1>
-          
-          <div className="text-center py-12">
-            <i className="fas fa-user-tie text-6xl text-green-400 mb-6"></i>
-            <p className="text-xl text-gray-300 mb-4">Dashboard Profissional em Desenvolvimento</p>
-            <p className="text-gray-400">
-              Funcionalidades para gestão de equipe, performance e métricas profissionais 
-              serão implementadas em breve.
-            </p>
-            
-            <button
-              onClick={() => addNotification('Dashboard profissional em desenvolvimento', 'info')}
-              className="premium-button mt-6"
-            >
-              Notificar quando estiver pronto
-            </button>
+    <div className="min-h-full bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-white overflow-hidden">
+      <div className="mx-auto max-w-6xl px-4 py-6">
+        <header className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <div className="flex items-center gap-3">
+            <Link to="/" className="text-cyan-300 hover:text-cyan-200 transition-colors">
+              <i className="fas fa-arrow-left mr-2" />Voltar ao início
+            </Link>
+            <span className="inline-flex items-center gap-2 rounded-xl bg-white/5 px-3 py-1 text-xs uppercase tracking-widest text-cyan-200">
+              <i className="fas fa-user-tie" /> Profissional
+            </span>
           </div>
-        </div>
+          <div className="rounded-2xl border border-white/10 bg-gradient-to-r from-cyan-400 via-blue-500 to-indigo-600 px-4 py-3 shadow-lg">
+            <h1 className="text-lg font-semibold uppercase tracking-widest">Centro Multimodal do Profissional</h1>
+            <p className="text-sm text-white/80">
+              Organize planos terapêuticos, supervisões e protocolos compartilhados em parceria com a Nôa Esperanza.
+            </p>
+          </div>
+        </header>
+
+        <section className="mt-6 rounded-3xl border border-white/10 bg-black/40 shadow-xl backdrop-blur">
+          <GPTPBuilder userId={builderUserId} userName={builderUserName} userType="profissional" />
+        </section>
       </div>
     </div>
   )

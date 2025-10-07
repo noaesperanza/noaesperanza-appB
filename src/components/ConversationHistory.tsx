@@ -4,11 +4,13 @@ import { conversationManager, NamedConversation } from '../services/conversation
 interface ConversationHistoryProps {
   onConversationSelect: (conversation: NamedConversation) => void
   currentConversationId: string | null
+  userId?: string | null
 }
 
 export const ConversationHistory: React.FC<ConversationHistoryProps> = ({
   onConversationSelect,
-  currentConversationId
+  currentConversationId,
+  userId
 }) => {
   const [conversations, setConversations] = useState<NamedConversation[]>([])
   const [editingId, setEditingId] = useState<string | null>(null)
@@ -16,12 +18,13 @@ export const ConversationHistory: React.FC<ConversationHistoryProps> = ({
   const [searchQuery, setSearchQuery] = useState('')
 
   useEffect(() => {
+    conversationManager.setUserContext(userId || null)
     loadConversations()
-    
+
     // Atualizar a cada mudança no conversationManager
     const interval = setInterval(loadConversations, 1000)
     return () => clearInterval(interval)
-  }, [])
+  }, [userId])
 
   const loadConversations = () => {
     const recentConversations = conversationManager.getRecentConversations(20)

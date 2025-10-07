@@ -25,9 +25,27 @@ export interface ChatMessage {
 export class ConversationManagerService {
   private conversations: NamedConversation[] = []
   private currentConversationId: string | null = null
-  private readonly STORAGE_KEY = 'noa_named_conversations'
+  private readonly baseStorageKey = 'noa_named_conversations'
+  private storageKey = `${this.baseStorageKey}_default`
+  private currentUserId: string | null = null
 
   constructor() {
+    this.loadConversations()
+  }
+
+  /**
+   * Define o contexto de usuário atual para isolar conversas por usuário
+   */
+  setUserContext(userId: string | null) {
+    const normalizedId = userId?.trim() || 'guest'
+
+    if (this.currentUserId === normalizedId) {
+      return
+    }
+
+    this.currentUserId = normalizedId
+    this.storageKey = `${this.baseStorageKey}_${normalizedId}`
+
     this.loadConversations()
   }
 
@@ -213,7 +231,7 @@ export class ConversationManagerService {
    */
   private saveConversations(): void {
     try {
-      localStorage.setItem(this.STORAGE_KEY, JSON.stringify({
+      localStorage.setItem(this.storageKey, JSON.stringify({
         conversations: this.conversations,
         currentConversationId: this.currentConversationId
       }))
@@ -227,7 +245,7 @@ export class ConversationManagerService {
    */
   private loadConversations(): void {
     try {
-      const saved = localStorage.getItem(this.STORAGE_KEY)
+      const saved = localStorage.getItem(this.storageKey)
       if (saved) {
         const data = JSON.parse(saved)
         this.conversations = (data.conversations || []).map((conv: any) => ({
@@ -236,11 +254,14 @@ export class ConversationManagerService {
           updatedAt: new Date(conv.updatedAt)
         }))
         this.currentConversationId = data.currentConversationId || null
-        
+
         // Se não há conversa ativa mas existem conversas, ativar a primeira
         if (!this.currentConversationId && this.conversations.length > 0) {
           this.currentConversationId = this.conversations[0].id
         }
+      } else {
+        this.conversations = []
+        this.currentConversationId = null
       }
     } catch (error) {
       console.error('Erro ao carregar conversas:', error)

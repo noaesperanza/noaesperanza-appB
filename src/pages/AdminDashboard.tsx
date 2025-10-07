@@ -1,9 +1,9 @@
-import { useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import GPTPBuilder from '../components/GPTPBuilder'
-import { useState, useEffect } from 'react'
 import { supabase } from '../integrations/supabase/client'
 import { clinicalAssessmentService } from '../services/clinicalAssessmentService'
+import { useAuth } from '../contexts/AuthContext'
 
 interface AdminDashboardProps {
   addNotification: (message: string, type?: 'info' | 'success' | 'warning' | 'error') => void
@@ -11,6 +11,12 @@ interface AdminDashboardProps {
 
 const AdminDashboard = ({ addNotification }: AdminDashboardProps) => {
   const [totalAssessments, setTotalAssessments] = useState<number>(0)
+  const { user, userProfile } = useAuth()
+  const builderUserId = user?.id || 'dr-ricardo-valenca'
+  const builderUserName = userProfile?.name || user?.email || 'Dr. Ricardo Valença'
+  const builderUserType = useMemo(() => (
+    (userProfile?.user_type as 'paciente' | 'aluno' | 'profissional' | 'admin' | 'medico' | undefined) || 'admin'
+  ), [userProfile?.user_type])
 
   const loadAssessmentsKPI = async () => {
     try {
@@ -149,8 +155,12 @@ const AdminDashboard = ({ addNotification }: AdminDashboardProps) => {
 
       {/* GPT Builder Full Screen */}
       <div className="h-full">
-        <GPTPBuilder />
-        </div>
+        <GPTPBuilder
+          userId={builderUserId}
+          userName={builderUserName}
+          userType={builderUserType}
+        />
+      </div>
     </div>
   )
 }

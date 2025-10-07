@@ -8,12 +8,17 @@ import { Link } from "react-router-dom";
 import { Button } from "../components/ui/button";
 import { useIsClient } from '../hooks/useIsClient';
 import { GraduationCap, BookOpen, Users, Award, Play, Clock, Star, X, CheckCircle } from "lucide-react";
+import GPTPBuilder from "../components/GPTPBuilder";
+import { useAuth } from "../contexts/AuthContext";
 
 const Ensino = () => {
   const isClient = useIsClient();
   const { toast } = useToast();
   const [selectedCourse, setSelectedCourse] = useState<any>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const { user, userProfile } = useAuth();
+  const builderUserId = user?.id || 'noa-aluno-guest';
+  const builderUserName = userProfile?.name || user?.email || 'Aluno Nôa';
 
   useEffect(() => {
     if (isClient) {
@@ -212,6 +217,12 @@ const Ensino = () => {
       <div className="min-h-screen premium-background">
         <Header currentSpecialty="rim" setCurrentSpecialty={() => {}} />
         <main>
+          <section className="px-4">
+            <div className="rounded-3xl border border-white/10 bg-black/40 shadow-xl backdrop-blur">
+              <GPTPBuilder userId={builderUserId} userName={builderUserName} userType="aluno" />
+            </div>
+          </section>
+
           <div className="flex gap-4 py-3 px-4">
       {/* Sidebar com Cursos */}
       <div className="w-72 flex-shrink-0">

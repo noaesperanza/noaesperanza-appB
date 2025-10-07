@@ -2374,34 +2374,37 @@ CONTEXTO ATUAL: ${modoAvaliacao ? 'Usuário está em avaliação clínica triaxi
                       }
                     }}
                     className={`px-2 py-1.5 rounded-md transition-colors text-xs ${
-                      isVoiceListening 
-                        ? 'bg-red-500 hover:bg-red-600 text-white' 
+                      isVoiceListening
+                        ? 'bg-red-500 hover:bg-red-600 text-white'
                         : 'bg-green-500 hover:bg-green-600 text-white'
                     }`}
                     title={isVoiceListening ? 'Parar gravação' : 'Falar com a NOA'}
                     aria-label={isVoiceListening ? 'Parar gravação de voz' : 'Iniciar gravação de voz'}
+                    data-testid="voice-button"
                   >
                     <i className={`fas ${isVoiceListening ? 'fa-stop' : 'fa-microphone'}`}></i>
                   </button>
-                  
+
                   {/* Input no meio */}
-                  <input 
-                    type="text" 
+                  <input
+                    type="text"
                     value={inputMessage}
                     onChange={(e) => setInputMessage(e.target.value)}
                     onKeyDown={handleKeyDown}
                     placeholder="Digite sua mensagem..."
                     className="flex-1 px-3 py-2 text-sm focus:outline-none text-black placeholder-gray-600"
                     aria-label="Campo de mensagem para conversar com NOA"
+                    data-testid="chat-input"
                   />
-                  
+
                   {/* Botão Enviar - Direita */}
-                  <button 
+                  <button
                     onClick={() => handleSendMessage()}
                     disabled={!inputMessage.trim()}
                     className="bg-blue-500 hover:bg-blue-600 disabled:bg-gray-400 disabled:cursor-not-allowed text-white px-2 py-1.5 rounded-md transition-colors text-xs"
                     aria-label="Enviar mensagem para NOA"
                     title="Enviar mensagem"
+                    data-testid="send-button"
                   >
                     <i className="fas fa-paper-plane"></i>
                   </button>

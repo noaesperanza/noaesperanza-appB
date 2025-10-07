@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import Header from '../components/Header'
 import Footer from '../components/Footer'
+import GPTPBuilder from '../components/GPTPBuilder'
 import { Specialty } from '../App'
 import { useAuth } from '../contexts/AuthContext'
 
@@ -12,7 +13,9 @@ const LandingPage = () => {
   const [showAuthModal, setShowAuthModal] = useState(false)
   const [authMode, setAuthMode] = useState<'login' | 'register'>('login')
   
-  const { signIn, signUp, user, loading } = useAuth()
+  const { signIn, signUp, user, userProfile, loading } = useAuth()
+  const builderUserType = (userProfile?.user_type as 'paciente' | 'aluno' | 'profissional' | 'admin' | 'medico' | undefined) || 'paciente'
+  const builderUserName = userProfile?.name || user?.email || null
   const navigate = useNavigate()
   
   useEffect(() => {
@@ -136,22 +139,24 @@ const LandingPage = () => {
         <div className="absolute inset-0" style={{
           background: 'linear-gradient(135deg, #000000 0%, #011d15 25%, #022f43 50%, #022f43 70%, #450a0a 85%, #78350f 100%)'
         }}></div>
-        <div className="relative z-10 max-w-6xl mx-auto text-center mt-16">
-          <div className={`transition-all duration-1000 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
+        <div className="relative z-10 max-w-6xl mx-auto mt-16 w-full">
+          <div
+            className={`transition-all duration-1000 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'} text-center`}
+          >
             {/* Logo NOA */}
             <div className="mb-8">
               <div className="w-[147px] h-[147px] mx-auto mb-6 relative">
                 <div className="absolute inset-0 bg-gradient-to-r from-blue-500 via-green-500 to-yellow-500 rounded-full animate-pulse"></div>
-                <img 
-                  src="/logo-noa-triangulo.gif" 
-                  alt="MedCanLab" 
+                <img
+                  src="/logo-noa-triangulo.gif"
+                  alt="MedCanLab"
                   className="relative w-full h-full object-cover rounded-full border-4 border-white/20"
                 />
               </div>
-              <h1 className="text-6xl md:text-8xl font-bold bg-gradient-to-r from-blue-400 via-green-400 to-yellow-400 bg-clip-text text-transparent mb-4">
+              <h1 className="text-5xl md:text-7xl lg:text-8xl font-bold bg-gradient-to-r from-blue-400 via-green-400 to-yellow-400 bg-clip-text text-transparent mb-4">
                 MEDCANLAB
               </h1>
-              <p className="text-xl md:text-2xl text-gray-300 mb-8 max-w-3xl mx-auto">
+              <p className="text-lg md:text-2xl text-gray-300 mb-8 max-w-3xl mx-auto">
                 MedCanLab @ Power By Nôa Esperanza<br />
                 A revolução da medicina digital com inteligência artificial especializada
               </p>
@@ -159,7 +164,7 @@ const LandingPage = () => {
 
             {/* CTA Buttons */}
             <div className="flex flex-col sm:flex-row gap-3 justify-center mb-16">
-              <button 
+              <button
                 onClick={() => {
                   setAuthMode('register')
                   setShowAuthModal(true)
@@ -168,7 +173,7 @@ const LandingPage = () => {
               >
                 Começar Agora
               </button>
-              <button 
+              <button
                 onClick={() => {
                   setAuthMode('login')
                   setShowAuthModal(true)
@@ -177,6 +182,17 @@ const LandingPage = () => {
               >
                 Já tenho conta
               </button>
+            </div>
+          </div>
+
+          <div className="relative w-full mt-4">
+            <div className="relative w-full max-w-5xl mx-auto h-[640px] md:h-[720px] rounded-3xl border border-white/20 bg-black/40 shadow-2xl overflow-hidden backdrop-blur">
+              <GPTPBuilder
+                embedded
+                userId={user?.id || null}
+                userName={builderUserName}
+                userType={builderUserType}
+              />
             </div>
           </div>
         </div>
