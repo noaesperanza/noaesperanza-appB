@@ -263,8 +263,23 @@ class OpenAIService {
     try {
       console.log('🎯 Usando modelo padrão com base de conhecimento própria')
       
+      // Verificar se há usuário reconhecido no localStorage
+      let recognizedUser = null
+      try {
+        const stored = localStorage.getItem('noa_recognized_user')
+        if (stored) {
+          recognizedUser = JSON.parse(stored)
+        }
+      } catch (e) {
+        console.warn('Erro ao carregar usuário reconhecido:', e)
+      }
+      
       // Construir prompt com sistema completo da Nôa Esperanza V2.0
-      let systemPrompt = getNoaSystemPrompt({
+      let systemPrompt = getNoaSystemPrompt(recognizedUser ? {
+        name: recognizedUser.name,
+        role: recognizedUser.role,
+        recognizedAs: recognizedUser.name
+      } : {
         name: 'Usuário',
         role: 'user'
       })
@@ -293,8 +308,23 @@ class OpenAIService {
 
   // Método fallback tradicional
   private async getNoaResponseFallback(userMessage: string, conversationHistory: ChatMessage[] = []): Promise<string> {
+    // Verificar se há usuário reconhecido no localStorage
+    let recognizedUser = null
+    try {
+      const stored = localStorage.getItem('noa_recognized_user')
+      if (stored) {
+        recognizedUser = JSON.parse(stored)
+      }
+    } catch (e) {
+      console.warn('Erro ao carregar usuário reconhecido:', e)
+    }
+    
     // Usar prompt do sistema V2.0
-    const systemPrompt = getNoaSystemPrompt({
+    const systemPrompt = getNoaSystemPrompt(recognizedUser ? {
+      name: recognizedUser.name,
+      role: recognizedUser.role,
+      recognizedAs: recognizedUser.name
+    } : {
       name: 'Usuário',
       role: 'user'
     })

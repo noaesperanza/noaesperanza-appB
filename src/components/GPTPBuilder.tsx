@@ -1641,15 +1641,90 @@ Detalhes do erro: ${error instanceof Error ? error.message : String(error)}
       // 🚀 DESABILITAR DETECÇÃO DE CONVERSA SIMPLES - CAUSA TRAVAMENTOS
       const isSimpleConversation = false // SEMPRE FALSE - evita travamentos
 
-      // ⚡ Reconhecimento imediato do Dr. Ricardo pela frase-código
-      if (lowerMessage.includes('olá, nôa. ricardo valença, aqui')) {
+      // ⚡ Reconhecimento imediato do Dr. Ricardo pela frase-código (com variações de escrita)
+      const ricardoPatterns = [
+        /olá,?\s*n[oôõ]a[.,]?\s*ricardo\s*val[eéè]n[çc]a,?\s*aqui/i,
+        /oi\s*n[oôõ]a[.,]?\s*ricardo\s*aqui/i,
+        /ricardo\s*val[eéè]n[çc]a[.,]?\s*aqui/i,
+        /dr\.?\s*ricardo\s*val[eéè]n[çc]a/i
+      ]
+      
+      const isRicardoRecognized = ricardoPatterns.some(pattern => pattern.test(messageToProcess))
+      
+      if (isRicardoRecognized) {
+        // Salvar contexto de reconhecimento
+        localStorage.setItem('noa_recognized_user', JSON.stringify({
+          name: 'Dr. Ricardo Valença',
+          role: 'admin',
+          accessLevel: 5,
+          recognizedAt: new Date().toISOString()
+        }))
+        
         const recognizedMessage: ChatMessage = {
           id: (Date.now() + 1).toString(),
           role: 'assistant',
-          content: `👨‍⚕️ **Dr. Ricardo Valença reconhecido pela frase código!**\n\nOlá, Dr. Ricardo! Sou a Nôa Esperanza, sua mentora especializada. Estou pronta para conversar sobre medicina, tecnologia e desenvolvimento da nossa plataforma.\n\nComo posso ajudá-lo hoje?`,
+          content: `👨‍⚕️ **Dr. Ricardo Valença reconhecido pela frase código!**
+
+Olá, Dr. Ricardo! Sou a Nôa Esperanza, sua mentora especializada.
+Todas as ferramentas avançadas estão disponíveis:
+🔧 Ferramentas Médicas
+🧠 Reasoning Layer
+🎯 Harmony Format
+💻 Desenvolvimento Colaborativo
+
+Como posso ajudá-lo hoje?`,
           timestamp: new Date(),
           action: 'user_recognized',
-          data: { user: 'dr_ricardo_valenca' },
+          data: { user: 'dr_ricardo_valenca', recognizedAs: 'Dr. Ricardo Valença' },
+        }
+
+        pushChatMessage(recognizedMessage)
+
+        // Salvar conversa no sistema híbrido em background (não bloquear)
+        try {
+          await saveConversationHybrid(
+            messageToProcess,
+            recognizedMessage.content,
+            'user_recognized'
+          )
+        } catch (_) {}
+
+        setIsTyping(false)
+        return
+      }
+      
+      // ⚡ Reconhecimento do Dr. Eduardo Faveret
+      const eduardoPatterns = [
+        /olá,?\s*n[oôõ]a[.,]?\s*eduardo\s*faveret,?\s*aqui/i,
+        /oi\s*n[oôõ]a[.,]?\s*eduardo\s*faveret/i,
+        /eduardo\s*faveret[.,]?\s*aqui/i,
+        /eduardo\s*de\s*sá\s*campello\s*faveret/i,
+        /dr\.?\s*eduardo\s*faveret/i
+      ]
+      
+      const isEduardoRecognized = eduardoPatterns.some(pattern => pattern.test(messageToProcess))
+      
+      if (isEduardoRecognized) {
+        // Salvar contexto de reconhecimento
+        localStorage.setItem('noa_recognized_user', JSON.stringify({
+          name: 'Dr. Eduardo Faveret',
+          role: 'admin',
+          accessLevel: 5,
+          recognizedAt: new Date().toISOString()
+        }))
+        
+        const recognizedMessage: ChatMessage = {
+          id: (Date.now() + 1).toString(),
+          role: 'assistant',
+          content: `👨‍⚕️ **Dr. Eduardo Faveret reconhecido!**
+
+Bem-vindo, Dr. Eduardo! Acesso administrativo concedido.
+Todas as funcionalidades do GPT Builder estão disponíveis.
+
+Como posso auxiliá-lo?`,
+          timestamp: new Date(),
+          action: 'user_recognized',
+          data: { user: 'dr_eduardo_faveret', recognizedAs: 'Dr. Eduardo Faveret' },
         }
 
         pushChatMessage(recognizedMessage)
