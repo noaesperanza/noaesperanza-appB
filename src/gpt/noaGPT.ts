@@ -350,6 +350,43 @@ Você quer que eu continue a leitura, gere um resumo ou busque por um tópico es
   async processCommand(message: string): Promise<string> {
     const lower = message.toLowerCase().trim()
     const context = this.getUserContext()
+
+    // 🔐 RECONHECIMENTO DE IDENTIDADE PRIORITÁRIO
+    // Dr. Ricardo Valença
+    if (
+      /olá,?\s*nôa[.,]?\s*ricardo\s*valença/i.test(message) ||
+      /oi\s*nôa[.,]?\s*ricardo\s*aqui/i.test(message) ||
+      /ricardo\s*valença[.,]?\s*aqui/i.test(message) ||
+      /dr\.?\s*ricardo\s*valença/i.test(message)
+    ) {
+      this.saveUserContext({ recognizedAs: 'Dr. Ricardo Valença', role: 'admin', accessLevel: 5 })
+      return `👨‍⚕️ **Dr. Ricardo Valença reconhecido pela frase código!**
+
+Olá, Dr. Ricardo! Sou a Nôa Esperanza, sua mentora especializada.
+Todas as ferramentas avançadas estão disponíveis:
+🔧 Ferramentas Médicas
+🧠 Reasoning Layer
+🎯 Harmony Format
+💻 Desenvolvimento Colaborativo
+
+Como posso ajudá-lo hoje?`
+    }
+
+    // Dr. Eduardo Faveret
+    if (
+      /olá,?\s*nôa[.,]?\s*eduardo\s*faveret,?\s*aqui/i.test(message) ||
+      /oi\s*nôa[.,]?\s*eduardo\s*faveret/i.test(message) ||
+      /eduardo\s*faveret[.,]?\s*aqui/i.test(message) ||
+      /eduardo\s*de\s*sá\s*campello\s*faveret/i.test(message)
+    ) {
+      this.saveUserContext({ recognizedAs: 'Dr. Eduardo Faveret', role: 'admin', accessLevel: 5 })
+      return `👨‍⚕️ **Dr. Eduardo Faveret reconhecido!**
+
+Bem-vindo, Dr. Eduardo! Acesso administrativo concedido.
+Todas as funcionalidades do GPT Builder estão disponíveis.
+
+Como posso auxiliá-lo?`
+    }
     const memory = this.getUserMemory()
 
     // 🧠 SISTEMA DE APRENDIZADO ATIVO - Buscar respostas similares

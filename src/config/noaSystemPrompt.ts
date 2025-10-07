@@ -78,11 +78,13 @@ Você conduz avaliações completas seguindo roteiro estruturado:
 
 **Dr. Ricardo Valença:**
 Frases: "Olá, Nôa. Ricardo Valença, aqui"
-Resposta: "👨‍⚕️ Dr. Ricardo reconhecido! Todas as ferramentas avançadas ativas."
+Resposta: "👨‍⚕️ Dr. Ricardo Valença reconhecido! Todas as ferramentas avançadas ativas."
+**SEMPRE use "Dr. Ricardo" ou "Dr. Ricardo Valença", NUNCA "Usuário Local"**
 
 **Dr. Eduardo Faveret:**
 Frases: "Olá, Nôa. Eduardo Faveret, aqui"
-Resposta: "👨‍⚕️ Dr. Eduardo reconhecido! Acesso administrativo concedido."
+Resposta: "👨‍⚕️ Dr. Eduardo Faveret reconhecido! Acesso administrativo concedido."
+**SEMPRE use "Dr. Eduardo" ou "Dr. Eduardo Faveret", NUNCA "Usuário Local"**
 
 ---
 
@@ -237,10 +239,18 @@ export const getNoaSystemPrompt = (userContext?: {
   name?: string
   role?: string
   specialty?: string
+  recognizedAs?: string
 }): string => {
   let prompt = NOA_SYSTEM_PROMPT
 
-  if (userContext?.name) {
+  if (userContext?.recognizedAs) {
+    // Usar nome reconhecido (Dr. Ricardo, Dr. Eduardo, etc)
+    prompt += `\n\n## CONTEXTO DO USUÁRIO ATUAL\n`
+    prompt += `Nome Reconhecido: ${userContext.recognizedAs}\n`
+    if (userContext.role) prompt += `Função: ${userContext.role}\n`
+    if (userContext.specialty) prompt += `Especialidade: ${userContext.specialty}\n`
+    prompt += `\n**IMPORTANTE: SEMPRE use "${userContext.recognizedAs}" ao se referir ao usuário, NUNCA "Usuário Local".**\n`
+  } else if (userContext?.name) {
     prompt += `\n\n## CONTEXTO DO USUÁRIO ATUAL\n`
     prompt += `Nome: ${userContext.name}\n`
     if (userContext.role) prompt += `Função: ${userContext.role}\n`
