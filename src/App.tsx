@@ -136,18 +136,8 @@
                   {/* Container Principal */}
                   <div className="pt-16 pb-20 h-full overflow-hidden">
                     <Routes>
-                      {/* Página inicial do app - Home com vídeo e chat */}
-                      <Route path="/" element={
-                        <div className="h-full overflow-hidden">
-                          {/* Chat Central - Tela Cheia */}
-                          <Home 
-                            currentSpecialty={currentSpecialty}
-                            isVoiceListening={isVoiceListening}
-                            setIsVoiceListening={setIsVoiceListening}
-                            addNotification={addNotification}
-                          />
-                        </div>
-                      } />
+                      {/* Página inicial do app - REDIRECT para /chat */}
+                      <Route path="/" element={<Navigate to="/chat" replace />} />
 
                       {/* Páginas específicas */}
                       

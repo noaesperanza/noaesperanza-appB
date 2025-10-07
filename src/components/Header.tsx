@@ -55,7 +55,7 @@ const Header = ({ currentSpecialty, setCurrentSpecialty }: HeaderProps) => {
             </div>
           </div>
         ) : (
-          <Link to="/app/" className="flex items-center gap-3">
+          <Link to="/chat" className="flex items-center gap-3">
             <div className="w-10 h-10 bg-gradient-to-r from-blue-500 via-green-500 to-yellow-500 rounded-lg flex items-center justify-center overflow-hidden">
               <img 
                 src="/logo-noa-triangulo.gif" 
