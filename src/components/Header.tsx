@@ -76,6 +76,10 @@ const Header = ({ currentSpecialty, setCurrentSpecialty }: HeaderProps) => {
         {/* Menu de Tipos de Usuário - não mostrar na landing page */}
         {location.pathname !== '/landing' && (
           <nav className="hidden lg:flex gap-1">
+            <Link to="/chat" className="nav-item text-xs px-3 py-2 bg-gradient-to-r from-emerald-600 to-emerald-700">
+              <i className="fas fa-comments text-xs"></i>
+              <span className="text-xs">Chat Nôa</span>
+            </Link>
             <Link to="/app/paciente" className="nav-item text-xs px-3 py-2">
               <i className="fas fa-user text-xs"></i>
               <span className="text-xs">Paciente</span>
@@ -139,6 +143,10 @@ const Header = ({ currentSpecialty, setCurrentSpecialty }: HeaderProps) => {
       {location.pathname !== '/landing' && mobileOpen && (
         <div className="lg:hidden bg-gradient-to-r from-gray-900/95 via-purple-900/95 to-amber-600/95 border-t border-white/10">
           <div className="px-4 py-3 flex flex-wrap gap-2">
+            <Link to="/chat" className="nav-item text-xs px-3 py-2 bg-gradient-to-r from-emerald-600 to-emerald-700" onClick={() => setMobileOpen(false)}>
+              <i className="fas fa-comments text-xs"></i>
+              <span className="text-xs ml-1">Chat Nôa</span>
+            </Link>
             <Link to="/app/paciente" className="nav-item text-xs px-3 py-2" onClick={() => setMobileOpen(false)}>
               <i className="fas fa-user text-xs"></i>
               <span className="text-xs ml-1">Paciente</span>

@@ -8,6 +8,7 @@
   import HomeFooter from './components/HomeFooter'
   import PremiumBackground from './components/PremiumBackground'
   import Home from './pages/Home'
+  import HomeNew from './pages/HomeNew'
   import DashboardMedico from './pages/DashboardMedico'
   import DashboardPaciente from './pages/DashboardPaciente'
   import DashboardProfissional from './pages/DashboardProfissional'
@@ -113,6 +114,13 @@
             <Route path="/register" element={<RegisterPage />} />
             <Route path="/landing" element={<LandingPage />} />
             
+            {/* Home New - Layout completo estilo ChatGPT - PROTEGIDA */}
+            <Route path="/chat" element={
+              <ProtectedRoute>
+                <HomeNew />
+              </ProtectedRoute>
+            } />
+            
             {/* Rotas do app - COM header/footer - PROTEGIDAS */}
             <Route path="/app/*" element={
               <ProtectedRoute>
@@ -128,7 +136,7 @@
                   {/* Container Principal */}
                   <div className="pt-16 pb-20 h-full overflow-hidden">
                     <Routes>
-                      {/* Página inicial do app - Chat limpo sem Sidebar */}
+                      {/* Página inicial do app - Home com vídeo e chat */}
                       <Route path="/" element={
                         <div className="h-full overflow-hidden">
                           {/* Chat Central - Tela Cheia */}
