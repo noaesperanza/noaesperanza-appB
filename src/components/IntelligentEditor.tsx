@@ -24,27 +24,27 @@ const IntelligentEditor: React.FC<IntelligentEditorProps> = ({
   initialContent = '',
   onContentChange,
   documentType = 'geral',
-  onSave
+  onSave,
 }) => {
   const [content, setContent] = useState(initialContent)
   const [suggestions, setSuggestions] = useState<Suggestion[]>([])
   const [isGenerating, setIsGenerating] = useState(false)
   const [showSuggestions, setShowSuggestions] = useState(false)
   const [cursorPosition, setCursorPosition] = useState(0)
-  
+
   const textareaRef = useRef<HTMLTextAreaElement>(null)
-  const suggestionTimeoutRef = useRef<NodeJS.Timeout>()
+  const suggestionTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
   // 📝 ATUALIZAR CONTEÚDO
   const handleContentChange = (newContent: string) => {
     setContent(newContent)
     onContentChange(newContent)
-    
+
     // Debounce para gerar sugestões
     if (suggestionTimeoutRef.current) {
       clearTimeout(suggestionTimeoutRef.current)
     }
-    
+
     suggestionTimeoutRef.current = setTimeout(() => {
       if (newContent.length > 50) {
         generateSuggestions(newContent)
@@ -55,11 +55,11 @@ const IntelligentEditor: React.FC<IntelligentEditorProps> = ({
   // 💡 GERAR SUGESTÕES DA NÔA ESPERANZA
   const generateSuggestions = async (text: string) => {
     setIsGenerating(true)
-    
+
     try {
       const activeContext = await activeContextService.getActiveContext()
       const contextPrompt = await activeContextService.generateContextPrompt()
-      
+
       const suggestionsPrompt = `
 Você é Nôa Esperanza, mentora especializada em medicina e desenvolvimento tecnológico.
 
@@ -87,12 +87,11 @@ CONTINUAÇÃO: [sugestão de continuação]
 `
 
       const response = await openAIService.getNoaResponse(suggestionsPrompt, [])
-      
+
       // Processar resposta e extrair sugestões
       const newSuggestions = parseSuggestions(response)
       setSuggestions(newSuggestions)
       setShowSuggestions(true)
-      
     } catch (error) {
       console.error('Erro ao gerar sugestões:', error)
     } finally {
@@ -103,46 +102,46 @@ CONTINUAÇÃO: [sugestão de continuação]
   // 🔍 PROCESSAR SUGESTÕES DA RESPOSTA
   const parseSuggestions = (response: string): Suggestion[] => {
     const suggestions: Suggestion[] = []
-    
+
     // Extrair sugestões baseado nos marcadores
     const complementMatch = response.match(/COMPLEMENTO:\s*(.+?)(?=MELHORIA:|$)/s)
     const improvementMatch = response.match(/MELHORIA:\s*(.+?)(?=CONTINUAÇÃO:|$)/s)
     const continuationMatch = response.match(/CONTINUAÇÃO:\s*(.+?)$/s)
-    
+
     if (complementMatch) {
       suggestions.push({
         id: 'complement_' + Date.now(),
         type: 'complement',
         text: complementMatch[1].trim(),
-        confidence: 0.8
+        confidence: 0.8,
       })
     }
-    
+
     if (improvementMatch) {
       suggestions.push({
         id: 'improvement_' + Date.now(),
         type: 'improvement',
         text: improvementMatch[1].trim(),
-        confidence: 0.9
+        confidence: 0.9,
       })
     }
-    
+
     if (continuationMatch) {
       suggestions.push({
         id: 'continuation_' + Date.now(),
         type: 'continuation',
         text: continuationMatch[1].trim(),
-        confidence: 0.7
+        confidence: 0.7,
       })
     }
-    
+
     return suggestions
   }
 
   // ✅ APLICAR SUGESTÃO
   const applySuggestion = (suggestion: Suggestion) => {
     let newContent = content
-    
+
     switch (suggestion.type) {
       case 'complement':
         newContent += '\n\n' + suggestion.text
@@ -157,7 +156,7 @@ CONTINUAÇÃO: [sugestão de continuação]
         newContent += '\n\n' + suggestion.text
         break
     }
-    
+
     setContent(newContent)
     onContentChange(newContent)
     setShowSuggestions(false)
@@ -185,7 +184,7 @@ CONTINUAÇÃO: [sugestão de continuação]
         <h3 className="text-lg font-semibold text-blue-400">
           💡 Editor Inteligente da Nôa Esperanza
         </h3>
-        
+
         <div className="flex gap-2">
           <button
             onClick={() => generateSuggestions(content)}
@@ -195,7 +194,7 @@ CONTINUAÇÃO: [sugestão de continuação]
             <i className="fas fa-lightbulb"></i>
             {isGenerating ? 'Gerando...' : 'Sugerir com Nôa'}
           </button>
-          
+
           <button
             onClick={handleSave}
             className="bg-green-600 hover:bg-green-700 text-white px-3 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
@@ -212,7 +211,7 @@ CONTINUAÇÃO: [sugestão de continuação]
           <textarea
             ref={textareaRef}
             value={content}
-            onChange={(e) => handleContentChange(e.target.value)}
+            onChange={e => handleContentChange(e.target.value)}
             onSelect={handleCursorMove}
             onKeyUp={handleCursorMove}
             placeholder="Comece a escrever... A Nôa Esperanza irá sugerir melhorias, complementos e continuações baseadas no contexto ativo da sessão."
@@ -231,9 +230,7 @@ CONTINUAÇÃO: [sugestão de continuação]
               className="w-96 bg-gray-800 border-l border-gray-700 p-4 overflow-y-auto"
             >
               <div className="flex justify-between items-center mb-4">
-                <h4 className="text-lg font-semibold text-purple-400">
-                  💡 Sugestões da Nôa
-                </h4>
+                <h4 className="text-lg font-semibold text-purple-400">💡 Sugestões da Nôa</h4>
                 <button
                   onClick={() => setShowSuggestions(false)}
                   className="text-gray-400 hover:text-white"
@@ -243,7 +240,7 @@ CONTINUAÇÃO: [sugestão de continuação]
               </div>
 
               <div className="space-y-4">
-                {suggestions.map((suggestion) => (
+                {suggestions.map(suggestion => (
                   <motion.div
                     key={suggestion.id}
                     initial={{ opacity: 0, y: 20 }}
@@ -260,11 +257,9 @@ CONTINUAÇÃO: [sugestão de continuação]
                         {Math.round(suggestion.confidence * 100)}% confiança
                       </span>
                     </div>
-                    
-                    <p className="text-sm text-gray-200 mb-3 leading-relaxed">
-                      {suggestion.text}
-                    </p>
-                    
+
+                    <p className="text-sm text-gray-200 mb-3 leading-relaxed">{suggestion.text}</p>
+
                     <button
                       onClick={() => applySuggestion(suggestion)}
                       className="w-full bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded text-sm font-medium transition-colors"
@@ -291,13 +286,11 @@ CONTINUAÇÃO: [sugestão de continuação]
             </span>
           )}
         </div>
-        
+
         <div className="flex items-center gap-2">
           <span>Tipo: {documentType}</span>
           {suggestions.length > 0 && (
-            <span className="text-purple-400">
-              {suggestions.length} sugestões disponíveis
-            </span>
+            <span className="text-purple-400">{suggestions.length} sugestões disponíveis</span>
           )}
         </div>
       </div>

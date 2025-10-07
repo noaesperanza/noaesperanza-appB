@@ -1,22 +1,42 @@
-import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
-import { Badge } from './ui/badge';
-import { Progress } from './ui/progress';
-// import { Alert, AlertDescription } from './ui/alert';
-import { CheckCircle, XCircle, AlertTriangle, Info } from 'lucide-react';
+import React, { useState, useEffect } from 'react'
+import { Card, CardContent, CardHeader, CardTitle } from './ui/card'
+import { Badge } from './ui/badge'
+import { Progress } from './ui/progress'
+import { CheckCircle, XCircle, AlertTriangle, Info } from 'lucide-react'
+
+const AlertBox: React.FC<{
+  variant?: 'default' | 'destructive'
+  icon: React.ReactNode
+  message: string
+}> = ({ variant = 'default', icon, message }) => {
+  const variantClasses =
+    variant === 'destructive'
+      ? 'border-red-200 bg-red-50 text-red-800'
+      : 'border-amber-200 bg-amber-50 text-amber-800'
+
+  return (
+    <div
+      className={`flex items-start gap-2 rounded-md border p-3 text-sm ${variantClasses}`}
+      role="alert"
+    >
+      <span className="mt-0.5">{icon}</span>
+      <p className="leading-snug">{message}</p>
+    </div>
+  )
+}
 
 interface QualityMetrics {
-  codeCoverage: number;
-  testPassRate: number;
-  lintErrors: number;
-  securityIssues: number;
-  performanceScore: number;
-  accessibilityScore: number;
-  lastUpdated: string;
+  codeCoverage: number
+  testPassRate: number
+  lintErrors: number
+  securityIssues: number
+  performanceScore: number
+  accessibilityScore: number
+  lastUpdated: string
 }
 
 interface QualityDashboardProps {
-  className?: string;
+  className?: string
 }
 
 export const QualityDashboard: React.FC<QualityDashboardProps> = ({ className }) => {
@@ -28,9 +48,9 @@ export const QualityDashboard: React.FC<QualityDashboardProps> = ({ className })
     performanceScore: 0,
     accessibilityScore: 0,
     lastUpdated: new Date().toISOString(),
-  });
+  })
 
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
     // Simulate fetching quality metrics
@@ -45,35 +65,35 @@ export const QualityDashboard: React.FC<QualityDashboardProps> = ({ className })
           performanceScore: 88,
           accessibilityScore: 95,
           lastUpdated: new Date().toISOString(),
-        };
-        
-        setMetrics(mockMetrics);
-      } catch (error) {
-        console.error('Error fetching quality metrics:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
+        }
 
-    fetchMetrics();
-    
+        setMetrics(mockMetrics)
+      } catch (error) {
+        console.error('Error fetching quality metrics:', error)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    fetchMetrics()
+
     // Refresh metrics every 5 minutes
-    const interval = setInterval(fetchMetrics, 5 * 60 * 1000);
-    
-    return () => clearInterval(interval);
-  }, []);
+    const interval = setInterval(fetchMetrics, 5 * 60 * 1000)
+
+    return () => clearInterval(interval)
+  }, [])
 
   const getStatusColor = (value: number, thresholds: { good: number; warning: number }) => {
-    if (value >= thresholds.good) return 'text-green-600';
-    if (value >= thresholds.warning) return 'text-yellow-600';
-    return 'text-red-600';
-  };
+    if (value >= thresholds.good) return 'text-green-600'
+    if (value >= thresholds.warning) return 'text-yellow-600'
+    return 'text-red-600'
+  }
 
   const getStatusIcon = (value: number, thresholds: { good: number; warning: number }) => {
-    if (value >= thresholds.good) return <CheckCircle className="h-4 w-4 text-green-600" />;
-    if (value >= thresholds.warning) return <AlertTriangle className="h-4 w-4 text-yellow-600" />;
-    return <XCircle className="h-4 w-4 text-red-600" />;
-  };
+    if (value >= thresholds.good) return <CheckCircle className="h-4 w-4 text-green-600" />
+    if (value >= thresholds.warning) return <AlertTriangle className="h-4 w-4 text-yellow-600" />
+    return <XCircle className="h-4 w-4 text-red-600" />
+  }
 
   if (isLoading) {
     return (
@@ -87,7 +107,7 @@ export const QualityDashboard: React.FC<QualityDashboardProps> = ({ className })
           </div>
         </div>
       </div>
-    );
+    )
   }
 
   return (
@@ -101,21 +121,18 @@ export const QualityDashboard: React.FC<QualityDashboardProps> = ({ className })
 
       {/* Alerts */}
       {metrics.lintErrors > 0 && (
-        <Alert>
-          <AlertTriangle className="h-4 w-4" />
-          <AlertDescription>
-            {metrics.lintErrors} erro(s) de lint encontrado(s). Execute `npm run lint:fix` para corrigir.
-          </AlertDescription>
-        </Alert>
+        <AlertBox
+          icon={<AlertTriangle className="h-4 w-4" />}
+          message={`${metrics.lintErrors} erro(s) de lint encontrado(s). Execute \`npm run lint:fix\` para corrigir.`}
+        />
       )}
 
       {metrics.securityIssues > 0 && (
-        <Alert variant="destructive">
-          <XCircle className="h-4 w-4" />
-          <AlertDescription>
-            {metrics.securityIssues} problema(s) de segurança encontrado(s). Verifique o relatório de segurança.
-          </AlertDescription>
-        </Alert>
+        <AlertBox
+          variant="destructive"
+          icon={<XCircle className="h-4 w-4" />}
+          message={`${metrics.securityIssues} problema(s) de segurança encontrado(s). Verifique o relatório de segurança.`}
+        />
       )}
 
       {/* Metrics Grid */}
@@ -248,5 +265,5 @@ export const QualityDashboard: React.FC<QualityDashboardProps> = ({ className })
         </CardContent>
       </Card>
     </div>
-  );
-};
+  )
+}

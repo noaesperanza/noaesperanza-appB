@@ -50,7 +50,7 @@ export class AISmartLearningService {
       // Calcular similaridade e ordenar
       const aprendizadosComSimilaridade = data.map(aprendizado => ({
         ...aprendizado,
-        similaridade: this.calcularSimilaridade(mensagemUsuario, aprendizado.user_message)
+        similaridade: this.calcularSimilaridade(mensagemUsuario, aprendizado.user_message),
       }))
 
       const melhoresAprendizados = aprendizadosComSimilaridade
@@ -59,7 +59,7 @@ export class AISmartLearningService {
         .slice(0, limite)
 
       console.log(`✅ ${melhoresAprendizados.length} aprendizados encontrados`)
-      
+
       return melhoresAprendizados
     } catch (error) {
       console.error('❌ Erro ao buscar aprendizados:', error)
@@ -69,18 +69,29 @@ export class AISmartLearningService {
 
   // 🔑 EXTRAIR PALAVRAS-CHAVE
   private extrairPalavrasChave(texto: string): string[] {
-    const stopWords = ['o', 'a', 'de', 'da', 'do', 'em', 'para', 'com', 'por', 'que', 'é', 'um', 'uma']
-    
+    const stopWords = [
+      'o',
+      'a',
+      'de',
+      'da',
+      'do',
+      'em',
+      'para',
+      'com',
+      'por',
+      'que',
+      'é',
+      'um',
+      'uma',
+    ]
+
     const palavras = texto
       .toLowerCase()
       .normalize('NFD')
       .replace(/[\u0300-\u036f]/g, '') // Remove acentos
       .replace(/[^\w\s]/g, '') // Remove pontuação
       .split(/\s+/)
-      .filter(palavra => 
-        palavra.length > 2 && 
-        !stopWords.includes(palavra)
-      )
+      .filter(palavra => palavra.length > 2 && !stopWords.includes(palavra))
 
     // Retorna palavras únicas
     return [...new Set(palavras)]
@@ -110,23 +121,34 @@ export class AISmartLearningService {
 
     // Retorna a resposta com maior similaridade e confiança
     const melhor = aprendizados[0]
-    
-    console.log(`✅ Melhor resposta encontrada (${Math.round(melhor.similaridade * 100)}% similar):`, melhor.ai_response.substring(0, 100))
-    
+
+    console.log(
+      `✅ Melhor resposta encontrada (${Math.round(melhor.similaridade * 100)}% similar):`,
+      melhor.ai_response.substring(0, 100)
+    )
+
     // Incrementa uso
     await this.incrementarUso(melhor.keyword)
-    
+
     return melhor.ai_response
   }
 
   // 📈 INCREMENTAR CONTADOR DE USO
   private async incrementarUso(keyword: string) {
     try {
+      const { data: current } = await supabase
+        .from('ai_learning')
+        .select('usage_count')
+        .eq('keyword', keyword)
+        .maybeSingle()
+
+      const nextUsageCount = (current?.usage_count ?? 0) + 1
+
       await supabase
         .from('ai_learning')
-        .update({ 
-          usage_count: supabase.raw('usage_count + 1'),
-          last_used: new Date().toISOString()
+        .update({
+          usage_count: nextUsageCount,
+          last_used: new Date().toISOString(),
         })
         .eq('keyword', keyword)
     } catch (error) {
@@ -190,16 +212,18 @@ export class AISmartLearningService {
 
     // 1. Buscar aprendizados similares
     const aprendizados = await this.buscarAprendizadosSimilares(mensagemUsuario, categoria, 3)
-    
+
     // 2. Buscar histórico do usuário
     const historico = await this.buscarHistoricoUsuario(userId, 5)
-    
+
     // 3. Buscar padrões
     const padroes = await this.buscarPadroes(categoria, mensagemUsuario)
 
     // 4. Se tem aprendizados relevantes, usar
     if (aprendizados.length > 0 && aprendizados[0].similaridade > 0.5) {
-      console.log(`✅ Usando aprendizado (${Math.round(aprendizados[0].similaridade * 100)}% similar)`)
+      console.log(
+        `✅ Usando aprendizado (${Math.round(aprendizados[0].similaridade * 100)}% similar)`
+      )
       return aprendizados[0].ai_response
     }
 
@@ -222,4 +246,3 @@ export class AISmartLearningService {
 
 // Exportar instância singleton
 export const aiSmartLearningService = new AISmartLearningService()
-

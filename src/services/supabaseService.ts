@@ -63,7 +63,7 @@ export const getAdminMetrics = async (): Promise<AdminMetrics> => {
 
     // Calcular receita mensal (simulado baseado em assinaturas)
     const activeSubscriptions = totalUsers || 0
-    const monthlyRevenue = activeSubscriptions * 89.90 // Valor da assinatura
+    const monthlyRevenue = activeSubscriptions * 89.9 // Valor da assinatura
 
     return {
       totalUsers: totalUsers || 0,
@@ -76,7 +76,7 @@ export const getAdminMetrics = async (): Promise<AdminMetrics> => {
       aiLearningCount: aiLearningCount || 0,
       totalAvaliacoes: totalAvaliacoes || 0,
       avaliacoesCompletas: avaliacoesCompletas || 0,
-      avaliacoesEmAndamento: avaliacoesEmAndamento || 0
+      avaliacoesEmAndamento: avaliacoesEmAndamento || 0,
     }
   } catch (error) {
     console.error('Erro ao buscar métricas administrativas:', error)
@@ -92,7 +92,7 @@ export const getAdminMetrics = async (): Promise<AdminMetrics> => {
       aiLearningCount: 0,
       totalAvaliacoes: 0,
       avaliacoesCompletas: 0,
-      avaliacoesEmAndamento: 0
+      avaliacoesEmAndamento: 0,
     }
   }
 }
@@ -131,13 +131,13 @@ export const getSystemStats = async () => {
 
     return {
       aiStats: aiStats || [],
-      topKeywords: topKeywords || []
+      topKeywords: topKeywords || [],
     }
   } catch (error) {
     console.error('Erro ao buscar estatísticas do sistema:', error)
     return {
       aiStats: [],
-      topKeywords: []
+      topKeywords: [],
     }
   }
 }
@@ -149,6 +149,7 @@ export interface User {
   name: string
   role: 'patient' | 'doctor' | 'admin'
   specialty?: 'rim' | 'neuro' | 'cannabis'
+  user_type?: 'paciente' | 'aluno' | 'profissional' | 'admin' | 'medico'
   created_at: string
   updated_at: string
 }
@@ -246,10 +247,10 @@ export class AuthService {
       email,
       password,
       options: {
-        data: userData
-      }
+        data: userData,
+      },
     })
-    
+
     if (error) throw error
     return data
   }
@@ -257,9 +258,9 @@ export class AuthService {
   async signIn(email: string, password: string) {
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
-      password
+      password,
     })
-    
+
     if (error) throw error
     return data
   }
@@ -270,18 +271,17 @@ export class AuthService {
   }
 
   async getCurrentUser() {
-    const { data: { user }, error } = await supabase.auth.getUser()
+    const {
+      data: { user },
+      error,
+    } = await supabase.auth.getUser()
     if (error) throw error
     return user
   }
 
   async getUserProfile(userId: string) {
-    const { data, error } = await supabase
-      .from('users')
-      .select('*')
-      .eq('id', userId)
-      .single()
-    
+    const { data, error } = await supabase.from('users').select('*').eq('id', userId).single()
+
     if (error) throw error
     return data
   }
@@ -293,7 +293,8 @@ export class DataService {
   async getPatients() {
     const { data, error } = await supabase
       .from('patients')
-      .select(`
+      .select(
+        `
         *,
         users (
           id,
@@ -301,9 +302,10 @@ export class DataService {
           email,
           role
         )
-      `)
+      `
+      )
       .order('created_at', { ascending: false })
-    
+
     if (error) throw error
     return data
   }
@@ -311,7 +313,8 @@ export class DataService {
   async getPatient(patientId: string) {
     const { data, error } = await supabase
       .from('patients')
-      .select(`
+      .select(
+        `
         *,
         users (
           id,
@@ -319,21 +322,18 @@ export class DataService {
           email,
           role
         )
-      `)
+      `
+      )
       .eq('id', patientId)
       .single()
-    
+
     if (error) throw error
     return data
   }
 
   async createPatient(patientData: Partial<Patient>) {
-    const { data, error } = await supabase
-      .from('patients')
-      .insert(patientData)
-      .select()
-      .single()
-    
+    const { data, error } = await supabase.from('patients').insert(patientData).select().single()
+
     if (error) throw error
     return data
   }
@@ -342,7 +342,8 @@ export class DataService {
   async getDoctors() {
     const { data, error } = await supabase
       .from('doctors')
-      .select(`
+      .select(
+        `
         *,
         users (
           id,
@@ -350,9 +351,10 @@ export class DataService {
           email,
           role
         )
-      `)
+      `
+      )
       .order('created_at', { ascending: false })
-    
+
     if (error) throw error
     return data
   }
@@ -360,7 +362,8 @@ export class DataService {
   async getDoctor(doctorId: string) {
     const { data, error } = await supabase
       .from('doctors')
-      .select(`
+      .select(
+        `
         *,
         users (
           id,
@@ -368,10 +371,11 @@ export class DataService {
           email,
           role
         )
-      `)
+      `
+      )
       .eq('id', doctorId)
       .single()
-    
+
     if (error) throw error
     return data
   }
@@ -380,7 +384,8 @@ export class DataService {
   async getAppointments(doctorId?: string, patientId?: string) {
     let query = supabase
       .from('appointments')
-      .select(`
+      .select(
+        `
         *,
         patients (
           id,
@@ -396,13 +401,14 @@ export class DataService {
             email
           )
         )
-      `)
+      `
+      )
       .order('date', { ascending: true })
 
     if (doctorId) {
       query = query.eq('doctor_id', doctorId)
     }
-    
+
     if (patientId) {
       query = query.eq('patient_id', patientId)
     }
@@ -418,7 +424,7 @@ export class DataService {
       .insert(appointmentData)
       .select()
       .single()
-    
+
     if (error) throw error
     return data
   }
@@ -430,17 +436,14 @@ export class DataService {
       .eq('id', appointmentId)
       .select()
       .single()
-    
+
     if (error) throw error
     return data
   }
 
   // Pagamentos
   async getPayments(userId?: string) {
-    let query = supabase
-      .from('payments')
-      .select('*')
-      .order('created_at', { ascending: false })
+    let query = supabase.from('payments').select('*').order('created_at', { ascending: false })
 
     if (userId) {
       query = query.eq('user_id', userId)
@@ -452,12 +455,8 @@ export class DataService {
   }
 
   async createPayment(paymentData: Partial<Payment>) {
-    const { data, error } = await supabase
-      .from('payments')
-      .insert(paymentData)
-      .select()
-      .single()
-    
+    const { data, error } = await supabase.from('payments').insert(paymentData).select().single()
+
     if (error) throw error
     return data
   }
@@ -469,7 +468,7 @@ export class DataService {
       .eq('id', paymentId)
       .select()
       .single()
-    
+
     if (error) throw error
     return data
   }
@@ -481,7 +480,7 @@ export class DataService {
       .insert(evaluationData)
       .select()
       .single()
-    
+
     if (error) throw error
     return data
   }
@@ -493,7 +492,7 @@ export class DataService {
       .eq('id', evaluationId)
       .select()
       .single()
-    
+
     if (error) throw error
     return data
   }
@@ -504,7 +503,7 @@ export class DataService {
       .select('*')
       .eq('id', evaluationId)
       .single()
-    
+
     if (error) throw error
     return data
   }
@@ -515,7 +514,7 @@ export class DataService {
       .select('*')
       .eq('user_id', userId)
       .order('created_at', { ascending: false })
-    
+
     if (error) throw error
     return data
   }
@@ -526,7 +525,7 @@ export class DataService {
       .select('*')
       .eq('session_id', sessionId)
       .single()
-    
+
     if (error) throw error
     return data
   }
@@ -541,5 +540,5 @@ export const supabaseService = {
   async salvarArquivoViaTexto(message: string): Promise<string> {
     console.log('📁 Supabase Service: Funcionalidade em desenvolvimento')
     return `💾 Supabase: Funcionalidade em desenvolvimento. Comando recebido: "${message}"`
-  }
+  },
 }

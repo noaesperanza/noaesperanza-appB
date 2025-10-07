@@ -51,9 +51,8 @@ export interface MasterPrompt {
 }
 
 export class GPTBuilderService {
-  
   // 📚 GERENCIAMENTO DE DOCUMENTOS MESTRES
-  
+
   // Buscar todos os documentos
   async getDocuments(): Promise<DocumentMaster[]> {
     try {
@@ -89,14 +88,16 @@ export class GPTBuilderService {
   }
 
   // Criar novo documento
-  async createDocument(document: Omit<DocumentMaster, 'id' | 'created_at' | 'updated_at'>): Promise<DocumentMaster> {
+  async createDocument(
+    document: Omit<DocumentMaster, 'id' | 'created_at' | 'updated_at'>
+  ): Promise<DocumentMaster> {
     try {
       const { data, error } = await supabase
         .from('documentos_mestres')
         .insert({
           ...document,
           created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
+          updated_at: new Date().toISOString(),
         })
         .select()
         .single()
@@ -116,7 +117,7 @@ export class GPTBuilderService {
         .from('documentos_mestres')
         .update({
           ...updates,
-          updated_at: new Date().toISOString()
+          updated_at: new Date().toISOString(),
         })
         .eq('id', id)
         .select()
@@ -169,23 +170,25 @@ export class GPTBuilderService {
             recognition: {
               drRicardoValenca: true,
               autoGreeting: true,
-              personalizedResponse: true
-            }
+              personalizedResponse: true,
+            },
           }
         }
         throw error
       }
-      return data?.config || {
-        personality: '',
-        greeting: '',
-        expertise: '',
-        tone: 'professional',
-        recognition: {
-          drRicardoValenca: false,
-          autoGreeting: false,
-          personalizedResponse: false
+      return (
+        data?.config || {
+          personality: '',
+          greeting: '',
+          expertise: '',
+          tone: 'professional',
+          recognition: {
+            drRicardoValenca: false,
+            autoGreeting: false,
+            personalizedResponse: false,
+          },
         }
-      }
+      )
     } catch (error) {
       console.error('Erro ao obter configuração da Nôa:', error)
       // Fallback final – mantém app funcional
@@ -197,8 +200,8 @@ export class GPTBuilderService {
         recognition: {
           drRicardoValenca: true,
           autoGreeting: true,
-          personalizedResponse: true
-        }
+          personalizedResponse: true,
+        },
       }
     }
   }
@@ -206,13 +209,11 @@ export class GPTBuilderService {
   // Salvar configuração da Nôa
   async saveNoaConfig(config: NoaConfig): Promise<void> {
     try {
-      const { error } = await supabase
-        .from('noa_config')
-        .upsert({
-          id: 'main',
-          config,
-          updated_at: new Date().toISOString()
-        })
+      const { error } = await supabase.from('noa_config').upsert({
+        id: 'main',
+        config,
+        updated_at: new Date().toISOString(),
+      })
 
       if (error) throw error
     } catch (error) {
@@ -228,16 +229,21 @@ export class GPTBuilderService {
     try {
       const { data, error } = await supabase
         .from('user_recognition')
-        .select(`
+        .select(
+          `
           *,
           auth.users!inner(email)
-        `)
+        `
+        )
         .eq('auth.users.email', email)
         .eq('is_active', true)
         .single()
 
       if (error && error.code !== 'PGRST116') throw error
-      return data as UserRecognition || null
+      if (!data || typeof data !== 'object' || 'error' in data) {
+        return null
+      }
+      return data as UserRecognition
     } catch (error) {
       console.error('Erro ao reconhecer usuário:', error)
       throw error
@@ -251,7 +257,7 @@ export class GPTBuilderService {
         .from('user_recognition')
         .upsert({
           ...recognition,
-          updated_at: new Date().toISOString()
+          updated_at: new Date().toISOString(),
         })
         .select()
         .single()
@@ -284,14 +290,16 @@ export class GPTBuilderService {
   }
 
   // Criar prompt mestre
-  async createMasterPrompt(prompt: Omit<MasterPrompt, 'id' | 'created_at' | 'updated_at'>): Promise<MasterPrompt> {
+  async createMasterPrompt(
+    prompt: Omit<MasterPrompt, 'id' | 'created_at' | 'updated_at'>
+  ): Promise<MasterPrompt> {
     try {
       const { data, error } = await supabase
         .from('master_prompts')
         .insert({
           ...prompt,
           created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
+          updated_at: new Date().toISOString(),
         })
         .select()
         .single()
@@ -314,28 +322,30 @@ export class GPTBuilderService {
     lastUpdate: string
   }> {
     try {
-      const [documents, prompts] = await Promise.all([
-        this.getDocuments(),
-        this.getMasterPrompts()
-      ])
+      const [documents, prompts] = await Promise.all([this.getDocuments(), this.getMasterPrompts()])
 
-      const documentsByType = documents.reduce((acc, doc) => {
-        acc[doc.type] = (acc[doc.type] || 0) + 1
-        return acc
-      }, {} as Record<string, number>)
+      const documentsByType = documents.reduce(
+        (acc, doc) => {
+          acc[doc.type] = (acc[doc.type] || 0) + 1
+          return acc
+        },
+        {} as Record<string, number>
+      )
 
-      const lastUpdate = documents.length > 0 
-        ? documents.reduce((latest, doc) => 
-            new Date(doc.updated_at) > new Date(latest) ? doc.updated_at : latest, 
-            documents[0].updated_at
-          )
-        : new Date().toISOString()
+      const lastUpdate =
+        documents.length > 0
+          ? documents.reduce(
+              (latest, doc) =>
+                new Date(doc.updated_at) > new Date(latest) ? doc.updated_at : latest,
+              documents[0].updated_at
+            )
+          : new Date().toISOString()
 
       return {
         totalDocuments: documents.filter(d => d.is_active).length,
         documentsByType,
         totalPrompts: prompts.length,
-        lastUpdate
+        lastUpdate,
       }
     } catch (error) {
       console.error('Erro ao obter estatísticas:', error)
@@ -349,17 +359,19 @@ export class GPTBuilderService {
   async searchDocuments(query: string): Promise<DocumentMaster[]> {
     try {
       console.log('🔍 Buscando documentos com query:', query)
-      
+
       // Sanitizar query para evitar problemas com caracteres especiais
       const sanitizedQuery = query
         .replace(/[%_\\]/g, '\\$&')
         .replace(/[#🌟📋📊🏗️🧠🎯🖥️🧩🗄️🔧🎊]/g, '') // Remove emojis e caracteres especiais
         .substring(0, 100) // Limita o tamanho da query
-      
+
       const { data, error } = await supabase
         .from('documentos_mestres')
         .select('*')
-        .or(`title.ilike.%${sanitizedQuery}%,content.ilike.%${sanitizedQuery}%,category.ilike.%${sanitizedQuery}%`)
+        .or(
+          `title.ilike.%${sanitizedQuery}%,content.ilike.%${sanitizedQuery}%,category.ilike.%${sanitizedQuery}%`
+        )
         .eq('is_active', true)
         .order('updated_at', { ascending: false })
 
@@ -372,10 +384,10 @@ export class GPTBuilderService {
           .eq('is_active', true)
           .order('updated_at', { ascending: false })
           .limit(10)
-        
+
         return fallbackData || []
       }
-      
+
       return data || []
     } catch (error) {
       console.error('Erro ao buscar documentos:', error)
@@ -391,7 +403,7 @@ export class GPTBuilderService {
       const [config, documents, prompts] = await Promise.all([
         this.getNoaConfig(),
         this.getDocuments(),
-        this.getMasterPrompts()
+        this.getMasterPrompts(),
       ])
 
       let contextualPrompt = `Você é Nôa Esperanza, assistente médica especializada.`
@@ -408,9 +420,10 @@ export class GPTBuilderService {
 
       // Adicionar contexto específico
       if (context) {
-        const relevantDocs = documents.filter(doc => 
-          doc.content.toLowerCase().includes(context.toLowerCase()) ||
-          doc.title.toLowerCase().includes(context.toLowerCase())
+        const relevantDocs = documents.filter(
+          doc =>
+            doc.content.toLowerCase().includes(context.toLowerCase()) ||
+            doc.title.toLowerCase().includes(context.toLowerCase())
         )
 
         if (relevantDocs.length > 0) {
@@ -422,9 +435,7 @@ export class GPTBuilderService {
       }
 
       // Adicionar prompts mestres relevantes
-      const relevantPrompts = prompts.filter(p => 
-        p.category === context || p.priority === 1
-      )
+      const relevantPrompts = prompts.filter(p => p.category === context || p.priority === 1)
 
       if (relevantPrompts.length > 0) {
         contextualPrompt += `\n\nINSTRUÇÕES ESPECÍFICAS:\n`
@@ -446,9 +457,7 @@ export class GPTBuilderService {
   async syncWithAILearning(): Promise<void> {
     try {
       const documents = await this.getDocuments()
-      const knowledgeDocs = documents.filter(doc => 
-        doc.type === 'knowledge' && doc.is_active
-      )
+      const knowledgeDocs = documents.filter(doc => doc.type === 'knowledge' && doc.is_active)
 
       // Converter documentos mestres em aprendizados
       for (const doc of knowledgeDocs) {
@@ -459,7 +468,7 @@ export class GPTBuilderService {
           ai_response: doc.content,
           category: doc.category,
           confidence_score: 0.9,
-          usage_count: 0
+          usage_count: 0,
         }
 
         // Verificar se já existe
@@ -470,9 +479,7 @@ export class GPTBuilderService {
           .single()
 
         if (!existing) {
-          await supabase
-            .from('ai_learning')
-            .insert(learningData)
+          await supabase.from('ai_learning').insert(learningData)
         }
       }
 
@@ -489,7 +496,7 @@ export const gptBuilderService = new GPTBuilderService()
 
 // 🌀 GPT BUILDER V2 - ENRIQUECIMENTO COM GRAMÁTICA NOA
 // Enriquece mensagem com metodologia da Arte da Entrevista Clínica
-export function enrichWithNoaGrammar(message: string, docs: any[], context: string = "") {
+export function enrichWithNoaGrammar(message: string, docs: any[], context: string = '') {
   const baseInstructions = `
 Você é Nôa Esperanza, assistente clínica e simbólica. Sua missão é escutar profundamente, organizar o raciocínio clínico com empatia e precisão, e responder com base nos documentos abaixo e na metodologia da Arte da Entrevista Clínica.
 
@@ -501,13 +508,13 @@ Método de resposta:
 3. Responder com empatia e linguagem acessível.
 
 Documentos relevantes:
-${docs.map((d, i) => `(${i+1}) ${d.content}`).join("\n\n")}
+${docs.map((d, i) => `(${i + 1}) ${d.content}`).join('\n\n')}
 
 Histórico simbólico do usuário:
 ${context}
 
 Mensagem do usuário:
 ${message}
-`;
-  return baseInstructions;
+`
+  return baseInstructions
 }

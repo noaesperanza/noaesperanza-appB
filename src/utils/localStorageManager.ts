@@ -12,14 +12,21 @@ export interface LocalConversation {
   synced: boolean
 }
 
+export interface LocalStorageMigrationResult {
+  success: boolean
+  migrated: number
+  failed: number
+  errors: string[]
+}
+
 export class LocalStorageManager {
   // 📊 VER TODOS OS DADOS SALVOS LOCALMENTE
   static getAllLocalData() {
-    const data: {[key: string]: any} = {}
-    
+    const data: { [key: string]: any } = {}
+
     // Listar todas as chaves do localStorage
     const keys = Object.keys(localStorage)
-    
+
     keys.forEach(key => {
       if (key.startsWith('noa_') || key.includes('conversation')) {
         try {
@@ -29,7 +36,7 @@ export class LocalStorageManager {
         }
       }
     })
-    
+
     return data
   }
 
@@ -48,14 +55,14 @@ export class LocalStorageManager {
   static getLocalStats() {
     const conversations = this.getLocalConversations()
     const allData = this.getAllLocalData()
-    
+
     return {
       totalConversations: conversations.length,
       syncedConversations: conversations.filter(c => c.synced).length,
       unsyncedConversations: conversations.filter(c => !c.synced).length,
       totalKeys: Object.keys(allData).length,
       storageSize: this.getStorageSize(),
-      allKeys: Object.keys(allData)
+      allKeys: Object.keys(allData),
     }
   }
 
@@ -71,32 +78,25 @@ export class LocalStorageManager {
   }
 
   // 🔄 MIGRAR PARA SUPABASE
-  static async migrateToSupabase(): Promise<{
-    success: boolean
-    migrated: number
-    failed: number
-    errors: string[]
-  }> {
+  static async migrateToSupabase(): Promise<LocalStorageMigrationResult> {
     const conversations = this.getLocalConversations()
     const unsyncedConversations = conversations.filter(c => !c.synced)
-    
+
     console.log(`📤 Migrando ${unsyncedConversations.length} conversas para Supabase...`)
-    
+
     let migrated = 0
     let failed = 0
     const errors: string[] = []
 
     for (const conv of unsyncedConversations) {
       try {
-        const { error } = await supabase
-          .from('conversation_history')
-          .insert({
-            user_id: 'dr-ricardo-valenca',
-            content: conv.userMessage,
-            response: conv.aiResponse,
-            created_at: new Date(conv.timestamp).toISOString(),
-            relevance_score: 0.95
-          })
+        const { error } = await supabase.from('conversation_history').insert({
+          user_id: 'dr-ricardo-valenca',
+          content: conv.userMessage,
+          response: conv.aiResponse,
+          created_at: new Date(conv.timestamp).toISOString(),
+          relevance_score: 0.95,
+        })
 
         if (error) {
           failed++
@@ -121,7 +121,7 @@ export class LocalStorageManager {
       success: migrated > 0,
       migrated,
       failed,
-      errors
+      errors,
     }
   }
 
@@ -169,26 +169,27 @@ export class LocalStorageManager {
   static searchConversations(keyword: string): LocalConversation[] {
     const conversations = this.getLocalConversations()
     const lowerKeyword = keyword.toLowerCase()
-    
-    return conversations.filter(conv => 
-      conv.userMessage.toLowerCase().includes(lowerKeyword) ||
-      conv.aiResponse.toLowerCase().includes(lowerKeyword)
+
+    return conversations.filter(
+      conv =>
+        conv.userMessage.toLowerCase().includes(lowerKeyword) ||
+        conv.aiResponse.toLowerCase().includes(lowerKeyword)
     )
   }
 
   // 📊 ANÁLISE DE DADOS LOCAIS
   static analyzeLocalData() {
     const conversations = this.getLocalConversations()
-    
+
     // Agrupar por data
-    const byDate: {[key: string]: number} = {}
+    const byDate: { [key: string]: number } = {}
     conversations.forEach(conv => {
       const date = new Date(conv.timestamp).toLocaleDateString('pt-BR')
       byDate[date] = (byDate[date] || 0) + 1
     })
 
     // Palavras mais comuns
-    const wordCount: {[key: string]: number} = {}
+    const wordCount: { [key: string]: number } = {}
     conversations.forEach(conv => {
       const words = conv.userMessage.toLowerCase().split(/\s+/)
       words.forEach(word => {
@@ -199,17 +200,21 @@ export class LocalStorageManager {
     })
 
     const topWords = Object.entries(wordCount)
-      .sort(([,a], [,b]) => b - a)
+      .sort(([, a], [, b]) => b - a)
       .slice(0, 10)
 
     return {
       totalConversations: conversations.length,
       dateDistribution: byDate,
       topWords: topWords.map(([word, count]) => ({ word, count })),
-      oldestConversation: conversations.length > 0 ? 
-        new Date(Math.min(...conversations.map(c => new Date(c.timestamp).getTime()))) : null,
-      newestConversation: conversations.length > 0 ?
-        new Date(Math.max(...conversations.map(c => new Date(c.timestamp).getTime()))) : null
+      oldestConversation:
+        conversations.length > 0
+          ? new Date(Math.min(...conversations.map(c => new Date(c.timestamp).getTime())))
+          : null,
+      newestConversation:
+        conversations.length > 0
+          ? new Date(Math.max(...conversations.map(c => new Date(c.timestamp).getTime())))
+          : null,
     }
   }
 }
@@ -219,7 +224,7 @@ declare global {
   interface Window {
     noaLocalStorage: {
       ver: () => void
-      migrar: () => Promise<void>
+      migrar: () => Promise<LocalStorageMigrationResult>
       baixar: () => void
       limpar: () => void
       analisar: () => void
@@ -266,7 +271,7 @@ if (typeof window !== 'undefined') {
       const stats = LocalStorageManager.getLocalStats()
       console.log('📊 ESTATÍSTICAS:', stats)
       return stats
-    }
+    },
   }
 
   console.log(`
@@ -289,4 +294,3 @@ if (typeof window !== 'undefined') {
 }
 
 export default LocalStorageManager
-

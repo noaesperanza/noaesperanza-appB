@@ -7,11 +7,11 @@ import { noaSystemService } from '../noaSystemService'
 // Mock do Supabase
 const mockSupabase = {
   rpc: vi.fn(),
-  from: vi.fn()
+  from: vi.fn(),
 }
 
 vi.mock('../../integrations/supabase/client', () => ({
-  supabase: mockSupabase
+  supabase: mockSupabase,
 }))
 
 describe('NoaSystemService', () => {
@@ -27,7 +27,7 @@ describe('NoaSystemService', () => {
       const result = await noaSystemService.getNoaConfig('default_voice')
 
       expect(mockSupabase.rpc).toHaveBeenCalledWith('get_noa_config', {
-        config_key: 'default_voice'
+        config_key: 'default_voice',
       })
       expect(result).toBe(mockConfig)
     })
@@ -49,14 +49,14 @@ describe('NoaSystemService', () => {
         block_name: 'Abertura Exponencial',
         block_prompt: 'Olá! Eu sou Nôa Esperanza.',
         block_type: 'presentation',
-        is_active: true
+        is_active: true,
       }
       mockSupabase.rpc.mockResolvedValue({ data: mockBlock, error: null })
 
       const result = await noaSystemService.getImreBlock(1)
 
       expect(mockSupabase.rpc).toHaveBeenCalledWith('get_imre_block', {
-        block_order: 1
+        block_order: 1,
       })
       expect(result).toEqual(mockBlock)
     })
@@ -70,14 +70,14 @@ describe('NoaSystemService', () => {
         category: 'greeting',
         specialty: 'neurology',
         usage_count: 10,
-        is_active: true
+        is_active: true,
       }
       mockSupabase.rpc.mockResolvedValue({ data: mockPrompt, error: null })
 
       const result = await noaSystemService.getPrompt('neurology_greeting')
 
       expect(mockSupabase.rpc).toHaveBeenCalledWith('get_prompt', {
-        prompt_id: 'neurology_greeting'
+        prompt_id: 'neurology_greeting',
       })
       expect(result).toEqual(mockPrompt)
     })
@@ -92,7 +92,7 @@ describe('NoaSystemService', () => {
           category: 'greeting',
           specialty: 'general',
           usage_count: 5,
-          is_active: true
+          is_active: true,
         },
         {
           id: 'greeting_2',
@@ -100,15 +100,15 @@ describe('NoaSystemService', () => {
           category: 'greeting',
           specialty: 'general',
           usage_count: 3,
-          is_active: true
-        }
+          is_active: true,
+        },
       ]
       mockSupabase.rpc.mockResolvedValue({ data: mockPrompts, error: null })
 
       const result = await noaSystemService.getPromptsByCategory('greeting')
 
       expect(mockSupabase.rpc).toHaveBeenCalledWith('get_prompts_by_category', {
-        category_param: 'greeting'
+        category_param: 'greeting',
       })
       expect(result).toEqual(mockPrompts)
     })
@@ -129,7 +129,7 @@ describe('NoaSystemService', () => {
       const result = await noaSystemService.setUserType('paciente')
 
       expect(mockSupabase.rpc).toHaveBeenCalledWith('set_user_type', {
-        user_type: 'paciente'
+        user_type: 'paciente',
       })
       expect(result).toBe(true)
     })
@@ -137,7 +137,7 @@ describe('NoaSystemService', () => {
     it('Deve retornar false em caso de erro', async () => {
       mockSupabase.rpc.mockResolvedValue({ data: false, error: new Error('Test error') })
 
-      const result = await noaSystemService.setUserType('invalid_type')
+      const result = await noaSystemService.setUserType('invalid_type' as any)
 
       expect(result).toBe(false)
     })
@@ -147,7 +147,7 @@ describe('NoaSystemService', () => {
     it('Deve obter tipo de usuário atual', async () => {
       const mockUserType = {
         user_type: 'paciente',
-        permission_level: 1
+        permission_level: 1,
       }
       mockSupabase.rpc.mockResolvedValue({ data: mockUserType, error: null })
 
@@ -175,7 +175,7 @@ describe('NoaSystemService', () => {
         ai_response_param: 'Olá! Como posso ajudar?',
         category_param: 'greeting',
         confidence_score_param: 0.9,
-        keywords_param: ['olá', 'paciente']
+        keywords_param: ['olá', 'paciente'],
       })
       expect(result).toBe(true)
     })
@@ -196,7 +196,7 @@ describe('NoaSystemService', () => {
         user_message_param: 'Olá, sou paciente',
         ai_response_param: 'Olá! Como posso ajudar?',
         conversation_type_param: 'presentation',
-        user_type_param: 'paciente'
+        user_type_param: 'paciente',
       })
       expect(result).toBe(true)
     })
@@ -217,7 +217,7 @@ describe('NoaSystemService', () => {
         session_id_param: 'session-123',
         step_type_param: 'user_type_selection',
         step_data_param: { user_type: 'paciente' },
-        step_order_param: 1
+        step_order_param: 1,
       })
       expect(result).toBe(true)
     })
@@ -234,7 +234,7 @@ describe('NoaSystemService', () => {
         nft_hash: 'abc123def456',
         nft_metadata: { type: 'clinical_evaluation' },
         status: 'generated',
-        created_at: '2025-09-30T21:00:00Z'
+        created_at: '2025-09-30T21:00:00Z',
       }
       mockSupabase.rpc.mockResolvedValue({ data: mockNftReport, error: null })
 
@@ -249,7 +249,7 @@ describe('NoaSystemService', () => {
         session_id_param: 'session-123',
         report_title_param: 'Avaliação Clínica Inicial',
         report_content_param: 'Relatório completo...',
-        nft_metadata_param: { type: 'clinical_evaluation' }
+        nft_metadata_param: { type: 'clinical_evaluation' },
       })
       expect(result).toEqual(mockNftReport)
     })
@@ -259,16 +259,12 @@ describe('NoaSystemService', () => {
     it('Deve atualizar status do NFT', async () => {
       mockSupabase.rpc.mockResolvedValue({ data: true, error: null })
 
-      const result = await noaSystemService.updateNftStatus(
-        'nft-123',
-        'minted',
-        'abc123def456'
-      )
+      const result = await noaSystemService.updateNftStatus('nft-123', 'minted', 'abc123def456')
 
       expect(mockSupabase.rpc).toHaveBeenCalledWith('update_nft_status', {
         report_id_param: 'nft-123',
         status_param: 'minted',
-        nft_hash_param: 'abc123def456'
+        nft_hash_param: 'abc123def456',
       })
       expect(result).toBe(true)
     })
@@ -283,16 +279,16 @@ describe('NoaSystemService', () => {
       const result = await noaSystemService.initializeUserSession('paciente')
 
       expect(mockSupabase.rpc).toHaveBeenCalledWith('set_user_type', {
-        user_type: 'paciente'
+        user_type: 'paciente',
       })
       expect(mockSupabase.rpc).toHaveBeenCalledWith('register_conversation_flow', {
         session_id_param: expect.any(String),
         step_type_param: 'session_start',
         step_data_param: expect.objectContaining({
           user_type: 'paciente',
-          timestamp: expect.any(String)
+          timestamp: expect.any(String),
         }),
-        step_order_param: 0
+        step_order_param: 0,
       })
       expect(result).toBe(true)
     })
@@ -303,9 +299,9 @@ describe('NoaSystemService', () => {
       const mockNftReport = {
         id: 'nft-123',
         nft_hash: 'abc123def456',
-        status: 'generated'
+        status: 'generated',
       }
-      
+
       mockSupabase.rpc
         .mockResolvedValueOnce({ data: mockNftReport, error: null }) // createNftReport
         .mockResolvedValueOnce({ data: true, error: null }) // updateNftStatus
@@ -314,7 +310,7 @@ describe('NoaSystemService', () => {
       const evaluationData = {
         blocks_completed: 28,
         user_type: 'paciente',
-        timestamp: '2025-09-30T21:00:00Z'
+        timestamp: '2025-09-30T21:00:00Z',
       }
 
       const result = await noaSystemService.completeClinicalEvaluation(
@@ -329,8 +325,8 @@ describe('NoaSystemService', () => {
         nft_metadata_param: expect.objectContaining({
           type: 'clinical_evaluation',
           method: 'IMRE',
-          blocks_completed: 28
-        })
+          blocks_completed: 28,
+        }),
       })
       expect(result).toEqual(mockNftReport)
     })
@@ -342,13 +338,13 @@ describe('NoaSystemService', () => {
         total_conversations: 100,
         presentations: 50,
         clinical_evaluations: 30,
-        user_type_selections: 20
+        user_type_selections: 20,
       }
-      
+
       mockSupabase.from.mockReturnValue({
         select: vi.fn().mockReturnValue({
-          single: vi.fn().mockResolvedValue({ data: mockStats, error: null })
-        })
+          single: vi.fn().mockResolvedValue({ data: mockStats, error: null }),
+        }),
       })
 
       const result = await noaSystemService.getConversationStats()
@@ -364,13 +360,13 @@ describe('NoaSystemService', () => {
         user_id: 'user-123',
         user_type: 'paciente',
         total_conversations: 5,
-        nft_reports_count: 2
+        nft_reports_count: 2,
       }
-      
+
       mockSupabase.from.mockReturnValue({
         select: vi.fn().mockReturnValue({
-          single: vi.fn().mockResolvedValue({ data: mockProfile, error: null })
-        })
+          single: vi.fn().mockResolvedValue({ data: mockProfile, error: null }),
+        }),
       })
 
       const result = await noaSystemService.getUserProfile()
@@ -386,13 +382,13 @@ describe('NoaSystemService', () => {
         total_nfts: 50,
         generated_nfts: 45,
         minted_nfts: 40,
-        pending_nfts: 5
+        pending_nfts: 5,
       }
-      
+
       mockSupabase.from.mockReturnValue({
         select: vi.fn().mockReturnValue({
-          single: vi.fn().mockResolvedValue({ data: mockSummary, error: null })
-        })
+          single: vi.fn().mockResolvedValue({ data: mockSummary, error: null }),
+        }),
       })
 
       const result = await noaSystemService.getNftSummary()

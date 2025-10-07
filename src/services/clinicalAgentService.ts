@@ -5,7 +5,7 @@
 
 import { supabase } from '../integrations/supabase/client'
 import { openAIService } from './openaiService'
-import { clinicalAssessmentService, AssessmentReport } from './clinicalAssessmentService'
+import { clinicalAssessmentService, ClinicalReport } from './clinicalAssessmentService'
 import { logger } from '../utils/logger'
 
 export interface PatientContext {
@@ -30,7 +30,7 @@ export interface ClinicalSession {
   status: 'active' | 'completed' | 'cancelled'
   startedAt: Date
   completedAt?: Date
-  assessmentReport?: AssessmentReport
+  assessmentReport?: ClinicalReport
   nftHash?: string
   lgpdCompliance: {
     consentGiven: boolean
@@ -48,9 +48,9 @@ export class ClinicalAgentService {
    */
   async initializePatientSession(patientContext: PatientContext): Promise<ClinicalSession> {
     try {
-      logger.info('🏥 Inicializando sessão clínica para paciente', { 
+      logger.info('🏥 Inicializando sessão clínica para paciente', {
         userId: patientContext.userId,
-        sessionId: patientContext.sessionId 
+        sessionId: patientContext.sessionId,
       })
 
       // Verificar permissões LGPD
@@ -73,19 +73,18 @@ export class ClinicalAgentService {
           consentGiven: patientContext.consentGiven,
           dataRetention: 365, // 1 ano
           purpose: 'Avaliação clínica inicial para consulta médica',
-          lawfulBasis: 'Consentimento explícito do paciente'
-        }
+          lawfulBasis: 'Consentimento explícito do paciente',
+        },
       }
 
       // Salvar no Supabase
       await this.saveSessionToDatabase(session)
-      
+
       // Armazenar sessão ativa
       this.activeSessions.set(session.id, session)
 
       logger.info('✅ Sessão clínica inicializada com sucesso', { sessionId: session.id })
       return session
-
     } catch (error) {
       logger.error('❌ Erro ao inicializar sessão clínica', error)
       throw error
@@ -96,7 +95,7 @@ export class ClinicalAgentService {
    * Processar mensagem do paciente com contexto clínico
    */
   async processPatientMessage(
-    message: string, 
+    message: string,
     patientContext: PatientContext,
     sessionId: string
   ): Promise<{
@@ -106,9 +105,9 @@ export class ClinicalAgentService {
     requiresConsent?: boolean
   }> {
     try {
-      logger.info('💬 Processando mensagem do paciente', { 
+      logger.info('💬 Processando mensagem do paciente', {
         sessionId,
-        messageLength: message.length 
+        messageLength: message.length,
       })
 
       // Verificar se sessão está ativa
@@ -117,16 +116,17 @@ export class ClinicalAgentService {
         return {
           response: 'Sua sessão expirou. Por favor, inicie uma nova avaliação clínica.',
           action: 'session_expired',
-          requiresConsent: true
+          requiresConsent: true,
         }
       }
 
       // Verificar permissões
       if (!this.hasPermissionToProcess(patientContext, message)) {
         return {
-          response: 'Desculpe, não tenho permissão para processar esta solicitação. Verifique se forneceu o consentimento necessário.',
+          response:
+            'Desculpe, não tenho permissão para processar esta solicitação. Verifique se forneceu o consentimento necessário.',
           action: 'permission_denied',
-          requiresConsent: true
+          requiresConsent: true,
         }
       }
 
@@ -142,16 +142,15 @@ export class ClinicalAgentService {
         data: {
           sessionId,
           timestamp: new Date(),
-          lgpdCompliant: true
-        }
+          lgpdCompliant: true,
+        },
       }
-
     } catch (error) {
       logger.error('❌ Erro ao processar mensagem do paciente', error)
       return {
         response: 'Desculpe, ocorreu um erro interno. Tente novamente em alguns momentos.',
         action: 'error',
-        requiresConsent: false
+        requiresConsent: false,
       }
     }
   }
@@ -160,11 +159,10 @@ export class ClinicalAgentService {
    * Gerar resposta clínica especializada
    */
   private async generateClinicalResponse(
-    message: string, 
+    message: string,
     patientContext: PatientContext,
     session: ClinicalSession
   ): Promise<string> {
-    
     // Prompt especializado para Nôa Esperanza como agente clínico
     const clinicalPrompt = `
 Você é Nôa Esperanza, assistente médica especializada em avaliação clínica inicial.
@@ -201,13 +199,13 @@ Responda como Nôa Esperanza especialista em avaliação clínica:
     `
 
     try {
-      const response = await openAIService.generateResponse([
+      const response = await openAIService.getNoaResponse(message, [
         { role: 'system', content: clinicalPrompt },
-        { role: 'user', content: message }
       ])
 
-      return response || 'Desculpe, não consegui processar sua mensagem. Pode reformular sua pergunta?'
-
+      return (
+        response || 'Desculpe, não consegui processar sua mensagem. Pode reformular sua pergunta?'
+      )
     } catch (error) {
       logger.error('❌ Erro ao gerar resposta clínica', error)
       return 'Estou com dificuldades técnicas no momento. Por favor, tente novamente.'
@@ -236,7 +234,7 @@ Responda como Nôa Esperanza especialista em avaliação clínica:
     // Verificar se mensagem não contém informações sensíveis não autorizadas
     const sensitiveKeywords = ['diagnóstico', 'prescrição', 'medicamento específico']
     const lowerMessage = message.toLowerCase()
-    
+
     for (const keyword of sensitiveKeywords) {
       if (lowerMessage.includes(keyword)) {
         logger.warn('⚠️ Tentativa de acesso a informação sensível', { keyword, message })
@@ -252,17 +250,15 @@ Responda como Nôa Esperanza especialista em avaliação clínica:
    */
   private async saveSessionToDatabase(session: ClinicalSession): Promise<void> {
     try {
-      const { error } = await supabase
-        .from('clinical_sessions')
-        .insert({
-          id: session.id,
-          patient_id: session.patientId,
-          session_type: session.sessionType,
-          status: session.status,
-          started_at: session.startedAt.toISOString(),
-          lgpd_compliance: JSON.stringify(session.lgpdCompliance),
-          created_at: new Date().toISOString()
-        })
+      const { error } = await supabase.from('clinical_sessions').insert({
+        id: session.id,
+        patient_id: session.patientId,
+        session_type: session.sessionType,
+        status: session.status,
+        started_at: session.startedAt.toISOString(),
+        lgpd_compliance: JSON.stringify(session.lgpdCompliance),
+        created_at: new Date().toISOString(),
+      })
 
       if (error) {
         logger.error('❌ Erro ao salvar sessão no Supabase', error)
@@ -286,18 +282,16 @@ Responda como Nôa Esperanza especialista em avaliação clínica:
     patientContext: PatientContext
   ): Promise<void> {
     try {
-      const { error } = await supabase
-        .from('patient_interactions')
-        .insert({
-          session_id: sessionId,
-          patient_id: patientContext.userId,
-          patient_message: patientMessage,
-          noa_response: noaResponse,
-          lgpd_compliant: true,
-          consent_verified: patientContext.consentGiven,
-          nft_hash: patientContext.nftHash,
-          created_at: new Date().toISOString()
-        })
+      const { error } = await supabase.from('patient_interactions').insert({
+        session_id: sessionId,
+        patient_id: patientContext.userId,
+        patient_message: patientMessage,
+        noa_response: noaResponse,
+        lgpd_compliant: true,
+        consent_verified: patientContext.consentGiven,
+        nft_hash: patientContext.nftHash,
+        created_at: new Date().toISOString(),
+      })
 
       if (error) {
         logger.error('❌ Erro ao salvar interação do paciente', error)
@@ -315,7 +309,7 @@ Responda como Nôa Esperanza especialista em avaliação clínica:
    */
   async completeClinicalSession(
     sessionId: string,
-    assessmentReport?: AssessmentReport,
+    assessmentReport?: ClinicalReport,
     nftHash?: string
   ): Promise<boolean> {
     try {
@@ -338,7 +332,7 @@ Responda como Nôa Esperanza especialista em avaliação clínica:
           status: 'completed',
           completed_at: session.completedAt.toISOString(),
           assessment_report: assessmentReport ? JSON.stringify(assessmentReport) : null,
-          nft_hash: nftHash
+          nft_hash: nftHash,
         })
         .eq('id', sessionId)
 
@@ -352,7 +346,6 @@ Responda como Nôa Esperanza especialista em avaliação clínica:
 
       logger.info('✅ Sessão clínica finalizada', { sessionId })
       return true
-
     } catch (error) {
       logger.error('❌ Erro ao finalizar sessão clínica', error)
       return false
@@ -376,16 +369,17 @@ Responda como Nôa Esperanza especialista em avaliação clínica:
         return []
       }
 
-      return data?.map(session => ({
-        id: session.id,
-        patientId: session.patient_id,
-        sessionType: session.session_type,
-        status: session.status,
-        startedAt: new Date(session.started_at),
-        completedAt: session.completed_at ? new Date(session.completed_at) : undefined,
-        lgpdCompliance: JSON.parse(session.lgpd_compliance || '{}')
-      })) || []
-
+      return (
+        data?.map(session => ({
+          id: session.id,
+          patientId: session.patient_id,
+          sessionType: session.session_type,
+          status: session.status,
+          startedAt: new Date(session.started_at),
+          completedAt: session.completed_at ? new Date(session.completed_at) : undefined,
+          lgpdCompliance: JSON.parse(session.lgpd_compliance || '{}'),
+        })) || []
+      )
     } catch (error) {
       logger.error('❌ Erro ao buscar sessões do paciente', error)
       return []
@@ -421,7 +415,7 @@ Responda como Nôa Esperanza especialista em avaliação clínica:
     return {
       compliant: issues.length === 0,
       issues,
-      recommendations
+      recommendations,
     }
   }
 }

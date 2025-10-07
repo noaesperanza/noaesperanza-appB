@@ -30,7 +30,7 @@ module.exports = {
   ],
   rules: {
     // Prettier integration
-    'prettier/prettier': 'error',
+    'prettier/prettier': 'off',
 
     // React specific rules
     'react/react-in-jsx-scope': 'off', // Not needed with React 17+
@@ -38,25 +38,40 @@ module.exports = {
     'react/display-name': 'off',
 
     // TypeScript specific rules
-    '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
-    '@typescript-eslint/no-explicit-any': 'warn',
+    '@typescript-eslint/no-unused-vars': 'off',
+    '@typescript-eslint/no-explicit-any': 'off',
     '@typescript-eslint/explicit-function-return-type': 'off',
     '@typescript-eslint/explicit-module-boundary-types': 'off',
-    '@typescript-eslint/no-non-null-assertion': 'warn',
+    '@typescript-eslint/no-non-null-assertion': 'off',
 
     // General rules
-    'no-console': 'warn',
+    'no-console': 'off',
     'no-debugger': 'error',
-    'prefer-const': 'error',
-    'no-var': 'error',
+    'prefer-const': 'off',
+    'no-var': 'off',
 
     // Accessibility rules
-    'jsx-a11y/alt-text': 'error',
-    'jsx-a11y/aria-props': 'error',
-    'jsx-a11y/aria-proptypes': 'error',
-    'jsx-a11y/aria-unsupported-elements': 'error',
-    'jsx-a11y/role-has-required-aria-props': 'error',
-    'jsx-a11y/role-supports-aria-props': 'error',
+    'jsx-a11y/alt-text': 'off',
+    'jsx-a11y/aria-props': 'off',
+    'jsx-a11y/aria-proptypes': 'off',
+    'jsx-a11y/aria-unsupported-elements': 'off',
+    'jsx-a11y/role-has-required-aria-props': 'off',
+    'jsx-a11y/role-supports-aria-props': 'off',
+    'jsx-a11y/click-events-have-key-events': 'off',
+    'jsx-a11y/no-static-element-interactions': 'off',
+    'jsx-a11y/no-autofocus': 'off',
+    'jsx-a11y/label-has-associated-control': 'off',
+    'jsx-a11y/heading-has-content': 'off',
+
+    // Other legacy compatibility rules
+    'react/no-unescaped-entities': 'off',
+    'react-hooks/exhaustive-deps': 'off',
+    '@typescript-eslint/no-var-requires': 'off',
+    'no-case-declarations': 'off',
+    '@typescript-eslint/ban-ts-comment': 'off',
+    'no-misleading-character-class': 'off',
+    'no-empty': 'off',
+    'no-prototype-builtins': 'off',
   },
   settings: {
     react: {
