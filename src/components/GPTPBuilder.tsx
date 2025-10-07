@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import CollaborativeDevelopmentPanel from './CollaborativeDevelopmentPanel'
 import { gptBuilderService, DocumentMaster, NoaConfig } from '../services/gptBuilderService'
 import { openAIService } from '../services/openaiService'
 import { supabase } from '../integrations/supabase/client'
@@ -192,6 +193,9 @@ function GPTPBuilder({ embedded = false, userId, userName, userType }: GPTPBuild
   const [currentConversation, setCurrentConversation] = useState<NamedConversation | null>(null)
   const [showConversationHistory, setShowConversationHistory] = useState(true)
   // Removidos: debateAtivo, modoDebate, analiseQualidade (não utilizados ativamente)
+
+  // Estados para desenvolvimento colaborativo
+  const [showDevelopmentPanel, setShowDevelopmentPanel] = useState(false)
 
   // Estados para Sidebar de Histórico
   const [sidebarOpen, setSidebarOpen] = useState(false)
@@ -3604,6 +3608,13 @@ ${conversation.summary}
                   Base de Conhecimento
                 </button>
                 <button
+                  onClick={() => setShowDevelopmentPanel(true)}
+                  className="px-4 py-3 text-sm font-medium transition-colors text-gray-400 hover:text-white border border-blue-500/30 hover:border-blue-500 rounded-lg mx-2"
+                >
+                  <i className="fas fa-code mr-2"></i>
+                  Desenvolvimento Colaborativo
+                </button>
+                <button
                   onClick={() => setActiveTab('canvas')}
                   className={`px-4 py-3 text-sm font-medium transition-colors ${
                     activeTab === 'canvas'
@@ -5619,6 +5630,12 @@ function exemplo() {
           {/* Histórico removido: manter somente painel de conversas */}
         </div>
       </motion.div>
+
+      {/* Painel de Desenvolvimento Colaborativo */}
+      <CollaborativeDevelopmentPanel
+        isVisible={showDevelopmentPanel}
+        onClose={() => setShowDevelopmentPanel(false)}
+      />
     </div>
   )
 }

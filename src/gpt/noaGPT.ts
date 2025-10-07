@@ -10,6 +10,7 @@ import { symbolicAgent } from './symbolicAgent'
 import { voiceControlAgent } from './voiceControlAgent'
 import { aiSmartLearningService } from '../services/aiSmartLearningService'
 import { logService } from '../services/logService'
+import { collaborativeDevelopmentService } from '../services/collaborativeDevelopmentService'
 
 export class NoaGPT {
   private userContext: any = {}
@@ -984,6 +985,71 @@ Como posso ajudá-lo com seu prontuário?`
 • "security" - Verificar segurança
 
 Digite um comando específico para continuar.`
+    }
+
+    // 🚀 DESENVOLVIMENTO COLABORATIVO
+    if (
+      lower.includes('desenvolver') ||
+      lower.includes('criar') ||
+      lower.includes('implementar') ||
+      lower.includes('construir') ||
+      lower.includes('fazer um') ||
+      lower.includes('fazer uma')
+    ) {
+      try {
+        const task = await collaborativeDevelopmentService.startDevelopmentTask(message)
+        
+        // Gerar código automaticamente
+        const codeGenerations = await collaborativeDevelopmentService.generateCode(task, message)
+        
+        let response = `🚀 **DESENVOLVIMENTO COLABORATIVO INICIADO!**\n\n`
+        response += `📋 **Tarefa:** ${task.title}\n`
+        response += `🎯 **Tipo:** ${task.type}\n`
+        response += `💡 **Sugestão:** ${task.aiSuggestion}\n\n`
+        
+        response += `📁 **Arquivos Gerados:**\n`
+        codeGenerations.forEach(gen => {
+          response += `• **${gen.fileName}** (${gen.type})\n`
+          response += `  ${gen.description}\n\n`
+        })
+        
+        response += `✅ **Próximos Passos:**\n`
+        response += `1. Revisar o código gerado\n`
+        response += `2. Fazer ajustes se necessário\n`
+        response += `3. Testar a implementação\n`
+        response += `4. Integrar ao projeto\n\n`
+        
+        response += `💬 **Quer modificar algo ou adicionar funcionalidades?**`
+        
+        return response
+      } catch (error) {
+        console.error('Erro no desenvolvimento colaborativo:', error)
+        return `⚠️ Erro ao iniciar desenvolvimento colaborativo. Tente novamente ou seja mais específico sobre o que deseja criar.`
+      }
+    }
+
+    // 📋 LISTAR TAREFAS DE DESENVOLVIMENTO
+    if (
+      lower.includes('tarefas de desenvolvimento') ||
+      lower.includes('tarefas dev') ||
+      lower.includes('projetos ativos') ||
+      lower.includes('status desenvolvimento')
+    ) {
+      const activeTasks = collaborativeDevelopmentService.getActiveTasks()
+      
+      if (activeTasks.length === 0) {
+        return `📋 **Nenhuma tarefa de desenvolvimento ativa.**\n\nUse "desenvolver [funcionalidade]" para iniciar um novo projeto colaborativo!`
+      }
+      
+      let response = `📋 **TAREFAS DE DESENVOLVIMENTO ATIVAS:**\n\n`
+      activeTasks.forEach(task => {
+        response += `🔄 **${task.title}**\n`
+        response += `   Status: ${task.status}\n`
+        response += `   Progresso: ${task.progress}%\n`
+        response += `   Arquivos: ${task.files.length}\n\n`
+      })
+      
+      return response
     }
 
     // 📊 COMANDOS DE SISTEMA (comandos especiais)
