@@ -3,7 +3,12 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { gptBuilderService, DocumentMaster, NoaConfig } from '../services/gptBuilderService'
 import { openAIService } from '../services/openaiService'
 import { supabase } from '../integrations/supabase/client'
-import { estudoVivoService, EstudoVivo, Debate, DocumentMetadata } from '../services/estudoVivoService'
+import {
+  estudoVivoService,
+  EstudoVivo,
+  Debate,
+  DocumentMetadata,
+} from '../services/estudoVivoService'
 import { semanticAttentionService, UserContext } from '../services/semanticAttentionService'
 import { reasoningLayerService, ReasoningEffort } from '../services/reasoningLayerService'
 import { medicalToolsService } from '../services/medicalToolsService'
@@ -16,10 +21,12 @@ import { ClinicalAssessment } from './ClinicalAssessment'
 import { chatSimulator } from '../utils/chatSimulator'
 import { offlineChatService } from '../services/offlineChatService'
 import LocalStorageManager from '../utils/localStorageManager'
-import { realTimeConsultationService, ConsultationContext } from '../services/realTimeConsultationService'
+import {
+  realTimeConsultationService,
+  ConsultationContext,
+} from '../services/realTimeConsultationService'
 import { conversationManager, NamedConversation } from '../services/conversationManagerService'
 import { ConversationHistory } from './ConversationHistory'
-
 
 interface GPTPBuilderProps {
   /**
@@ -51,37 +58,43 @@ interface AssessmentStats {
 
 function GPTPBuilder({ embedded = false, userId, userName, userType }: GPTPBuilderProps) {
   const resolvedUserType = userType || 'admin'
-  const personaMap = useMemo(() => ({
-    paciente: {
-      defaultName: 'Paciente',
-      tone: 'acolhedor',
-      focus: 'cuidado personalizado'
-    },
-    aluno: {
-      defaultName: 'Aluno',
-      tone: 'didático',
-      focus: 'aprendizado guiado'
-    },
-    profissional: {
-      defaultName: 'Profissional',
-      tone: 'colaborativo',
-      focus: 'planejamento clínico'
-    },
-    medico: {
-      defaultName: 'Profissional de Saúde',
-      tone: 'especializado',
-      focus: 'gestão de casos clínicos'
-    },
-    admin: {
-      defaultName: 'Dr. Ricardo Valença',
-      tone: 'estratégico',
-      focus: 'orquestração da plataforma'
-    }
-  }), [])
+  const personaMap = useMemo(
+    () => ({
+      paciente: {
+        defaultName: 'Paciente',
+        tone: 'acolhedor',
+        focus: 'cuidado personalizado',
+      },
+      aluno: {
+        defaultName: 'Aluno',
+        tone: 'didático',
+        focus: 'aprendizado guiado',
+      },
+      profissional: {
+        defaultName: 'Profissional',
+        tone: 'colaborativo',
+        focus: 'planejamento clínico',
+      },
+      medico: {
+        defaultName: 'Profissional de Saúde',
+        tone: 'especializado',
+        focus: 'gestão de casos clínicos',
+      },
+      admin: {
+        defaultName: 'Dr. Ricardo Valença',
+        tone: 'estratégico',
+        focus: 'orquestração da plataforma',
+      },
+    }),
+    []
+  )
 
   const persona = personaMap[resolvedUserType] || personaMap.admin
   const resolvedUserName = userName?.trim() || persona.defaultName
-  const shortName = useMemo(() => resolvedUserName.split(' ')[0] || resolvedUserName, [resolvedUserName])
+  const shortName = useMemo(
+    () => resolvedUserName.split(' ')[0] || resolvedUserName,
+    [resolvedUserName]
+  )
   const activeUserId = useMemo(() => {
     const trimmed = userId?.trim()
     if (trimmed && trimmed.length > 0) {
@@ -93,22 +106,35 @@ function GPTPBuilder({ embedded = false, userId, userName, userType }: GPTPBuild
     return `noa-${resolvedUserType}-guest`
   }, [userId, resolvedUserType])
 
-  const personalizeText = useCallback((text: string) => {
-    if (!text) {
+  const personalizeText = useCallback(
+    (text: string) => {
+      if (!text) {
+        return text
+      }
+
       return text
-    }
+        .replace(/Dr\.\s?Ricardo Valença/gi, resolvedUserName)
+        .replace(/Dr\.\s?Ricardo/gi, resolvedUserName)
+        .replace(/Ricardo Valença/gi, resolvedUserName)
+        .replace(/Ricardo/gi, shortName)
+    },
+    [resolvedUserName, shortName]
+  )
 
-    return text
-      .replace(/Dr\.\s?Ricardo Valença/gi, resolvedUserName)
-      .replace(/Dr\.\s?Ricardo/gi, resolvedUserName)
-      .replace(/Ricardo Valença/gi, resolvedUserName)
-      .replace(/Ricardo/gi, shortName)
-  }, [resolvedUserName, shortName])
+  const personalizeMessage = useCallback(
+    (message: ChatMessage): ChatMessage => {
+      // NUNCA personalizar mensagens do usuário - apenas assistant/system
+      if (message.role === 'user') {
+        return message
+      }
 
-  const personalizeMessage = useCallback((message: ChatMessage): ChatMessage => ({
-    ...message,
-    content: personalizeText(message.content)
-  }), [personalizeText])
+      return {
+        ...message,
+        content: personalizeText(message.content),
+      }
+    },
+    [personalizeText]
+  )
   const [documents, setDocuments] = useState<DocumentMaster[]>([])
   const [selectedDocument, setSelectedDocument] = useState<DocumentMaster | null>(null)
   const [isEditing, setIsEditing] = useState(false)
@@ -120,7 +146,7 @@ function GPTPBuilder({ embedded = false, userId, userName, userType }: GPTPBuild
     content: '',
     type: 'personality',
     category: '',
-    is_active: true
+    is_active: true,
   })
 
   // Estados para configurações da Nôa
@@ -132,51 +158,58 @@ function GPTPBuilder({ embedded = false, userId, userName, userType }: GPTPBuild
     recognition: {
       drRicardoValenca: true,
       autoGreeting: true,
-      personalizedResponse: true
-    }
+      personalizedResponse: true,
+    },
   })
 
   // Estados para chat multimodal
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([])
-  const pushChatMessage = useCallback((message: ChatMessage) => {
-    setChatMessages(prev => [...prev, personalizeMessage(message)])
-  }, [personalizeMessage])
+  const pushChatMessage = useCallback(
+    (message: ChatMessage) => {
+      setChatMessages(prev => [...prev, personalizeMessage(message)])
+    },
+    [personalizeMessage]
+  )
 
-  const replaceChatMessages = useCallback((messages: ChatMessage[]) => {
-    setChatMessages(messages.map(personalizeMessage))
-  }, [personalizeMessage])
+  const replaceChatMessages = useCallback(
+    (messages: ChatMessage[]) => {
+      setChatMessages(messages.map(personalizeMessage))
+    },
+    [personalizeMessage]
+  )
   const [currentMessage, setCurrentMessage] = useState('')
   const [isTyping, setIsTyping] = useState(false)
-  const [activeTab, setActiveTab] = useState<'chat' | 'canvas' | 'kpis' | 'knowledge-base' | 'clinical-assessment' | 'cruzamentos'>('chat')
+  const [activeTab, setActiveTab] = useState<
+    'chat' | 'canvas' | 'kpis' | 'knowledge-base' | 'clinical-assessment' | 'cruzamentos'
+  >('chat')
   const [attachedFiles, setAttachedFiles] = useState<File[]>([])
   const [uploadedDocuments, setUploadedDocuments] = useState<any[]>([])
-  
+
   // Estados para Estudo Vivo
   const [estudoVivoAtivo, setEstudoVivoAtivo] = useState<EstudoVivo | null>(null)
-  
-  
+
   // Estados para gerenciamento de conversas
   const [currentConversation, setCurrentConversation] = useState<NamedConversation | null>(null)
   const [showConversationHistory, setShowConversationHistory] = useState(true)
   // Removidos: debateAtivo, modoDebate, analiseQualidade (não utilizados ativamente)
-  
+
   // Estados para Sidebar de Histórico
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [intelligentSidebarOpen, setIntelligentSidebarOpen] = useState(false)
   const [selectedConversation, setSelectedConversation] = useState<any>(null)
-  
+
   // Estado para attention semântica
   const [userContext, setUserContext] = useState<UserContext | null>(null)
   const [semanticAttentionActive, setSemanticAttentionActive] = useState(false)
-  
+
   // 🧠 Estado para Reasoning Layer
   const [reasoningActive, setReasoningActive] = useState(false)
   const [currentReasoningChain, setCurrentReasoningChain] = useState<any>(null)
-  
+
   // 🔧 Estado para Ferramentas Médicas
   const [medicalToolsActive, setMedicalToolsActive] = useState(false)
   const [availableTools, setAvailableTools] = useState<any[]>([])
-  
+
   // 🎯 Estado para Harmony Format
   const [harmonyActive, setHarmonyActive] = useState(false)
   const [currentHarmonyConversation, setCurrentHarmonyConversation] = useState<any>(null)
@@ -189,7 +222,7 @@ function GPTPBuilder({ embedded = false, userId, userName, userType }: GPTPBuild
     averageDuration: 45,
     totalAssessments: 0,
     completedAssessments: 0,
-    currentStage: 'none'
+    currentStage: 'none',
   })
 
   const editorRef = useRef<HTMLTextAreaElement>(null)
@@ -204,17 +237,17 @@ function GPTPBuilder({ embedded = false, userId, userName, userType }: GPTPBuild
   // Se quiser adicionar a aba 'cruzamentos', inclua no tipo de activeTab:
   // const [activeTab, setActiveTab] = useState<'chat' | 'canvas' | 'kpis' | 'knowledge-base' | 'cruzamentos'>('chat')
   // Por ora, removendo o efeito pois nunca será chamado
-    // useEffect(() => {
-    //   if (activeTab === 'cruzamentos') {
-    //     loadAllDataForCrossing()
-    //   }
-    // }, [activeTab])
+  // useEffect(() => {
+  //   if (activeTab === 'cruzamentos') {
+  //     loadAllDataForCrossing()
+  //   }
+  // }, [activeTab])
 
   // 🎨 Carregar conteúdo salvo do canvas
   useEffect(() => {
     const savedCanvasData = localStorage.getItem('canvas-data')
     const autoSavedData = localStorage.getItem('canvas-auto-save')
-    
+
     if (savedCanvasData || autoSavedData) {
       setTimeout(() => {
         const canvas = document.getElementById('canvas-area')
@@ -271,7 +304,6 @@ function GPTPBuilder({ embedded = false, userId, userName, userType }: GPTPBuild
       console.log(`  • ${documents.length} documentos totais`)
       console.log(`  • ${milestones.length} marcos de desenvolvimento`)
       console.log(`  • ${Object.keys(localData).length} chaves localStorage`)
-
     } catch (error) {
       console.error('❌ Erro ao carregar dados para cruzamento:', error)
     }
@@ -284,42 +316,40 @@ function GPTPBuilder({ embedded = false, userId, userName, userType }: GPTPBuild
         // 1. Carregar configurações básicas
         await loadDocuments()
         await loadNoaConfig()
-        
+
         // 2. Inicializar chat
         await initializeChat()
-        
+
         // 3. Criar documento institucional (se necessário)
         await createInstitutionalDocument()
-        
+
         // 4. Ativar sistemas avançados
         await activateSemanticAttention()
         await initializeAdvancedSystems()
-        
+
         logger.info('🚀 Inicialização completa do GPTPBuilder')
-        
       } catch (error) {
         logger.error('❌ Erro na inicialização:', error)
       }
     }
-    
+
     initializeSequentially()
   }, [])
-  
+
   // Ativar attention semântica para Dr. Ricardo
   const activateSemanticAttention = async () => {
     try {
       console.log('🧠 Ativando attention semântica para Dr. Ricardo...')
-      
+
       // Versão simplificada - sem processamento complexo
       setSemanticAttentionActive(true)
-      
+
       console.log('✅ Attention semântica ativada com sucesso!')
-      
+
       // Não adicionar mensagem automática no chat; manter interface limpa
-      
     } catch (error) {
       console.error('Erro ao ativar attention semântica:', error)
-      
+
       // Fallback para modo padrão
       const fallbackMessage: ChatMessage = {
         id: Date.now().toString(),
@@ -328,57 +358,56 @@ function GPTPBuilder({ embedded = false, userId, userName, userType }: GPTPBuild
 
 Sistema inicializado. Como posso ajudá-lo hoje?`,
         timestamp: new Date(),
-        action: 'fallback'
+        action: 'fallback',
       }
       pushChatMessage(fallbackMessage)
     }
   }
-  
+
   // 🚀 Inicializar sistemas avançados
   const initializeAdvancedSystems = async () => {
     try {
       console.log('🚀 Inicializando sistemas avançados da Nôa...')
-      
+
       // Ativar ferramentas médicas
       const tools = await medicalToolsService.getAvailableTools()
       setAvailableTools(tools)
       setMedicalToolsActive(true)
       console.log('🔧 Ferramentas médicas ativadas:', tools.length)
-      
+
       // Ativar reasoning layer
       setReasoningActive(true)
       console.log('🧠 Reasoning Layer ativado')
-      
+
       // Ativar Harmony Format
       setHarmonyActive(true)
       console.log('🎯 Harmony Format ativado')
-      
+
       // Criar conversação Harmony inicial
       const harmonyContext: HarmonyContext = {
         sessionType: 'development',
         specialty: 'geral',
-        reasoningLevel: 'high'
+        reasoningLevel: 'high',
       }
-      
+
       const harmonyConversation = await harmonyFormatService.createHarmonyConversation(
         'Sistema Nôa Esperanza Avançado inicializado com sucesso!',
         harmonyContext
       )
       setCurrentHarmonyConversation(harmonyConversation)
       console.log('🎯 Conversação Harmony criada:', harmonyConversation.id)
-      
     } catch (error) {
       console.error('Erro ao inicializar sistemas avançados:', error)
     }
   }
-  
+
   // 🔍 BUSCAR CONTEXTO HISTÓRICO PARA 97% DE ACURÁCIA
   const getHistoricalContext = async (message: string, dominantContext: string): Promise<any[]> => {
     try {
       console.log('🔍 Buscando contexto histórico...')
-      
+
       const contextResults: any[] = []
-      
+
       // 1. Buscar no conversation_history
       const { data: conversationHistory } = await supabase
         .from('conversation_history')
@@ -387,18 +416,18 @@ Sistema inicializado. Como posso ajudá-lo hoje?`,
         .textSearch('content', message)
         .order('relevance_score', { ascending: false })
         .limit(3)
-      
+
       if (conversationHistory) {
         conversationHistory.forEach(conv => {
           contextResults.push({
             type: 'conversa_anterior',
             content: conv.content,
             relevance: Math.round((conv.relevance_score || 0.8) * 100),
-            timestamp: conv.created_at
+            timestamp: conv.created_at,
           })
         })
       }
-      
+
       // 2. Buscar na memoria_viva_cientifica
       const { data: memoriaViva } = await supabase
         .from('memoria_viva_cientifica')
@@ -407,18 +436,18 @@ Sistema inicializado. Como posso ajudá-lo hoje?`,
         .textSearch('content', message)
         .order('relevance', { ascending: false })
         .limit(2)
-      
+
       if (memoriaViva) {
         memoriaViva.forEach(memoria => {
           contextResults.push({
             type: 'memoria_viva',
             content: memoria.content,
             relevance: Math.round((memoria.relevance || 0.9) * 100),
-            timestamp: memoria.created_at
+            timestamp: memoria.created_at,
           })
         })
       }
-      
+
       // 3. Buscar em documentos_mestres relevantes
       const { data: documentos } = await supabase
         .from('documentos_mestres')
@@ -426,18 +455,18 @@ Sistema inicializado. Como posso ajudá-lo hoje?`,
         .eq('user_id', activeUserId)
         .textSearch('content', message)
         .limit(2)
-      
+
       if (documentos) {
         documentos.forEach(doc => {
           contextResults.push({
             type: 'documento_mestre',
             content: doc.content,
             relevance: 95, // Documentos mestres têm alta relevância
-            timestamp: doc.created_at
+            timestamp: doc.created_at,
           })
         })
       }
-      
+
       // 4. Buscar no vector_memory por similaridade semântica
       const { data: vectorMemory } = await supabase
         .from('vector_memory')
@@ -445,121 +474,109 @@ Sistema inicializado. Como posso ajudá-lo hoje?`,
         .eq('user_id', activeUserId)
         .order('created_at', { ascending: false })
         .limit(2)
-      
+
       if (vectorMemory) {
         vectorMemory.forEach(vector => {
           contextResults.push({
             type: 'memoria_vetorial',
             content: vector.content,
             relevance: 90, // Memória vetorial tem alta relevância
-            timestamp: vector.created_at
+            timestamp: vector.created_at,
           })
         })
       }
-      
+
       // Ordenar por relevância e retornar top 5
-      const sortedContext = contextResults
-        .sort((a, b) => b.relevance - a.relevance)
-        .slice(0, 5)
-      
+      const sortedContext = contextResults.sort((a, b) => b.relevance - a.relevance).slice(0, 5)
+
       console.log(`✅ Contexto histórico encontrado: ${sortedContext.length} itens`)
       return sortedContext
-      
     } catch (error) {
       console.error('❌ Erro ao buscar contexto histórico:', error)
       return []
     }
   }
-  
+
   // 💾 SALVAR CONVERSAÇÃO NO BANCO DE DADOS
-  const saveConversationToDatabase = async (userMessage: string, aiResponse: string, processedInput: any) => {
+  const saveConversationToDatabase = async (
+    userMessage: string,
+    aiResponse: string,
+    processedInput: any
+  ) => {
     try {
       console.log('💾 Salvando conversa no banco de dados...')
-      
+
       // 1. Salvar no conversation_history (tabela principal)
-      await supabase
-        .from('conversation_history')
-        .insert({
-          user_id: activeUserId,
-          content: userMessage,
-          response: aiResponse,
-          focused_context: processedInput.focusedContext,
-          semantic_features: processedInput.semanticFeatures,
-          attention_scores: processedInput.attentionScores,
-          relevance_score: processedInput.relevanceScore || 0.95,
-          created_at: new Date().toISOString()
-        })
-      
+      await supabase.from('conversation_history').insert({
+        user_id: activeUserId,
+        content: userMessage,
+        response: aiResponse,
+        focused_context: processedInput.focusedContext,
+        semantic_features: processedInput.semanticFeatures,
+        attention_scores: processedInput.attentionScores,
+        relevance_score: processedInput.relevanceScore || 0.95,
+        created_at: new Date().toISOString(),
+      })
+
       // 2. Atualizar vector_memory (com fallback seguro)
       try {
-        await supabase
-          .from('vector_memory')
-          .insert({
-            user_id: activeUserId,
-            content: userMessage,
-            vector_embedding: processedInput.semanticFeatures?.vector || [],
-            metadata: {
-              response: aiResponse,
-              context: processedInput.focusedContext,
-              timestamp: new Date().toISOString()
-            }
-          })
+        await supabase.from('vector_memory').insert({
+          user_id: activeUserId,
+          content: userMessage,
+          vector_embedding: processedInput.semanticFeatures?.vector || [],
+          metadata: {
+            response: aiResponse,
+            context: processedInput.focusedContext,
+            timestamp: new Date().toISOString(),
+          },
+        })
       } catch (vectorError) {
         console.warn('⚠️ Vector memory não disponível, continuando sem vetor:', vectorError)
         // Continuar sem vetor - não é crítico
       }
-      
+
       // 3. Salvar na memória viva científica
-      await supabase
-        .from('memoria_viva_cientifica')
-        .insert({
-          user_id: activeUserId,
-          title: `Conversa ${new Date().toLocaleDateString()}`,
-          content: userMessage,
-          context_type: 'conversa',
-          metadata: {
-            response: aiResponse,
-            context: processedInput.focusedContext,
-            semantic_features: processedInput.semanticFeatures,
-            area: processedInput.focusedContext.dominantContext || 'geral',
-            tipo: 'conversa',
-            relevancia: processedInput.relevanceScore || 0.95
-          },
-          tags: processedInput.semanticFeatures?.tags || ['conversa', 'admin'],
-          relevance: processedInput.relevanceScore || 0.95
-        })
-      
+      await supabase.from('memoria_viva_cientifica').insert({
+        user_id: activeUserId,
+        title: `Conversa ${new Date().toLocaleDateString()}`,
+        content: userMessage,
+        context_type: 'conversa',
+        metadata: {
+          response: aiResponse,
+          context: processedInput.focusedContext,
+          semantic_features: processedInput.semanticFeatures,
+          area: processedInput.focusedContext.dominantContext || 'geral',
+          tipo: 'conversa',
+          relevancia: processedInput.relevanceScore || 0.95,
+        },
+        tags: processedInput.semanticFeatures?.tags || ['conversa', 'admin'],
+        relevance: processedInput.relevanceScore || 0.95,
+      })
+
       // 4. Atualizar Harmony Conversation se existir
       if (currentHarmonyConversation) {
-        await harmonyFormatService.processHarmonyMessage(
-          currentHarmonyConversation,
-          userMessage
-        )
+        await harmonyFormatService.processHarmonyMessage(currentHarmonyConversation, userMessage)
       }
-      
+
       console.log('✅ Conversa salva com sucesso no banco de dados')
-      
     } catch (error) {
       console.error('❌ Erro ao salvar conversa:', error)
     }
   }
-  
+
   // 🚀 SALVAR SIMPLES EM BACKGROUND (ULTRA-FLUIDO)
   const saveSimpleInBackground = async (message: string, response: string) => {
     try {
       // Salvar apenas o essencial - sem processamento complexo
-      await supabase
-        .from('conversation_history')
-        .insert({
-          user_id: activeUserId,
-          content: message,
-          response: response,
-          relevance_score: 0.95,
-          created_at: new Date().toISOString()
-        })
-      
+      await supabase.from('conversation_history').insert({
+        user_id: activeUserId,
+        content: message,
+        response: response,
+        relevance_score: 0.95,
+        created_at: new Date().toISOString(),
+      })
+
       console.log('✅ Salvo em background (ultra-fluido)')
-      
     } catch (error) {
       console.error('Erro no background simples:', error)
       // Não afeta a resposta principal
@@ -570,9 +587,9 @@ Sistema inicializado. Como posso ajudá-lo hoje?`,
   const testChatFluidity = async () => {
     try {
       console.log('🧪 Testando fluidez do chat...')
-      
+
       const result = await chatSimulator.simulateChat()
-      
+
       const testMessage: ChatMessage = {
         id: Date.now().toString(),
         role: 'assistant',
@@ -585,128 +602,135 @@ Sistema inicializado. Como posso ajudá-lo hoje?`,
 
 ${result.errors.length > 0 ? `**Erros encontrados:**\n${result.errors.map(e => `• ${e}`).join('\n')}` : '**Sistema funcionando perfeitamente!**'}`,
         timestamp: new Date(),
-        action: 'test_fluidity'
+        action: 'test_fluidity',
       }
-      
+
       pushChatMessage(testMessage)
-      
     } catch (error) {
       console.error('Erro no teste de fluidez:', error)
     }
   }
-  
+
   // 🚀 PROCESSAR EM BACKGROUND OTIMIZADO (FLUIDO)
   const processInBackgroundOptimized = async (message: string, response: string) => {
     try {
       console.log('🚀 Processando em background otimizado...')
-      
+
       // 1. Salvar conversa no banco (simplificado)
-      await supabase
-        .from('conversation_history')
-        .insert({
-          user_id: activeUserId,
-          content: message,
-          response: response,
-          relevance_score: 0.95,
-          created_at: new Date().toISOString()
-        })
-      
+      await supabase.from('conversation_history').insert({
+        user_id: activeUserId,
+        content: message,
+        response: response,
+        relevance_score: 0.95,
+        created_at: new Date().toISOString(),
+      })
+
       // 2. Atualizar contexto semântico (simplificado) - removido para evitar travamentos
-      
+
       console.log('✅ Background otimizado processado com sucesso')
-      
     } catch (error) {
       console.error('Erro no background otimizado:', error)
       // Não afeta a resposta principal
     }
   }
-  
+
   // 🚀 PROCESSAR SISTEMAS AVANÇADOS EM BACKGROUND
-  const processAdvancedSystemsInBackground = async (message: string, response: string, processedInput: any) => {
+  const processAdvancedSystemsInBackground = async (
+    message: string,
+    response: string,
+    processedInput: any
+  ) => {
     try {
       console.log('🚀 Processando sistemas avançados em background...')
-      
+
       // 0. 🔍 BUSCAR CONTEXTO HISTÓRICO EM BACKGROUND (para próxima resposta)
-      const historicalContext = await getHistoricalContext(message, processedInput.focusedContext.dominantContext)
+      const historicalContext = await getHistoricalContext(
+        message,
+        processedInput.focusedContext.dominantContext
+      )
       console.log(`🔍 Contexto histórico encontrado: ${historicalContext.length} itens`)
-      
+
       // 1. 🧠 REASONING LAYER (se for consulta clínica ou pesquisa)
-      if (message.toLowerCase().includes('paciente') || 
-          message.toLowerCase().includes('diagnóstico') || 
-          message.toLowerCase().includes('sintoma') ||
-          message.toLowerCase().includes('pesquisa') ||
-          message.toLowerCase().includes('estudo')) {
-        
+      if (
+        message.toLowerCase().includes('paciente') ||
+        message.toLowerCase().includes('diagnóstico') ||
+        message.toLowerCase().includes('sintoma') ||
+        message.toLowerCase().includes('pesquisa') ||
+        message.toLowerCase().includes('estudo')
+      ) {
         const effort: ReasoningEffort = {
           level: message.toLowerCase().includes('pesquisa') ? 'research' : 'clinical',
           description: 'Raciocínio automático em background',
           maxIterations: 3,
-          contextDepth: 5
+          contextDepth: 5,
         }
-        
+
         await reasoningLayerService.startReasoning(message, effort, {
           patientContext: 'Consulta automática',
           symptoms: [],
           evidenceBased: true,
-          guidelines: ['Protocolos atuais']
+          guidelines: ['Protocolos atuais'],
         })
         console.log('🧠 Reasoning Layer processado em background')
       }
-      
+
       // 2. 🔧 FERRAMENTAS MÉDICAS (se precisar de busca ou cálculo)
-      if (message.toLowerCase().includes('buscar') || 
-          message.toLowerCase().includes('calcular') ||
-          message.toLowerCase().includes('imc') ||
-          message.toLowerCase().includes('dosagem')) {
-        
+      if (
+        message.toLowerCase().includes('buscar') ||
+        message.toLowerCase().includes('calcular') ||
+        message.toLowerCase().includes('imc') ||
+        message.toLowerCase().includes('dosagem')
+      ) {
         // Busca médica automática
         if (message.toLowerCase().includes('buscar')) {
           await medicalToolsService.searchMedicalWeb(message, 'general')
           console.log('🔍 Busca médica processada em background')
         }
-        
+
         // Cálculo médico automático
-        if (message.toLowerCase().includes('calcular') || 
-            message.toLowerCase().includes('imc') ||
-            message.toLowerCase().includes('dosagem')) {
+        if (
+          message.toLowerCase().includes('calcular') ||
+          message.toLowerCase().includes('imc') ||
+          message.toLowerCase().includes('dosagem')
+        ) {
           await medicalToolsService.calculateMedical(message, 'clinical')
           console.log('🧮 Cálculo médico processado em background')
         }
       }
-      
+
       // 3. 🎯 HARMONY FORMAT (sempre atualizar conversação)
       if (currentHarmonyConversation) {
-        await harmonyFormatService.processHarmonyMessage(
-          currentHarmonyConversation,
-          message
-        )
+        await harmonyFormatService.processHarmonyMessage(currentHarmonyConversation, message)
         console.log('🎯 Harmony Format atualizado em background')
       }
-      
+
       console.log('✅ Sistemas avançados processados em background com sucesso')
-      
     } catch (error) {
       console.error('Erro no processamento background:', error)
       // Não afeta a resposta principal
     }
   }
-  
+
   // 📚 SISTEMA DE BASE DE CONHECIMENTO COMO HISTÓRIA DE DESENVOLVIMENTO
   const createInstitutionalDocument = async () => {
     try {
       console.log('🔍 Verificando se os documentos mestres existem...')
-      
+
       // Verificar se as tabelas existem primeiro
       try {
         const existingDocs = await gptBuilderService.getDocuments()
         console.log('📚 Documentos existentes:', existingDocs.length)
-        
-        const hasMasterDoc = existingDocs.some(doc => 
-          doc.title.includes('Documento Mestre Institucional') && doc.category === 'institutional-master'
+
+        const hasMasterDoc = existingDocs.some(
+          doc =>
+            doc.title.includes('Documento Mestre Institucional') &&
+            doc.category === 'institutional-master'
         )
-        
-        const hasBaseDoc = existingDocs.some(doc => 
-          doc.title.includes('Base de Conhecimento - História') && doc.category === 'development-history'
+
+        const hasBaseDoc = existingDocs.some(
+          doc =>
+            doc.title.includes('Base de Conhecimento - História') &&
+            doc.category === 'development-history'
         )
 
         console.log('📘 Documento Mestre existe:', hasMasterDoc)
@@ -715,7 +739,7 @@ ${result.errors.length > 0 ? `**Erros encontrados:**\n${result.errors.map(e => `
         if (!hasMasterDoc) {
           console.log('📘 Criando Documento Mestre Institucional...')
           const masterDoc = {
-            title: "📘 Documento Mestre Institucional – Nôa Esperanza (v.2.0)",
+            title: '📘 Documento Mestre Institucional – Nôa Esperanza (v.2.0)',
             content: `📘 Documento Mestre Institucional – Nôa Esperanza (v.2.0)
 Atualização: Setembro 2025
 
@@ -831,9 +855,9 @@ Validação: Equipe de Desenvolvimento e Coordenação Clínica
 "Cada fala escutada é um ato fundador."`,
             type: 'knowledge' as const,
             category: 'institutional-master',
-            is_active: true
+            is_active: true,
           }
-          
+
           await gptBuilderService.createDocument(masterDoc)
           console.log('✅ Documento Mestre Institucional criado com sucesso!')
         }
@@ -841,7 +865,7 @@ Validação: Equipe de Desenvolvimento e Coordenação Clínica
         if (!hasBaseDoc) {
           console.log('📚 Criando Base de Conhecimento...')
           const baseDoc = {
-            title: "📚 Base de Conhecimento - História de Desenvolvimento da Nôa Esperanza",
+            title: '📚 Base de Conhecimento - História de Desenvolvimento da Nôa Esperanza',
             content: `# 📚 BASE DE CONHECIMENTO - HISTÓRIA DE DESENVOLVIMENTO DA NÔA ESPERANZA
 
 ## 🎯 **CONCEITO FUNDAMENTAL**
@@ -879,19 +903,17 @@ Criar uma **história ordenada** do desenvolvimento da Nôa Esperanza, onde cada
 **Status:** Sistema ativo desde ${new Date().toLocaleDateString('pt-BR')}`,
             type: 'knowledge' as const,
             category: 'development-history',
-            is_active: true
+            is_active: true,
           }
-          
+
           await gptBuilderService.createDocument(baseDoc)
           console.log('✅ Base de Conhecimento criada com sucesso!')
         }
-        
       } catch (tableError) {
         console.error('❌ Erro ao acessar tabelas do banco de dados:', tableError)
         console.log('💡 As tabelas do GPT Builder podem não ter sido criadas ainda.')
         console.log('💡 Execute os scripts SQL para criar as tabelas primeiro.')
       }
-      
     } catch (error) {
       console.error('❌ Erro geral ao criar documentos da base de conhecimento:', error)
     }
@@ -910,9 +932,12 @@ Criar uma **história ordenada** do desenvolvimento da Nôa Esperanza, onde cada
       setLoading(true)
       const documents = await gptBuilderService.getDocuments()
       console.log('📚 Documentos carregados:', documents.length)
-      console.log('📚 Lista de documentos:', documents.map(d => d.title))
+      console.log(
+        '📚 Lista de documentos:',
+        documents.map(d => d.title)
+      )
       setDocuments(documents)
-      
+
       if (documents.length === 0) {
         console.log('⚠️ Nenhum documento encontrado - criando documentos mestres...')
         await createInstitutionalDocument()
@@ -945,9 +970,9 @@ Criar uma **história ordenada** do desenvolvimento da Nôa Esperanza, onde cada
       setLoading(true)
       await gptBuilderService.updateDocument(selectedDocument.id, {
         title: selectedDocument.title,
-        content: selectedDocument.content
+        content: selectedDocument.content,
       })
-      
+
       setIsEditing(false)
       loadDocuments()
     } catch (error) {
@@ -959,12 +984,12 @@ Criar uma **história ordenada** do desenvolvimento da Nôa Esperanza, onde cada
 
   const createNewDocument = () => {
     console.log('📝 CRIANDO NOVO DOCUMENTO...')
-    setNewDocument({ 
-      title: 'Novo Documento', 
-      content: '', 
-      type: 'knowledge', 
-      category: 'manual', 
-      is_active: true 
+    setNewDocument({
+      title: 'Novo Documento',
+      content: '',
+      type: 'knowledge',
+      category: 'manual',
+      is_active: true,
     })
     setSelectedDocument(null)
     setIsEditing(true)
@@ -979,17 +1004,17 @@ Criar uma **história ordenada** do desenvolvimento da Nôa Esperanza, onde cada
     try {
       setLoading(true)
       console.log('💾 SALVANDO DOCUMENTO:', newDocument)
-      
+
       const result = await gptBuilderService.createDocument({
         title: newDocument.title,
         content: newDocument.content,
         type: newDocument.type as any,
         category: newDocument.category || '',
-        is_active: true
+        is_active: true,
       })
-      
+
       console.log('✅ DOCUMENTO SALVO:', result)
-      
+
       setNewDocument({ title: '', content: '', type: 'personality', category: '', is_active: true })
       await loadDocuments()
       setIsEditing(false)
@@ -1019,24 +1044,24 @@ Criar uma **história ordenada** do desenvolvimento da Nôa Esperanza, onde cada
   const getHistoricalContextSimple = async (message: string) => {
     try {
       console.log('📚 Buscando contexto histórico...')
-      
+
       const { data, error } = await supabase
         .from('conversation_history')
         .select('content, response, created_at')
         .eq('user_id', activeUserId)
         .order('created_at', { ascending: false })
         .limit(5)
-      
+
       if (error) {
         console.warn('⚠️ Erro ao buscar contexto histórico:', error)
         return null
       }
-      
+
       if (data && data.length > 0) {
         console.log(`✅ Contexto histórico carregado: ${data.length} conversas`)
         return data
       }
-      
+
       return null
     } catch (error) {
       console.warn('⚠️ Erro na busca de contexto histórico:', error)
@@ -1045,20 +1070,27 @@ Criar uma **história ordenada** do desenvolvimento da Nôa Esperanza, onde cada
   }
 
   // Construir prompt contextual
-  const buildContextualPrompt = (message: string, historicalContext: any, chatMessages: ChatMessage[]) => {
+  const buildContextualPrompt = (
+    message: string,
+    historicalContext: any,
+    chatMessages: ChatMessage[]
+  ) => {
     let contextText = ''
-    
+
     if (historicalContext && historicalContext.length > 0) {
       contextText = '\n\n📚 **CONTEXTO HISTÓRICO:**\n'
       historicalContext.forEach((conv: any, index: number) => {
         contextText += `${index + 1}. **${conv.created_at.split('T')[0]}**: ${conv.content.substring(0, 100)}...\n`
       })
     }
-    
-    const recentMessages = chatMessages.slice(-4).map(msg => 
-      `${msg.role === 'user' ? 'Dr. Ricardo' : 'Nôa'}: ${msg.content.substring(0, 150)}...`
-    ).join('\n')
-    
+
+    const recentMessages = chatMessages
+      .slice(-4)
+      .map(
+        msg => `${msg.role === 'user' ? 'Dr. Ricardo' : 'Nôa'}: ${msg.content.substring(0, 150)}...`
+      )
+      .join('\n')
+
     return `Você é a Nôa Esperanza, assistente médica e parceira de desenvolvimento do Dr. Ricardo Valença.
 
 ${contextText}
@@ -1084,15 +1116,9 @@ ${recentMessages}
   // Função para detectar consultas à base de conhecimento
   const checkKnowledgeBaseQuery = (message: string): boolean => {
     const lowerMessage = message.toLowerCase().trim()
-    
+
     // Evitar acionar KB em saudações ou identificação
-    const greetingPhrases = [
-      'olá, nôa. ricardo valença, aqui',
-      'olá, nôa',
-      'oi, nôa',
-      'olá',
-      'oi'
-    ]
+    const greetingPhrases = ['olá, nôa. ricardo valença, aqui', 'olá, nôa', 'oi, nôa', 'olá', 'oi']
     if (greetingPhrases.some(g => lowerMessage.startsWith(g))) return false
 
     const knowledgeBaseKeywords = [
@@ -1108,13 +1134,13 @@ ${recentMessages}
       'protocolo',
       'roteiro',
       'avaliação clínica',
-      'entrevista'
+      'entrevista',
     ]
-    
-    const hasKnowledgeKeyword = knowledgeBaseKeywords.some(keyword => 
+
+    const hasKnowledgeKeyword = knowledgeBaseKeywords.some(keyword =>
       lowerMessage.includes(keyword)
     )
-    
+
     // Detectar frases específicas de consulta
     const consultPhrases = [
       'consulte',
@@ -1125,33 +1151,33 @@ ${recentMessages}
       'mostre',
       'liste',
       'acesse',
-      'pesquise'
+      'pesquise',
     ]
-    
-    const hasConsultPhrase = consultPhrases.some(phrase => 
-      lowerMessage.includes(phrase)
-    )
-    
+
+    const hasConsultPhrase = consultPhrases.some(phrase => lowerMessage.includes(phrase))
+
     // Requerir intenção mínima: frase de consulta + termo de documento, ou termo específico de KB
     return hasKnowledgeKeyword || (hasConsultPhrase && lowerMessage.length > 15)
   }
 
   // Salvar conversa no sistema híbrido (Supabase + Local)
-  const saveConversationHybrid = async (userMessage: string, aiResponse: string, action: string) => {
+  const saveConversationHybrid = async (
+    userMessage: string,
+    aiResponse: string,
+    action: string
+  ) => {
     try {
       console.log('💾 Salvando conversa no sistema híbrido...')
-      
+
       // 1. Salvar no Supabase (se online)
       try {
-        const { error: supabaseError } = await supabase
-          .from('conversation_history')
-          .insert({
-            user_id: activeUserId,
-            content: userMessage,
-            response: aiResponse,
-            created_at: new Date().toISOString()
-          })
-        
+        const { error: supabaseError } = await supabase.from('conversation_history').insert({
+          user_id: activeUserId,
+          content: userMessage,
+          response: aiResponse,
+          created_at: new Date().toISOString(),
+        })
+
         if (supabaseError) {
           console.warn('⚠️ Erro ao salvar no Supabase:', supabaseError)
         } else {
@@ -1160,7 +1186,7 @@ ${recentMessages}
       } catch (supabaseError) {
         console.warn('⚠️ Erro de conexão Supabase:', supabaseError)
       }
-      
+
       // 2. Salvar localmente (sempre)
       const localConversation = {
         id: `local_${Date.now()}`,
@@ -1168,16 +1194,16 @@ ${recentMessages}
         aiResponse,
         action,
         timestamp: new Date(),
-        synced: false
+        synced: false,
       }
-      
+
       // Salvar no localStorage
       const existingLocal = JSON.parse(localStorage.getItem('noa_local_conversations') || '[]')
       existingLocal.push(localConversation)
       localStorage.setItem('noa_local_conversations', JSON.stringify(existingLocal))
-      
+
       console.log('✅ Conversa salva localmente')
-      
+
       // 3. Aprendizado inteligente (background)
       setTimeout(async () => {
         try {
@@ -1191,7 +1217,6 @@ ${recentMessages}
           console.warn('⚠️ Erro no aprendizado inteligente:', learningError)
         }
       }, 1000)
-      
     } catch (error) {
       console.error('❌ Erro ao salvar conversa híbrida:', error)
     }
@@ -1201,16 +1226,16 @@ ${recentMessages}
     try {
       // 1. Carregar conversas do banco de dados
       console.log('📖 Carregando conversas do banco de dados...')
-      
+
       const { data: recentConversations, error } = await supabase
         .from('conversation_history')
         .select('*')
         .eq('user_id', activeUserId)
         .order('created_at', { ascending: false })
         .limit(10)
-      
+
       let chatMessages: ChatMessage[] = []
-      
+
       if (!error && recentConversations) {
         // Converter conversas do banco para formato do chat
         recentConversations.reverse().forEach(conv => {
@@ -1219,21 +1244,21 @@ ${recentMessages}
             id: `${conv.id}_user`,
             role: 'user',
             content: conv.content,
-            timestamp: new Date(conv.created_at)
+            timestamp: new Date(conv.created_at),
           })
-          
+
           // Resposta da IA
           chatMessages.push({
             id: `${conv.id}_assistant`,
             role: 'assistant',
             content: conv.response,
-            timestamp: new Date(conv.created_at)
+            timestamp: new Date(conv.created_at),
           })
         })
-        
+
         console.log(`✅ Carregadas ${recentConversations.length} conversas do banco`)
       }
-      
+
       // 2. Adicionar mensagem de boas-vindas se não há conversas
       if (chatMessages.length === 0) {
         const welcomeMessage = personalizeMessage({
@@ -1244,7 +1269,7 @@ ${recentMessages}
 Sou a **Nôa Esperanza**, sua mentora especializada. Estou pronta para apoiar ${persona.focus}.
 
 **Como posso ajudá-lo hoje?**`,
-          timestamp: new Date()
+          timestamp: new Date(),
         })
         chatMessages = [welcomeMessage]
       } else {
@@ -1255,16 +1280,15 @@ Sou a **Nôa Esperanza**, sua mentora especializada. Estou pronta para apoiar ${
           content: `👩‍⚕️ **Vamos continuar, ${resolvedUserName}!**
 
 Já registramos ${Math.floor(chatMessages.length / 2)} interações recentes. Em que posso ajudar agora?`,
-          timestamp: new Date()
+          timestamp: new Date(),
         })
         chatMessages.push(continueMessage)
       }
-      
+
       replaceChatMessages(chatMessages)
-      
     } catch (error) {
       console.error('Erro ao carregar conversas:', error)
-      
+
       // Fallback: mensagem de boas-vindas simples
       const welcomeMessage = personalizeMessage({
         id: 'welcome',
@@ -1274,7 +1298,7 @@ Já registramos ${Math.floor(chatMessages.length / 2)} interações recentes. Em
 Sou a **Nôa Esperanza**, sua mentora especializada. Estou pronta para apoiar ${persona.focus}.
 
 **Como posso ajudá-lo hoje?**`,
-        timestamp: new Date()
+        timestamp: new Date(),
       })
       replaceChatMessages([welcomeMessage])
     }
@@ -1284,10 +1308,10 @@ Sou a **Nôa Esperanza**, sua mentora especializada. Estou pronta para apoiar ${
 
   const handleFileUpload = async (file: File) => {
     console.log('📁 Processando arquivo:', file.name)
-    
+
     // Adicionar arquivo à lista de anexados
     setAttachedFiles(prev => [...prev, file])
-    
+
     // Processar conteúdo do arquivo
     await processUploadedFile(file)
   }
@@ -1296,7 +1320,7 @@ Sou a **Nôa Esperanza**, sua mentora especializada. Estou pronta para apoiar ${
     try {
       let content = ''
       let documentTitle = file.name.replace(/\.[^/.]+$/, '')
-      
+
       if (file.type === 'text/plain') {
         content = await file.text()
       } else if (file.type === 'application/pdf') {
@@ -1308,14 +1332,19 @@ Sou a **Nôa Esperanza**, sua mentora especializada. Estou pronta para apoiar ${
           console.log('Erro ao processar PDF, usando fallback:', pdfError)
           content = `[CONTEÚDO DO PDF: ${file.name}]\n\nArquivo PDF detectado. Conteúdo disponível para análise e integração à base de conhecimento.\n\nErro no processamento: ${pdfError instanceof Error ? pdfError.message : String(pdfError)}`
         }
-      } else if (file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' || file.name.toLowerCase().endsWith('.docx')) {
+      } else if (
+        file.type === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' ||
+        file.name.toLowerCase().endsWith('.docx')
+      ) {
         // Para DOCX, vamos extrair o texto real
         try {
           const arrayBuffer = await file.arrayBuffer()
           const mammoth = await import('mammoth')
           const result = await mammoth.extractRawText({ arrayBuffer })
-          content = result.value || `[CONTEÚDO DO DOCX: ${file.name}]\n\nDocumento Word processado. Conteúdo extraído para análise.`
-          
+          content =
+            result.value ||
+            `[CONTEÚDO DO DOCX: ${file.name}]\n\nDocumento Word processado. Conteúdo extraído para análise.`
+
           // Adicionar avisos se houver
           if (result.messages && result.messages.length > 0) {
             content += `\n\n⚠️ Avisos durante o processamento:\n${result.messages.map(msg => `- ${msg.message}`).join('\n')}`
@@ -1338,42 +1367,42 @@ Sou a **Nôa Esperanza**, sua mentora especializada. Estou pronta para apoiar ${
       console.log('💾 Salvando documento na base de conhecimento...')
       console.log('📄 Título:', documentTitle)
       console.log('📊 Tamanho do conteúdo:', content.length, 'caracteres')
-      
+
       const documentData = {
         title: `Documento Enviado: ${documentTitle}`,
         content: content,
         type: 'knowledge' as const,
         category: 'uploaded-document',
-        is_active: true
+        is_active: true,
       }
 
       console.log('📋 Dados do documento:', documentData)
-      
+
       try {
         const savedDocument = await gptBuilderService.createDocument(documentData)
         console.log('✅ Documento salvo com sucesso:', savedDocument)
-        
+
         if (!savedDocument || !savedDocument.id) {
           throw new Error('Documento não foi salvo corretamente - sem ID retornado')
         }
-        
+
         setUploadedDocuments(prev => [...prev, savedDocument])
-        
+
         // Verificar se o documento foi realmente salvo consultando o banco
         const verification = await gptBuilderService.getDocuments()
         const foundDoc = verification.find(doc => doc.id === savedDocument.id)
-        
+
         if (!foundDoc) {
           console.warn('⚠️ Documento não encontrado após salvamento')
         } else {
           console.log('✅ Documento verificado no banco de dados:', foundDoc.title)
         }
-        
+
         // Mensagem detalhada de confirmação
         const confirmationMessage: ChatMessage = {
-        id: Date.now().toString(),
-        role: 'assistant',
-        content: `📁 **Arquivo processado e salvo com sucesso!**
+          id: Date.now().toString(),
+          role: 'assistant',
+          content: `📁 **Arquivo processado e salvo com sucesso!**
 
 **📄 Detalhes do documento:**
 • **Arquivo:** ${file.name}
@@ -1390,19 +1419,17 @@ Sou a **Nôa Esperanza**, sua mentora especializada. Estou pronta para apoiar ${
 • **Palavras:** ${content.split(/\s+/).length.toLocaleString()}
 
 **💬 Agora você pode conversar sobre este documento!** Faça perguntas, peça análises, ou solicite esclarecimentos sobre o conteúdo.`,
-        timestamp: new Date()
-      }
+          timestamp: new Date(),
+        }
 
         pushChatMessage(confirmationMessage)
-        
       } catch (saveError) {
         console.error('❌ Erro ao salvar documento:', saveError)
         throw saveError
       }
-      
     } catch (error) {
       console.error('Erro ao processar arquivo:', error)
-      
+
       const errorMessage: ChatMessage = {
         id: Date.now().toString(),
         role: 'assistant',
@@ -1411,7 +1438,7 @@ Sou a **Nôa Esperanza**, sua mentora especializada. Estou pronta para apoiar ${
 Detalhes do erro: ${error instanceof Error ? error.message : String(error)}
 
 Tente novamente ou envie o arquivo em um formato diferente.`,
-        timestamp: new Date()
+        timestamp: new Date(),
       }
 
       pushChatMessage(errorMessage)
@@ -1429,38 +1456,51 @@ Tente novamente ou envie o arquivo em um formato diferente.`,
       const wordCount = content.split(/\s+/).length
       const charCount = content.length
       const lineCount = content.split('\n').length
-      
+
       // Detectar tipo de documento baseado no conteúdo
       let documentType = 'Geral'
       let keyTopics: string[] = []
-      
-      if (content.toLowerCase().includes('cannabis') || content.toLowerCase().includes('cbd') || content.toLowerCase().includes('thc')) {
+
+      if (
+        content.toLowerCase().includes('cannabis') ||
+        content.toLowerCase().includes('cbd') ||
+        content.toLowerCase().includes('thc')
+      ) {
         documentType = 'Cannabis Medicinal'
         keyTopics.push('Cannabis', 'CBD', 'THC')
       }
-      
-      if (content.toLowerCase().includes('protocolo') || content.toLowerCase().includes('tratamento')) {
+
+      if (
+        content.toLowerCase().includes('protocolo') ||
+        content.toLowerCase().includes('tratamento')
+      ) {
         documentType = 'Protocolo Médico'
         keyTopics.push('Protocolo', 'Tratamento')
       }
-      
+
       if (content.toLowerCase().includes('caso') || content.toLowerCase().includes('paciente')) {
         documentType = 'Caso Clínico'
         keyTopics.push('Caso Clínico', 'Paciente')
       }
-      
-      if (content.toLowerCase().includes('epilepsia') || content.toLowerCase().includes('convulsão')) {
+
+      if (
+        content.toLowerCase().includes('epilepsia') ||
+        content.toLowerCase().includes('convulsão')
+      ) {
         keyTopics.push('Epilepsia', 'Convulsões')
       }
-      
-      if (content.toLowerCase().includes('neurologia') || content.toLowerCase().includes('neurológico')) {
+
+      if (
+        content.toLowerCase().includes('neurologia') ||
+        content.toLowerCase().includes('neurológico')
+      ) {
         keyTopics.push('Neurologia')
       }
-      
+
       // Buscar contexto relacionado na base de conhecimento
       const relatedDocs = await gptBuilderService.searchDocuments(content.substring(0, 500))
       const relatedCount = relatedDocs.length
-      
+
       let analysis = `**📄 Tipo de documento:** ${documentType}
 
 **📊 Resumo do conteúdo:**
@@ -1473,18 +1513,20 @@ ${keyTopics.length > 0 ? keyTopics.map(topic => `• ${topic}`).join('\n') : '�
 
       if (relatedCount > 0) {
         analysis += `\n\n**📚 Documentos relacionados encontrados:**
-${relatedDocs.slice(0, 3).map(doc => `• ${doc.title}`).join('\n')}`
+${relatedDocs
+  .slice(0, 3)
+  .map(doc => `• ${doc.title}`)
+  .join('\n')}`
       }
-      
+
       // Sugestões mais conversacionais
       analysis += `\n\n**💬 O que você gostaria de saber sobre este documento?**
 • "Resuma os pontos principais"
 • "Quais são as informações mais importantes?"
 • "Compare com outros documentos similares"
 • "Identifique pontos que precisam de atenção"`
-      
+
       return analysis
-      
     } catch (error) {
       console.error('Erro na análise do documento:', error)
       return `**📄 Análise básica realizada com sucesso**
@@ -1522,7 +1564,7 @@ Este marco contribui para a evolução contínua da personalidade da Nôa Espera
 **Status:** Marco registrado com sucesso`,
         type: 'knowledge' as const,
         category: 'development-milestone',
-        is_active: true
+        is_active: true,
       }
 
       await gptBuilderService.createDocument(milestoneDoc)
@@ -1561,7 +1603,7 @@ Detalhes do erro: ${error instanceof Error ? error.message : String(error)}
 • Verifique se o arquivo não está corrompido
 • Tente converter para outro formato
 • Verifique o tamanho do arquivo`,
-            timestamp: new Date()
+            timestamp: new Date(),
           }
           pushChatMessage(errorMessage)
         }
@@ -1576,7 +1618,7 @@ Detalhes do erro: ${error instanceof Error ? error.message : String(error)}
       id: Date.now().toString(),
       role: 'user',
       content: currentMessage,
-      timestamp: new Date()
+      timestamp: new Date(),
     }
 
     pushChatMessage(userMessage)
@@ -1586,10 +1628,10 @@ Detalhes do erro: ${error instanceof Error ? error.message : String(error)}
 
     try {
       console.log('🔍 Processando comando:', messageToProcess)
-      
+
       // Processar comando com attention semântica se ativa
       let response: any
-      
+
       // Verificar se é conversa simples ANTES de usar attention semântica
       const lowerMessage = messageToProcess.toLowerCase()
       // 🚀 DESABILITAR DETECÇÃO DE CONVERSA SIMPLES - CAUSA TRAVAMENTOS
@@ -1603,140 +1645,147 @@ Detalhes do erro: ${error instanceof Error ? error.message : String(error)}
           content: `👨‍⚕️ **Dr. Ricardo Valença reconhecido pela frase código!**\n\nOlá, Dr. Ricardo! Sou a Nôa Esperanza, sua mentora especializada. Estou pronta para conversar sobre medicina, tecnologia e desenvolvimento da nossa plataforma.\n\nComo posso ajudá-lo hoje?`,
           timestamp: new Date(),
           action: 'user_recognized',
-          data: { user: 'dr_ricardo_valenca' }
+          data: { user: 'dr_ricardo_valenca' },
         }
 
         pushChatMessage(recognizedMessage)
 
         // Salvar conversa no sistema híbrido em background (não bloquear)
         try {
-          await saveConversationHybrid(messageToProcess, recognizedMessage.content, 'user_recognized')
+          await saveConversationHybrid(
+            messageToProcess,
+            recognizedMessage.content,
+            'user_recognized'
+          )
         } catch (_) {}
 
         setIsTyping(false)
         return
       }
-      
+
       if (isSimpleConversation) {
         // 🚫 Detecção de conversa simples desabilitada temporariamente para evitar travamentos
       } else {
-      // 🚀 PROCESSAMENTO HÍBRIDO PROFISSIONAL
-      console.log('💬 Processando com arquitetura híbrida...')
-      
-      // 1. Verificar se é consulta à base de conhecimento (ajustado para evitar falsos positivos em saudações)
-      const isKnowledgeBaseQuery = checkKnowledgeBaseQuery(messageToProcess)
-      
-      if (isKnowledgeBaseQuery) {
-        console.log('📚 Consulta à base de conhecimento detectada...')
-        
-        try {
-          const consultationContext: ConsultationContext = {
-            userQuery: messageToProcess,
-            userType: 'admin', // Dr. Ricardo é admin
-            conversationHistory: chatMessages.slice(-6).map(msg => ({
-              role: msg.role,
-              content: msg.content
-            }))
-          }
-          
-          const consultationResult = await realTimeConsultationService.consultKnowledgeBase(consultationContext)
-          
-          // Formatar resposta com informações da base de conhecimento
-          let formattedResponse = consultationResult.answer
-          
-          if (consultationResult.documents.length > 0) {
-            formattedResponse += `\n\n📚 **Documentos consultados:**\n`
-            consultationResult.documents.forEach((doc, index) => {
-              formattedResponse += `${index + 1}. **${doc.title}** (${doc.category})\n`
-            })
-            
-            formattedResponse += `\n🎯 **Confiança:** ${Math.round(consultationResult.confidence * 100)}%`
-          }
-          
-          response = {
-            message: formattedResponse,
-            action: 'consulta_base_conhecimento',
-            data: { 
-              documentsFound: consultationResult.documents.length,
-              confidence: consultationResult.confidence,
-              sources: consultationResult.sources
+        // 🚀 PROCESSAMENTO HÍBRIDO PROFISSIONAL
+        console.log('💬 Processando com arquitetura híbrida...')
+
+        // 1. Verificar se é consulta à base de conhecimento (ajustado para evitar falsos positivos em saudações)
+        const isKnowledgeBaseQuery = checkKnowledgeBaseQuery(messageToProcess)
+
+        if (isKnowledgeBaseQuery) {
+          console.log('📚 Consulta à base de conhecimento detectada...')
+
+          try {
+            const consultationContext: ConsultationContext = {
+              userQuery: messageToProcess,
+              userType: 'admin', // Dr. Ricardo é admin
+              conversationHistory: chatMessages.slice(-6).map(msg => ({
+                role: msg.role,
+                content: msg.content,
+              })),
+            }
+
+            const consultationResult =
+              await realTimeConsultationService.consultKnowledgeBase(consultationContext)
+
+            // Formatar resposta com informações da base de conhecimento
+            let formattedResponse = consultationResult.answer
+
+            if (consultationResult.documents.length > 0) {
+              formattedResponse += `\n\n📚 **Documentos consultados:**\n`
+              consultationResult.documents.forEach((doc, index) => {
+                formattedResponse += `${index + 1}. **${doc.title}** (${doc.category})\n`
+              })
+
+              formattedResponse += `\n🎯 **Confiança:** ${Math.round(consultationResult.confidence * 100)}%`
+            }
+
+            response = {
+              message: formattedResponse,
+              action: 'consulta_base_conhecimento',
+              data: {
+                documentsFound: consultationResult.documents.length,
+                confidence: consultationResult.confidence,
+                sources: consultationResult.sources,
+              },
+            }
+
+            console.log('✅ Resposta gerada via consulta à base de conhecimento')
+          } catch (error) {
+            console.warn('⚠️ Erro na consulta à base de conhecimento, usando IA padrão:', error)
+            // Fallback para IA padrão
+            const aiResponse = await openAIService.getNoaResponse(messageToProcess, [
+              ...chatMessages.slice(-6).map(msg => ({
+                role: msg.role as 'user' | 'assistant' | 'system',
+                content: msg.content,
+              })),
+            ])
+
+            response = {
+              message: aiResponse,
+              action: 'fallback_ia_padrao',
+              data: { error: error instanceof Error ? error.message : String(error) },
             }
           }
-          
-          console.log('✅ Resposta gerada via consulta à base de conhecimento')
-          
-        } catch (error) {
-          console.warn('⚠️ Erro na consulta à base de conhecimento, usando IA padrão:', error)
-          // Fallback para IA padrão
-          const aiResponse = await openAIService.getNoaResponse(messageToProcess, [
-            ...chatMessages.slice(-6).map(msg => ({
-              role: msg.role as 'user' | 'assistant' | 'system',
-              content: msg.content
-            }))
-          ])
-          
-          response = {
-            message: aiResponse,
-            action: 'fallback_ia_padrao',
-            data: { error: error instanceof Error ? error.message : String(error) }
+        } else {
+          // 2. Tentar processamento com IA real + contexto (processo original)
+          try {
+            console.log('🧠 Tentando resposta com IA real + contexto...')
+
+            // Buscar contexto histórico do Supabase
+            const historicalContext = await getHistoricalContextSimple(messageToProcess)
+
+            // Preparar contexto para OpenAI
+            const contextualPrompt = buildContextualPrompt(
+              messageToProcess,
+              historicalContext,
+              chatMessages
+            )
+
+            // Chamar OpenAI com contexto
+            const aiResponse = await openAIService.getNoaResponse(messageToProcess, [
+              ...chatMessages.slice(-6).map(msg => ({
+                role: msg.role as 'user' | 'assistant' | 'system',
+                content: msg.content,
+              })),
+            ])
+
+            response = {
+              message: aiResponse,
+              action: 'resposta_contextualizada_ia',
+              data: { hasContext: true, contextLength: historicalContext?.length || 0 },
+            }
+
+            console.log('✅ Resposta gerada com IA real + contexto')
+          } catch (error) {
+            console.warn('⚠️ Erro na IA real, usando fallback offline:', error)
+
+            // Fallback: usar serviço offline
+            const aiResponse = await offlineChatService.processMessage(messageToProcess, {
+              recentHistory: chatMessages.slice(-4),
+              userContext: userContext,
+            })
+
+            response = {
+              message: aiResponse,
+              action: 'fallback_offline',
+              data: { error: error instanceof Error ? error.message : String(error) },
+            }
+
+            console.log('✅ Resposta gerada via fallback offline')
           }
         }
-      } else {
-        // 2. Tentar processamento com IA real + contexto (processo original)
-        try {
-          console.log('🧠 Tentando resposta com IA real + contexto...')
-          
-          // Buscar contexto histórico do Supabase
-          const historicalContext = await getHistoricalContextSimple(messageToProcess)
-          
-          // Preparar contexto para OpenAI
-          const contextualPrompt = buildContextualPrompt(messageToProcess, historicalContext, chatMessages)
-          
-          // Chamar OpenAI com contexto
-          const aiResponse = await openAIService.getNoaResponse(messageToProcess, [
-            ...chatMessages.slice(-6).map(msg => ({
-              role: msg.role as 'user' | 'assistant' | 'system',
-              content: msg.content
-            }))
-          ])
-          
-          response = {
-            message: aiResponse,
-            action: 'resposta_contextualizada_ia',
-            data: { hasContext: true, contextLength: historicalContext?.length || 0 }
-          }
-          
-          console.log('✅ Resposta gerada com IA real + contexto')
-        
-      } catch (error) {
-        console.warn('⚠️ Erro na IA real, usando fallback offline:', error)
-        
-        // Fallback: usar serviço offline
-        const aiResponse = await offlineChatService.processMessage(messageToProcess, {
-          recentHistory: chatMessages.slice(-4),
-          userContext: userContext
-        })
-        
-        response = {
-          message: aiResponse,
-          action: 'fallback_offline',
-          data: { error: error instanceof Error ? error.message : String(error) }
-        }
-        
-        console.log('✅ Resposta gerada via fallback offline')
       }
-      }
-      }
-      
+
       console.log('✅ Resposta gerada:', response.message.substring(0, 100) + '...')
-      
+
       const assistantMessage: ChatMessage = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
         content: response.message,
         timestamp: new Date(),
         action: response.action,
-        data: response.data
+        data: response.data,
       }
 
       pushChatMessage(assistantMessage)
@@ -1758,7 +1807,7 @@ Detalhes do erro: ${error instanceof Error ? error.message : String(error)}
           content: `❌ Erro ao processar comando: ${error instanceof Error ? error.message : String(error)}`,
           timestamp: new Date(),
           action: 'erro_salvar_conversa',
-          data: { error }
+          data: { error },
         }
         pushChatMessage(errorMessage)
       }
@@ -1770,7 +1819,7 @@ Detalhes do erro: ${error instanceof Error ? error.message : String(error)}
         content: `❌ Erro ao processar sua mensagem: ${error instanceof Error ? error.message : String(error)}`,
         timestamp: new Date(),
         action: 'erro_envio_mensagem',
-        data: { error }
+        data: { error },
       }
       pushChatMessage(errorMessage)
     } finally {
@@ -1797,7 +1846,11 @@ Detalhes do erro: ${error instanceof Error ? error.message : String(error)}
       return await handleCreateDocumentCommand(message)
     }
 
-    if (lowerMessage.includes('mostrar') || lowerMessage.includes('listar') || lowerMessage.includes('documentos')) {
+    if (
+      lowerMessage.includes('mostrar') ||
+      lowerMessage.includes('listar') ||
+      lowerMessage.includes('documentos')
+    ) {
       return await handleListDocumentsCommand()
     }
 
@@ -1814,26 +1867,31 @@ Detalhes do erro: ${error instanceof Error ? error.message : String(error)}
     }
 
     // 🚀 COMANDOS DO ESTUDO VIVO
-    
+
     // Gerar Estudo Vivo
     if (lowerMessage.includes('gerar estudo vivo') || lowerMessage.includes('estudo vivo')) {
-      const area = lowerMessage.includes('nefrologia') ? 'nefrologia' : 
-                   lowerMessage.includes('neurologia') ? 'neurologia' : 
-                   lowerMessage.includes('cannabis') ? 'cannabis' : undefined
-      
+      const area = lowerMessage.includes('nefrologia')
+        ? 'nefrologia'
+        : lowerMessage.includes('neurologia')
+          ? 'neurologia'
+          : lowerMessage.includes('cannabis')
+            ? 'cannabis'
+            : undefined
+
       await handleGerarEstudoVivo(message, area)
       return {
-        message: '🧠 **Gerando Estudo Vivo...** Analisando documentos e gerando síntese científica.',
+        message:
+          '🧠 **Gerando Estudo Vivo...** Analisando documentos e gerando síntese científica.',
         action: 'estudo_vivo',
-        data: { pergunta: message, area }
+        data: { pergunta: message, area },
       }
     }
-    
+
     // 🧠 SISTEMAS AVANÇADOS TRABALHANDO EM BACKGROUND
-    
+
     // Os sistemas avançados (Reasoning, Tools, Harmony) agora trabalham
     // automaticamente em background, sem comandos específicos que travem a fluidez
-    
+
     // Iniciar Debate Científico
     if (lowerMessage.includes('debate científico') || lowerMessage.includes('debater trabalho')) {
       // Buscar último documento enviado
@@ -1843,43 +1901,53 @@ Detalhes do erro: ${error instanceof Error ? error.message : String(error)}
         return {
           message: '💬 **Iniciando Debate Científico...** Preparando análise crítica do trabalho.',
           action: 'debate_cientifico',
-          data: { documento: ultimoDocumento }
+          data: { documento: ultimoDocumento },
         }
       } else {
         return {
           message: '⚠️ **Nenhum documento encontrado para debate.** Envie um trabalho primeiro.',
-          action: 'error'
+          action: 'error',
         }
       }
     }
-    
+
     // Analisar Qualidade
-    if (lowerMessage.includes('analisar qualidade') || lowerMessage.includes('análise metodológica')) {
+    if (
+      lowerMessage.includes('analisar qualidade') ||
+      lowerMessage.includes('análise metodológica')
+    ) {
       const ultimoDocumento = uploadedDocuments[uploadedDocuments.length - 1]
       if (ultimoDocumento) {
         await handleAnalisarQualidade(ultimoDocumento.id)
         return {
-          message: '📊 **Analisando Qualidade Metodológica...** Avaliando rigor científico do trabalho.',
+          message:
+            '📊 **Analisando Qualidade Metodológica...** Avaliando rigor científico do trabalho.',
           action: 'analise_qualidade',
-          data: { documento: ultimoDocumento }
+          data: { documento: ultimoDocumento },
         }
       } else {
         return {
           message: '⚠️ **Nenhum documento encontrado para análise.** Envie um trabalho primeiro.',
-          action: 'error'
+          action: 'error',
         }
       }
     }
-    
+
     // Buscar Debates Anteriores
-    if (lowerMessage.includes('debates anteriores') || lowerMessage.includes('histórico de debates')) {
+    if (
+      lowerMessage.includes('debates anteriores') ||
+      lowerMessage.includes('histórico de debates')
+    ) {
       try {
         const debates = await estudoVivoService.buscarDebatesAnteriores(undefined, 5)
         if (debates.length > 0) {
-          const debatesText = debates.map(debate => 
-            `**${debate.titulo}** (${new Date(debate.dataDebate).toLocaleDateString()})\nÁrea: ${debate.area}\nRelevância: ${debate.relevancia}/10`
-          ).join('\n\n')
-          
+          const debatesText = debates
+            .map(
+              debate =>
+                `**${debate.titulo}** (${new Date(debate.dataDebate).toLocaleDateString()})\nÁrea: ${debate.area}\nRelevância: ${debate.relevancia}/10`
+            )
+            .join('\n\n')
+
           return {
             message: `🧠 **DEBATES ANTERIORES ENCONTRADOS:**
 
@@ -1887,24 +1955,28 @@ ${debatesText}
 
 **Quer continuar algum debate ou iniciar um novo?**`,
             action: 'debates_anteriores',
-            data: { debates }
+            data: { debates },
           }
         } else {
           return {
-            message: '📝 **Nenhum debate anterior encontrado.** Que tal iniciar o primeiro debate científico?',
-            action: 'no_debates'
+            message:
+              '📝 **Nenhum debate anterior encontrado.** Que tal iniciar o primeiro debate científico?',
+            action: 'no_debates',
           }
         }
       } catch (error) {
         return {
           message: '❌ Erro ao buscar debates anteriores.',
-          action: 'error'
+          action: 'error',
         }
       }
     }
 
     // Comando para testar base de conhecimento
-    if (lowerMessage.includes('acesse a sua base de conhecimento') || lowerMessage.includes('acesse sua base de conhecimento')) {
+    if (
+      lowerMessage.includes('acesse a sua base de conhecimento') ||
+      lowerMessage.includes('acesse sua base de conhecimento')
+    ) {
       try {
         const context = await findRelevantContext('base de conhecimento')
         return {
@@ -1914,7 +1986,7 @@ ${context}
 
 **✅ Base de conhecimento acessada com sucesso!** Como posso ajudá-lo com as informações encontradas?`,
           action: 'knowledge_base_access',
-          data: { context }
+          data: { context },
         }
       } catch (error) {
         return {
@@ -1925,19 +1997,18 @@ ${context}
 • Confirme se as tabelas foram criadas corretamente
 • Teste a conexão com o banco de dados`,
           action: 'error',
-          data: { error }
+          data: { error },
         }
       }
     }
 
     if (lowerMessage.includes('editor') || lowerMessage.includes('editar')) {
-      setActiveTab('knowledge-base');
+      setActiveTab('knowledge-base')
       return {
         message: '📝 Abrindo editor de documentos...',
-        action: 'open_editor'
+        action: 'open_editor',
       }
     }
-
 
     // Remover comando de chat para não interferir na conversa natural
     // if (lowerMessage.includes('chat') || lowerMessage.includes('conversar')) {
@@ -1950,37 +2021,60 @@ ${context}
 
     // 🎨 COMANDOS AVANÇADOS DE CUSTOMIZAÇÃO DO APP
     if (lowerMessage.includes('customizar') || lowerMessage.includes('personalizar')) {
-      return await handleCustomizationCommand(lowerMessage);
+      return await handleCustomizationCommand(lowerMessage)
     }
 
-    if (lowerMessage.includes('interface') || lowerMessage.includes('ui') || lowerMessage.includes('layout')) {
-      return await handleInterfaceCommand(lowerMessage);
+    if (
+      lowerMessage.includes('interface') ||
+      lowerMessage.includes('ui') ||
+      lowerMessage.includes('layout')
+    ) {
+      return await handleInterfaceCommand(lowerMessage)
     }
 
     if (lowerMessage.includes('card') || lowerMessage.includes('dashboard')) {
       return await handleCardCommand(message)
     }
 
-    if (lowerMessage.includes('chat') && (lowerMessage.includes('configurar') || lowerMessage.includes('personalizar'))) {
+    if (
+      lowerMessage.includes('chat') &&
+      (lowerMessage.includes('configurar') || lowerMessage.includes('personalizar'))
+    ) {
       return await handleChatConfigCommand(message)
     }
 
-    if (lowerMessage.includes('cor') || lowerMessage.includes('tema') || lowerMessage.includes('dark') || lowerMessage.includes('light')) {
+    if (
+      lowerMessage.includes('cor') ||
+      lowerMessage.includes('tema') ||
+      lowerMessage.includes('dark') ||
+      lowerMessage.includes('light')
+    ) {
       return await handleThemeCommand(message)
     }
 
-    if (lowerMessage.includes('componente') || lowerMessage.includes('botão') || lowerMessage.includes('menu')) {
+    if (
+      lowerMessage.includes('componente') ||
+      lowerMessage.includes('botão') ||
+      lowerMessage.includes('menu')
+    ) {
       return await handleComponentCommand(message)
     }
 
-    if (lowerMessage.includes('ajuda') || lowerMessage.includes('help') || lowerMessage.includes('comandos')) {
+    if (
+      lowerMessage.includes('ajuda') ||
+      lowerMessage.includes('help') ||
+      lowerMessage.includes('comandos')
+    ) {
       return await handleHelpCommand()
     }
 
     // Conversa livre e inteligente
     console.log('🧠 Chamando getIntelligentResponse para:', message)
     const intelligentResponse = await getIntelligentResponse(message)
-    console.log('✅ Resposta inteligente gerada:', intelligentResponse.message.substring(0, 100) + '...')
+    console.log(
+      '✅ Resposta inteligente gerada:',
+      intelligentResponse.message.substring(0, 100) + '...'
+    )
     return intelligentResponse
   }
 
@@ -2005,30 +2099,30 @@ ${context}
 • "reorganizar dashboard"
 
 **Digite seu comando de customização!**`,
-      action: 'customization_menu'
+      action: 'customization_menu',
     }
   }
 
   const handleInterfaceCommand = async (message: string) => {
     // Análise inteligente da solicitação
     const lowerMessage = message.toLowerCase()
-    
+
     if (lowerMessage.includes('reorganizar') && lowerMessage.includes('dashboard')) {
       return await reorganizeDashboard(message)
     }
-    
+
     if (lowerMessage.includes('adicionar') && lowerMessage.includes('menu')) {
       return await addMenuItem(message)
     }
-    
+
     if (lowerMessage.includes('personalizar') && lowerMessage.includes('cabeçalho')) {
       return await customizeHeader(message)
     }
-    
+
     if (lowerMessage.includes('ajustar') && lowerMessage.includes('mobile')) {
       return await adjustMobile(message)
     }
-    
+
     // Resposta inteligente baseada na conversa
     return {
       message: `🔧 **DESENVOLVIMENTO DE INTERFACE ATIVO**
@@ -2050,7 +2144,7 @@ Entendo que você quer **desenvolver e implementar** mudanças reais na interfac
 • "Criar modal de confirmação personalizado"
 
 **Me diga exatamente o que você quer desenvolver e eu vou criar o código e implementar!**`,
-      action: 'development_mode'
+      action: 'development_mode',
     }
   }
 
@@ -2073,7 +2167,7 @@ Entendo que você quer **desenvolver e implementar** mudanças reais na interfac
 • "remover card de notificações"
 
 **Que tipo de card você quer criar/modificar?**`,
-      action: 'card_menu'
+      action: 'card_menu',
     }
   }
 
@@ -2097,7 +2191,7 @@ Entendo que você quer **desenvolver e implementar** mudanças reais na interfac
 • "integrar com sistema externo"
 
 **Como você quer personalizar o chat?**`,
-      action: 'chat_config_menu'
+      action: 'chat_config_menu',
     }
   }
 
@@ -2121,7 +2215,7 @@ Entendo que você quer **desenvolver e implementar** mudanças reais na interfac
 • "mudar fonte para Arial"
 
 **Que tema você quer aplicar?**`,
-      action: 'theme_menu'
+      action: 'theme_menu',
     }
   }
 
@@ -2145,7 +2239,7 @@ Entendo que você quer **desenvolver e implementar** mudanças reais na interfac
 • "animar cards do dashboard"
 
 **Qual componente você quer personalizar?**`,
-      action: 'component_menu'
+      action: 'component_menu',
     }
   }
 
@@ -2183,7 +2277,7 @@ Entendo que você quer **desenvolver e implementar** mudanças reais na interfac
 • Desenvolva funcionalidades juntos
 
 **Exemplo:** "Criar um componente de card de pacientes com animação"`,
-      action: 'help_menu'
+      action: 'help_menu',
     }
   }
 
@@ -2204,7 +2298,7 @@ Vou criar um novo layout para o dashboard. Me diga:
 **Ou me descreva o layout ideal e eu implemento!**
 
 Exemplo: "Quero o card de estatísticas no topo, lista de pacientes à esquerda, e gráficos à direita"`,
-      action: 'reorganize_dashboard'
+      action: 'reorganize_dashboard',
     }
   }
 
@@ -2221,7 +2315,7 @@ Vou adicionar um novo item ao menu lateral. Me informe:
 • Posição no menu?
 
 **Ou me diga:** "Adicionar item 'Relatórios' com ícone de gráfico que abre uma página de relatórios"`,
-      action: 'add_menu_item'
+      action: 'add_menu_item',
     }
   }
 
@@ -2239,7 +2333,7 @@ Vou modificar o cabeçalho da aplicação. Que mudanças você quer?
 • Informações adicionais?
 
 **Me descreva:** "Quero um logo da Nôa Esperanza, cor azul médica, e botão de notificações"`,
-      action: 'customize_header'
+      action: 'customize_header',
     }
   }
 
@@ -2257,7 +2351,7 @@ Vou otimizar a interface para dispositivos móveis. Que aspectos você quer ajus
 • Layout adaptativo?
 
     **Me diga:** "Quero menu hambúrguer, cards empilhados verticalmente, e botões maiores para touch"`,
-      action: 'adjust_mobile'
+      action: 'adjust_mobile',
     }
   }
 
@@ -2265,17 +2359,17 @@ Vou otimizar a interface para dispositivos móveis. Que aspectos você quer ajus
     // Extrair informações do comando
     const typeMatch = message.match(/(personalidade|conhecimento|instruções|exemplos)/i)
     const titleMatch = message.match(/sobre\s+(.+?)(?:\s|$)/i)
-    
+
     const type = typeMatch ? typeMatch[1].toLowerCase() : 'knowledge'
     const title = titleMatch ? titleMatch[1] : 'Novo Documento'
-    
+
     // Criar documento base
     const newDoc: Partial<DocumentMaster> = {
       title: title,
       content: `Conteúdo para ${title}...`,
       type: type as any,
       category: 'auto-generated',
-      is_active: true
+      is_active: true,
     }
 
     try {
@@ -2285,14 +2379,14 @@ Vou otimizar a interface para dispositivos móveis. Que aspectos você quer ajus
           content: newDoc.content!,
           type: newDoc.type!,
           category: newDoc.category || '',
-          is_active: newDoc.is_active!
+          is_active: newDoc.is_active!,
         })
         await loadDocuments()
-        
+
         return {
           message: `✅ Documento criado com sucesso!\n\n📝 **${created.title}**\n🏷️ Tipo: ${type}\n\nQuer que eu abra o editor para você completar o conteúdo?`,
           action: 'document_created',
-          data: created
+          data: created,
         }
       } else {
         throw new Error('Título e conteúdo são obrigatórios')
@@ -2300,7 +2394,7 @@ Vou otimizar a interface para dispositivos móveis. Que aspectos você quer ajus
     } catch (error) {
       return {
         message: `❌ Erro ao criar documento: ${error}`,
-        action: 'error'
+        action: 'error',
       }
     }
   }
@@ -2309,40 +2403,44 @@ Vou otimizar a interface para dispositivos móveis. Que aspectos você quer ajus
     try {
       const docs = await gptBuilderService.getDocuments()
       setDocuments(docs)
-      
+
       // Separar documentos por tipo
       const uploadedDocs = docs.filter(doc => doc.category === 'uploaded-document')
       const otherDocs = docs.filter(doc => doc.category !== 'uploaded-document')
-      
+
       if (docs.length === 0) {
         return {
-          message: '📂 **Nenhum documento encontrado na base de conhecimento.**\n\n**Para adicionar documentos:**\n• Use o botão "Upload Arquivo" para enviar documentos\n• Use o botão "Base de Conhecimento" para criar documentos\n• Digite "criar documento sobre [tema]" para criar via chat',
-          action: 'list_documents'
+          message:
+            '📂 **Nenhum documento encontrado na base de conhecimento.**\n\n**Para adicionar documentos:**\n• Use o botão "Upload Arquivo" para enviar documentos\n• Use o botão "Base de Conhecimento" para criar documentos\n• Digite "criar documento sobre [tema]" para criar via chat',
+          action: 'list_documents',
         }
       }
 
       let message = `📋 **Documentos na Base de Conhecimento**
 
 **📁 Documentos Enviados (${uploadedDocs.length}):**\n`
-      
+
       if (uploadedDocs.length > 0) {
-        message += uploadedDocs.map((doc, index) => 
-          `${index + 1}. **${doc.title}**
+        message += uploadedDocs
+          .map(
+            (doc, index) =>
+              `${index + 1}. **${doc.title}**
   📅 Criado: ${new Date(doc.created_at).toLocaleDateString('pt-BR')}
   📝 ID: ${doc.id}
   📊 Tamanho: ${doc.content.length} caracteres`
-        ).join('\n\n')
+          )
+          .join('\n\n')
       } else {
         message += 'Nenhum documento enviado ainda.\n'
       }
-      
+
       if (otherDocs.length > 0) {
         message += `\n\n**📚 Outros Documentos (${otherDocs.length}):**\n`
-        message += otherDocs.map((doc, index) => 
-          `${index + 1}. **${doc.title}** (${doc.type}) - ${doc.category}`
-        ).join('\n')
+        message += otherDocs
+          .map((doc, index) => `${index + 1}. **${doc.title}** (${doc.type}) - ${doc.category}`)
+          .join('\n')
       }
-      
+
       message += `\n\n**📊 Estatísticas:**
 • Total: ${docs.length} documentos
 • Enviados: ${uploadedDocs.length}
@@ -2354,62 +2452,69 @@ Vou otimizar a interface para dispositivos móveis. Que aspectos você quer ajus
       return {
         message,
         action: 'list_documents',
-        data: docs
+        data: docs,
       }
     } catch (error) {
       return {
         message: `❌ Erro ao listar documentos: ${error}`,
-        action: 'error'
+        action: 'error',
       }
     }
   }
 
   const handlePersonalityConfigCommand = async (message: string) => {
     const config = await gptBuilderService.getNoaConfig()
-    
+
     return {
       message: `🔧 **Configuração Atual da Nôa:**\n\n**Personalidade:**\n${config.personality || 'Não configurada'}\n\n**Especialização:**\n${config.expertise || 'Não configurada'}\n\n**Reconhecimento Dr. Ricardo:** ${config.recognition?.drRicardoValenca ? '✅ Ativo' : '❌ Inativo'}\n\nQuer que eu modifique alguma configuração específica?`,
       action: 'show_config',
-      data: config
+      data: config,
     }
   }
 
   const handleStatsCommand = async () => {
     const stats = await gptBuilderService.getKnowledgeStats()
-    
+
     return {
-      message: `📊 **Estatísticas da Base de Conhecimento:**\n\n📝 **Total de Documentos:** ${stats.totalDocuments}\n📋 **Total de Prompts:** ${stats.totalPrompts}\n🕒 **Última Atualização:** ${new Date(stats.lastUpdate).toLocaleDateString('pt-BR')}\n\n**Por Tipo:**\n${Object.entries(stats.documentsByType).map(([type, count]) => `• ${type}: ${count}`).join('\n')}`,
+      message: `📊 **Estatísticas da Base de Conhecimento:**\n\n📝 **Total de Documentos:** ${stats.totalDocuments}\n📋 **Total de Prompts:** ${stats.totalPrompts}\n🕒 **Última Atualização:** ${new Date(stats.lastUpdate).toLocaleDateString('pt-BR')}\n\n**Por Tipo:**\n${Object.entries(
+        stats.documentsByType
+      )
+        .map(([type, count]) => `• ${type}: ${count}`)
+        .join('\n')}`,
       action: 'show_stats',
-      data: stats
+      data: stats,
     }
   }
 
   const handleRecognitionCommand = async (message: string) => {
     return {
       message: `👤 **Sistema de Reconhecimento:**\n\n**Dr. Ricardo Valença:** ✅ Configurado\n**Cumprimento Automático:** ✅ Ativo\n**Contexto Personalizado:** ✅ Ativo\n\nO sistema está configurado para reconhecê-lo automaticamente quando você se identificar!`,
-      action: 'show_recognition'
+      action: 'show_recognition',
     }
   }
 
   // 🧠 PROCESSAMENTO INTELIGENTE DE CONHECIMENTO
-  
+
   const processAndExtractKnowledge = async (message: string) => {
     try {
-      console.log('🧠 PROCESSANDO CONHECIMENTO - Mensagem recebida:', message.substring(0, 100) + '...')
-      
+      console.log(
+        '🧠 PROCESSANDO CONHECIMENTO - Mensagem recebida:',
+        message.substring(0, 100) + '...'
+      )
+
       // Extrair conceitos médicos, protocolos, casos clínicos da conversa
       const knowledgeExtraction = await extractKnowledgeFromMessage(message)
-      
+
       console.log('📊 RESULTADO DA ANÁLISE:', {
         hasKnowledge: knowledgeExtraction.hasKnowledge,
         isWorkDocument: knowledgeExtraction.isWorkDocument,
-        keywords: knowledgeExtraction.keywords
+        keywords: knowledgeExtraction.keywords,
       })
-      
+
       // SEMPRE processar se tem conhecimento
       if (knowledgeExtraction.hasKnowledge) {
         console.log('✅ CONHECIMENTO DETECTADO - Iniciando processamento...')
-        
+
         // Se for um trabalho/documento, fazer análise cruzada
         if (knowledgeExtraction.isWorkDocument) {
           console.log('📄 TRABALHO DOCUMENTO DETECTADO - Iniciando análise cruzada...')
@@ -2428,25 +2533,24 @@ Vou otimizar a interface para dispositivos móveis. Que aspectos você quer ajus
   }
 
   // 📊 ANÁLISE CRUZADA DE TRABALHOS/DOCUMENTOS
-  
+
   const performWorkAnalysis = async (workContent: string) => {
     try {
       console.log('🔍 Iniciando análise cruzada do trabalho...')
-      
+
       // 1. Buscar dados relacionados no banco
       const relatedData = await crossReferenceData(workContent)
-      
+
       // 2. Analisar com IA para melhorias
       const analysis = await analyzeWorkWithAI(workContent, relatedData)
-      
+
       // 3. Gerar versão melhorada
       const improvedVersion = await generateImprovedVersion(workContent, analysis)
-      
+
       // 4. Salvar análise como documento mestre
       await saveWorkAnalysis(workContent, analysis, improvedVersion)
-      
+
       console.log('✅ Análise cruzada concluída!')
-      
     } catch (error) {
       console.error('Erro na análise cruzada:', error)
     }
@@ -2456,22 +2560,26 @@ Vou otimizar a interface para dispositivos móveis. Que aspectos você quer ajus
     try {
       // Buscar documentos relacionados na base de conhecimento
       const relatedDocs = await gptBuilderService.searchDocuments(workContent)
-      
+
       // Buscar aprendizados relacionados
       const relatedLearnings = await searchRelatedLearnings(workContent)
-      
+
       // Buscar casos clínicos similares
       const similarCases = await searchSimilarCases(workContent)
-      
+
       // Buscar protocolos relacionados
       const relatedProtocols = await searchRelatedProtocols(workContent)
-      
+
       return {
         documents: relatedDocs,
         learnings: relatedLearnings,
         cases: similarCases,
         protocols: relatedProtocols,
-        totalReferences: relatedDocs.length + relatedLearnings.length + similarCases.length + relatedProtocols.length
+        totalReferences:
+          relatedDocs.length +
+          relatedLearnings.length +
+          similarCases.length +
+          relatedProtocols.length,
       }
     } catch (error) {
       console.error('Erro ao cruzar dados:', error)
@@ -2484,10 +2592,12 @@ Vou otimizar a interface para dispositivos móveis. Que aspectos você quer ajus
       const { data } = await supabase
         .from('ai_learning')
         .select('*')
-        .or(`keyword.ilike.%${content.substring(0, 20)}%,ai_response.ilike.%${content.substring(0, 20)}%`)
+        .or(
+          `keyword.ilike.%${content.substring(0, 20)}%,ai_response.ilike.%${content.substring(0, 20)}%`
+        )
         .order('confidence_score', { ascending: false })
         .limit(5)
-      
+
       return data || []
     } catch (error) {
       console.error('Erro ao buscar aprendizados:', error)
@@ -2502,14 +2612,14 @@ Vou otimizar a interface para dispositivos móveis. Que aspectos você quer ajus
         .replace(/[#🌟📋📊🏗️🧠🎯🖥️🧩🗄️🔧🎊]/g, '') // Remove emojis
         .replace(/[%_\\]/g, '\\$&') // Escapa caracteres SQL
         .substring(0, 50) // Limita tamanho
-      
+
       // Buscar de forma mais segura, sem assumir coluna específica
       const { data } = await supabase
         .from('avaliacoes_em_andamento')
         .select('id, created_at, updated_at')
         .order('created_at', { ascending: false })
         .limit(3)
-      
+
       return data || []
     } catch (error) {
       console.error('Erro ao buscar casos similares:', error)
@@ -2526,7 +2636,7 @@ Vou otimizar a interface para dispositivos móveis. Que aspectos você quer ajus
         .or(`title.ilike.%protocolo%,content.ilike.%protocolo%`)
         .order('updated_at', { ascending: false })
         .limit(5)
-      
+
       return data || []
     } catch (error) {
       console.error('Erro ao buscar protocolos:', error)
@@ -2549,7 +2659,10 @@ Vou otimizar a interface para dispositivos móveis. Que aspectos você quer ajus
         - Protocolos relacionados: ${relatedData.protocols.length}
         
         CONTEXTO ESPECÍFICO:
-        ${relatedData.documents.slice(0, 2).map((doc: any) => `${doc.title}: ${doc.content.substring(0, 200)}...`).join('\n')}
+        ${relatedData.documents
+          .slice(0, 2)
+          .map((doc: any) => `${doc.title}: ${doc.content.substring(0, 200)}...`)
+          .join('\n')}
         
         ANALISE E FORNEÇA:
         1. Pontos fortes do trabalho
@@ -2558,7 +2671,7 @@ Vou otimizar a interface para dispositivos móveis. Que aspectos você quer ajus
         4. Recomendações específicas
         5. Nível de acurácia atual (0-100%)
       `
-      
+
       const response = await openAIService.getNoaResponse(contextPrompt, [])
       return response
     } catch (error) {
@@ -2585,7 +2698,7 @@ Vou otimizar a interface para dispositivos móveis. Que aspectos você quer ajus
         4. 100% de acurácia médica
         5. Referências atualizadas
       `
-      
+
       const improvedVersion = await openAIService.getNoaResponse(improvementPrompt, [])
       return improvedVersion
     } catch (error) {
@@ -2616,15 +2729,14 @@ METADATA:
 
 Esta análise foi gerada automaticamente cruzando dados da base de conhecimento da Nôa Esperanza.
       `
-      
+
       await gptBuilderService.createDocument({
         title: `Análise Cruzada - ${new Date().toLocaleDateString('pt-BR')}`,
         content: documentContent,
         type: 'knowledge',
         category: 'work-analysis',
-        is_active: true
+        is_active: true,
       })
-      
     } catch (error) {
       console.error('Erro ao salvar análise:', error)
     }
@@ -2632,51 +2744,84 @@ Esta análise foi gerada automaticamente cruzando dados da base de conhecimento 
 
   const extractKnowledgeFromMessage = async (message: string) => {
     const medicalKeywords = [
-      'protocolo', 'dosagem', 'cbd', 'thc', 'cannabis', 'epilepsia', 'dor', 'neuropática',
-      'convulsão', 'neurologia', 'nefrologia', 'diagnóstico', 'tratamento', 'medicação',
-      'sintoma', 'caso clínico', 'paciente', 'avaliação', 'anamnese', 'exame',
-      'terapia', 'interação', 'efeito colateral', 'contraindicação', 'indicação',
-      'trabalho', 'estudo', 'pesquisa', 'artigo', 'publicação', 'metodologia',
-      'pdf', 'documento', 'texto', 'conteúdo', 'informação', 'dados'
+      'protocolo',
+      'dosagem',
+      'cbd',
+      'thc',
+      'cannabis',
+      'epilepsia',
+      'dor',
+      'neuropática',
+      'convulsão',
+      'neurologia',
+      'nefrologia',
+      'diagnóstico',
+      'tratamento',
+      'medicação',
+      'sintoma',
+      'caso clínico',
+      'paciente',
+      'avaliação',
+      'anamnese',
+      'exame',
+      'terapia',
+      'interação',
+      'efeito colateral',
+      'contraindicação',
+      'indicação',
+      'trabalho',
+      'estudo',
+      'pesquisa',
+      'artigo',
+      'publicação',
+      'metodologia',
+      'pdf',
+      'documento',
+      'texto',
+      'conteúdo',
+      'informação',
+      'dados',
     ]
 
     const lowerMessage = message.toLowerCase()
     const foundKeywords = medicalKeywords.filter(keyword => lowerMessage.includes(keyword))
-    
+
     // Detectar se é um trabalho/documento para análise - CRITERIOS ESPECÍFICOS
-    const isWorkDocument = message.length > 1000 ||  // Aumentado para 1000 caracteres
-                          (lowerMessage.includes('trabalho') && lowerMessage.includes('análise')) ||
-                          (lowerMessage.includes('estudo') && lowerMessage.includes('pesquisa')) ||
-                          (lowerMessage.includes('documento') && lowerMessage.includes('análise')) ||
-                          lowerMessage.includes('artigo') ||
-                          lowerMessage.includes('publicação') ||
-                          lowerMessage.includes('protocolo') ||
-                          lowerMessage.includes('pdf') ||
-                          lowerMessage.includes('documento') ||
-                          lowerMessage.includes('caso clínico') ||
-                          lowerMessage.includes('relatório') ||
-                          lowerMessage.includes('análise')
-    
+    const isWorkDocument =
+      message.length > 1000 || // Aumentado para 1000 caracteres
+      (lowerMessage.includes('trabalho') && lowerMessage.includes('análise')) ||
+      (lowerMessage.includes('estudo') && lowerMessage.includes('pesquisa')) ||
+      (lowerMessage.includes('documento') && lowerMessage.includes('análise')) ||
+      lowerMessage.includes('artigo') ||
+      lowerMessage.includes('publicação') ||
+      lowerMessage.includes('protocolo') ||
+      lowerMessage.includes('pdf') ||
+      lowerMessage.includes('documento') ||
+      lowerMessage.includes('caso clínico') ||
+      lowerMessage.includes('relatório') ||
+      lowerMessage.includes('análise')
+
     // CRITERIOS MAIS PERMISSIVOS para detectar conhecimento
-    const hasKnowledge = foundKeywords.length > 0 || 
-                        message.length > 50 ||  // Reduzido de 100 para 50
-                        lowerMessage.includes('dr.') ||
-                        lowerMessage.includes('médico') ||
-                        lowerMessage.includes('clínico') ||
-                        lowerMessage.includes('cannabis') ||
-                        lowerMessage.includes('cbd') ||
-                        lowerMessage.includes('thc') ||
-                        lowerMessage.includes('epilepsia') ||
-                        lowerMessage.includes('neurologia') ||
-                        lowerMessage.includes('nefrologia') ||
-                        isWorkDocument
+    const hasKnowledge =
+      foundKeywords.length > 0 ||
+      message.length > 50 || // Reduzido de 100 para 50
+      lowerMessage.includes('dr.') ||
+      lowerMessage.includes('médico') ||
+      lowerMessage.includes('clínico') ||
+      lowerMessage.includes('cannabis') ||
+      lowerMessage.includes('cbd') ||
+      lowerMessage.includes('thc') ||
+      lowerMessage.includes('epilepsia') ||
+      lowerMessage.includes('neurologia') ||
+      lowerMessage.includes('nefrologia') ||
+      isWorkDocument
 
     console.log('🔍 ANÁLISE DE CONHECIMENTO:', {
       messageLength: message.length,
       foundKeywords,
       isWorkDocument,
       hasKnowledge,
-      lowerMessage: lowerMessage.substring(0, 100) + '...'
+      lowerMessage: lowerMessage.substring(0, 100) + '...',
     })
 
     return {
@@ -2686,33 +2831,33 @@ Esta análise foi gerada automaticamente cruzando dados da base de conhecimento 
       extractedConcepts: foundKeywords,
       confidence: foundKeywords.length / medicalKeywords.length,
       isWorkDocument,
-      documentType: isWorkDocument ? 'work_analysis' : 'general_knowledge'
+      documentType: isWorkDocument ? 'work_analysis' : 'general_knowledge',
     }
   }
 
   const saveExtractedKnowledge = async (knowledge: any) => {
     try {
       console.log('💾 SALVANDO CONHECIMENTO EXTRAÍDO...')
-      
+
       // Criar documento automático baseado na conversa
       const documentTitle = generateDocumentTitle(knowledge)
       const documentContent = generateDocumentContent(knowledge)
-      
+
       console.log('📝 DOCUMENTO GERADO:', {
         title: documentTitle,
         contentLength: documentContent?.length,
-        keywords: knowledge.keywords
+        keywords: knowledge.keywords,
       })
-      
+
       if (documentTitle && documentContent) {
         const result = await gptBuilderService.createDocument({
           title: documentTitle,
           content: documentContent,
           type: 'knowledge',
           category: 'conversational-extraction',
-          is_active: true
+          is_active: true,
         })
-        
+
         console.log('✅ CONHECIMENTO SALVO COM SUCESSO!', result)
       } else {
         console.log('❌ ERRO: Título ou conteúdo vazio')
@@ -2727,20 +2872,20 @@ Esta análise foi gerada automaticamente cruzando dados da base de conhecimento 
     if (keywords.length > 0) {
       return `Conhecimento: ${keywords.slice(0, 3).join(', ')}`
     }
-    
+
     const message = knowledge.message
     if (message.includes('protocolo')) return 'Protocolo Médico - Conversa'
     if (message.includes('caso')) return 'Caso Clínico - Discussão'
     if (message.includes('dosagem')) return 'Dosagem e Administração'
     if (message.includes('sintoma')) return 'Sintomas e Manifestações'
-    
+
     return 'Conhecimento Extraído da Conversa'
   }
 
   const generateDocumentContent = (knowledge: any): string => {
     const message = knowledge.message
     const keywords = knowledge.extractedConcepts
-    
+
     return `CONHECIMENTO EXTRAÍDO DA CONVERSA:
 
 Contexto: ${new Date().toLocaleString('pt-BR')}
@@ -2759,34 +2904,38 @@ Relacionado a: ${keywords.slice(0, 5).join(', ')}`
 
   const generateSimpleConversationResponse = async (message: string): Promise<string> => {
     const lowerMessage = message.toLowerCase()
-    
+
     // Buscar contexto da conversa anterior
     const lastMessages = chatMessages.slice(-5) // Últimas 5 mensagens
-    const hasGreetedBefore = lastMessages.some(msg => 
-      msg.role === 'assistant' && (msg.content.includes('Olá') || msg.content.includes('oi'))
+    const hasGreetedBefore = lastMessages.some(
+      msg => msg.role === 'assistant' && (msg.content.includes('Olá') || msg.content.includes('oi'))
     )
-    
+
     // Verificar se já conversamos sobre desenvolvimento/construção
-    const recentTopics = lastMessages.map(msg => msg.content).join(' ').toLowerCase()
-    const hasRecentContext = recentTopics.includes('construímos') || 
-                            recentTopics.includes('plataforma') || 
-                            recentTopics.includes('desenvolvimento')
-    
+    const recentTopics = lastMessages
+      .map(msg => msg.content)
+      .join(' ')
+      .toLowerCase()
+    const hasRecentContext =
+      recentTopics.includes('construímos') ||
+      recentTopics.includes('plataforma') ||
+      recentTopics.includes('desenvolvimento')
+
     // Respostas mais naturais e variadas
     const greetings = [
       `👩‍⚕️ **Olá, Dr. Ricardo!** Tudo ótimo aqui! Como posso ajudá-lo hoje? ✨`,
       `🧠 **Oi, Dr. Ricardo!** Estou aqui com attention semântica ativa. Em que posso ajudar?`,
       `👋 **Olá!** Tudo bem, Dr. Ricardo! Estou pronta para nossa conversa.`,
-      `👩‍⚕️ **Dr. Ricardo, olá!** Como está? Posso ajudá-lo com algo específico?`
+      `👩‍⚕️ **Dr. Ricardo, olá!** Como está? Posso ajudá-lo com algo específico?`,
     ]
-    
+
     const statusResponses = [
       `🧠 **Perfeito, Dr. Ricardo!** Sistema funcionando 100%. Como posso ajudá-lo? 🚀`,
       `✅ **Tudo excelente!** Attention semântica ativa e memória carregada. Qual o próximo passo?`,
       `🎯 **Ótimo, Dr. Ricardo!** Estou aqui focada em você. O que vamos desenvolver hoje?`,
-      `⚡ **Sistema operacional!** Pronta para conversar sobre medicina, tecnologia ou desenvolvimento.`
+      `⚡ **Sistema operacional!** Pronta para conversar sobre medicina, tecnologia ou desenvolvimento.`,
     ]
-    
+
     // Resposta contextual baseada no histórico
     if (lowerMessage.includes('olá') || lowerMessage.includes('oi')) {
       if (hasGreetedBefore) {
@@ -2799,15 +2948,15 @@ Relacionado a: ${keywords.slice(0, 5).join(', ')}`
       // Evitar repetir a mesma mensagem
       const lastResponse = lastMessages.find(msg => msg.role === 'assistant')?.content || ''
       const availableGreetings = greetings.filter(g => !lastResponse.includes(g.substring(0, 20)))
-      return availableGreetings.length > 0 ? 
-        availableGreetings[Math.floor(Math.random() * availableGreetings.length)] :
-        greetings[Math.floor(Math.random() * greetings.length)]
+      return availableGreetings.length > 0
+        ? availableGreetings[Math.floor(Math.random() * availableGreetings.length)]
+        : greetings[Math.floor(Math.random() * greetings.length)]
     }
-    
+
     if (lowerMessage.includes('tudo bem') || lowerMessage.includes('como está')) {
       return statusResponses[Math.floor(Math.random() * statusResponses.length)]
     }
-    
+
     if (lowerMessage.includes('conversar') || lowerMessage.includes('conversa')) {
       return `👩‍⚕️ **Perfeito, Dr. Ricardo!** Vamos conversar naturalmente como sempre fazemos.
 
@@ -2819,7 +2968,7 @@ Lembro de tudo que construímos juntos:
 
 **Conte-me, o que está pensando hoje?** 💬`
     }
-    
+
     // Resposta inteligente baseada no contexto
     if (lowerMessage.includes('ajudar') || lowerMessage.includes('pode')) {
       return `🎯 **Claro, Dr. Ricardo!** Posso ajudá-lo com:
@@ -2831,7 +2980,7 @@ Lembro de tudo que construímos juntos:
 
 **O que você gostaria de explorar hoje?** ✨`
     }
-    
+
     // Resposta padrão mais natural
     return `👩‍⚕️ **Dr. Ricardo, estou aqui!** 
 
@@ -2841,35 +2990,35 @@ Como posso ajudá-lo hoje? 🚀`
   const getIntelligentResponse = async (message: string) => {
     try {
       const lowerMessage = message.toLowerCase()
-      
+
       // 🚀 DESABILITAR DETECÇÃO DE CONVERSA SIMPLES - CAUSA TRAVAMENTOS
       const isSimpleConversation = false // SEMPRE FALSE - evita travamentos
-      
+
       if (isSimpleConversation) {
         // Resposta direta para conversas simples
         const simpleResponse = await generateSimpleConversationResponse(message)
         return {
           message: simpleResponse,
-          action: 'simple_conversation'
+          action: 'simple_conversation',
         }
       }
-      
+
       // Verificar se é um trabalho/documento
       const knowledgeExtraction = await extractKnowledgeFromMessage(message)
-      
+
       if (knowledgeExtraction.isWorkDocument) {
         // Para documentos, vamos simplesmente processar e responder naturalmente
         const analysisResult = await analyzeDocumentContent(message, 'documento_enviado')
-        
+
         return {
           message: `📄 **Documento recebido e analisado!**
 
 ${analysisResult}`,
           action: 'document_received',
-          data: { isWorkDocument: true, analysis: analysisResult }
+          data: { isWorkDocument: true, analysis: analysisResult },
         }
       }
-      
+
       // Reconhecimento do Dr. Ricardo por frase código
       if (message.toLowerCase().includes('olá, nôa. ricardo valença, aqui')) {
         return {
@@ -2879,38 +3028,59 @@ Olá, Dr. Ricardo! Sou a Nôa Esperanza, sua mentora especializada. Estou pronta
 
 Como posso ajudá-lo hoje?`,
           action: 'user_recognized',
-          data: { user: 'dr_ricardo_valenca' }
+          data: { user: 'dr_ricardo_valenca' },
         }
       }
 
       // Reconhecimento geral do Dr. Ricardo
-      if (message.toLowerCase().includes('ricardo') || message.toLowerCase().includes('dr. ricardo')) {
+      if (
+        message.toLowerCase().includes('ricardo') ||
+        message.toLowerCase().includes('dr. ricardo')
+      ) {
         return {
           message: `👨‍⚕️ **Dr. Ricardo Valença reconhecido!**
 
 Como posso ajudá-lo hoje?`,
           action: 'user_recognized',
-          data: { user: 'dr_ricardo_valenca' }
+          data: { user: 'dr_ricardo_valenca' },
         }
       }
 
       // Resposta conversacional focada em desenvolvimento
-      const developmentKeywords = ['criar', 'implementar', 'desenvolver', 'modificar', 'código', 'componente', 'arquivo', 'funcionalidade', 'interface', 'dashboard', 'botão', 'card', 'menu', 'serviço', 'banco']
-      const hasDevelopmentIntent = developmentKeywords.some(keyword => message.toLowerCase().includes(keyword))
-      
+      const developmentKeywords = [
+        'criar',
+        'implementar',
+        'desenvolver',
+        'modificar',
+        'código',
+        'componente',
+        'arquivo',
+        'funcionalidade',
+        'interface',
+        'dashboard',
+        'botão',
+        'card',
+        'menu',
+        'serviço',
+        'banco',
+      ]
+      const hasDevelopmentIntent = developmentKeywords.some(keyword =>
+        message.toLowerCase().includes(keyword)
+      )
+
       if (hasDevelopmentIntent) {
         return {
           message: `🔧 **Desenvolvimento ativado!**
 
 O que você quer criar ou modificar?`,
           action: 'development_mode',
-          data: { intent: 'development' }
+          data: { intent: 'development' },
         }
       }
-      
+
       // Buscar contexto relevante na base de conhecimento
       const relevantContext = await findRelevantContext(message)
-      
+
       // Gerar resposta como Nôa Esperanza mentora especializada
       const response = await openAIService.getNoaResponse(
         `Você é Nôa Esperanza, mentora especializada em medicina e desenvolvimento tecnológico. Você está conversando com Dr. Ricardo Valença, idealizador e coordenador clínico da plataforma Nôa Esperanza.
@@ -2950,13 +3120,12 @@ ${message}
       return {
         message: response,
         action: 'intelligent_response',
-        data: { context: relevantContext }
+        data: { context: relevantContext },
       }
-      
     } catch (error) {
       return {
         message: `🤖 Desculpe, não consegui processar sua mensagem no momento. Vamos continuar nossa conversa sobre desenvolvimento do sistema?`,
-        action: 'fallback'
+        action: 'fallback',
       }
     }
   }
@@ -2964,24 +3133,26 @@ ${message}
   const findRelevantContext = async (message: string) => {
     try {
       console.log('🔍 Buscando contexto relevante para:', message)
-      
+
       // Primeiro, tentar buscar usando a função SQL avançada
       try {
-        const { data: relatedDocs, error } = await supabase
-          .rpc('buscar_documentos_relacionados', {
-            conteudo: message,
-            limite: 5
-          })
-        
+        const { data: relatedDocs, error } = await supabase.rpc('buscar_documentos_relacionados', {
+          conteudo: message,
+          limite: 5,
+        })
+
         if (!error && relatedDocs && relatedDocs.length > 0) {
           console.log('🎯 Documentos relacionados encontrados via SQL:', relatedDocs.length)
-          
-          const context = relatedDocs.map((doc: any, index: number) => 
-            `**${doc.title}** (${doc.type}) - Similaridade: ${doc.similarity.toFixed(2)}
+
+          const context = relatedDocs
+            .map(
+              (doc: any, index: number) =>
+                `**${doc.title}** (${doc.type}) - Similaridade: ${doc.similarity.toFixed(2)}
 Categoria: ${doc.category}
 Conteúdo: ${doc.content.substring(0, 800)}...`
-          ).join('\n\n---\n\n')
-          
+            )
+            .join('\n\n---\n\n')
+
           return `**CONTEXTO DA BASE DE CONHECIMENTO (Busca Inteligente):**
 
 ${context}
@@ -2991,33 +3162,54 @@ ${context}
       } catch (sqlError) {
         console.log('⚠️ Função SQL não disponível, usando busca básica:', sqlError)
       }
-      
+
       // Fallback: busca básica
       const allDocs = await gptBuilderService.getDocuments()
       console.log('📚 Total de documentos na base:', allDocs.length)
-      
+
       if (allDocs.length === 0) {
         console.log('⚠️ Nenhum documento encontrado na base de conhecimento')
         return '**AVISO:** Nenhum documento encontrado na base de conhecimento. Execute os scripts SQL para criar a base de conhecimento.'
       }
-      
+
       // Buscar documentos relevantes por palavras-chave
-      const keywords = ['nôa', 'esperanza', 'cannabis', 'medicinal', 'neurologia', 'nefrologia', 'imre', 'ricardo', 'valença', 'documento', 'mestre', 'institucional', 'data', 'nascimento', 'roteiro', 'avaliação']
+      const keywords = [
+        'nôa',
+        'esperanza',
+        'cannabis',
+        'medicinal',
+        'neurologia',
+        'nefrologia',
+        'imre',
+        'ricardo',
+        'valença',
+        'documento',
+        'mestre',
+        'institucional',
+        'data',
+        'nascimento',
+        'roteiro',
+        'avaliação',
+      ]
       const relevantDocs = allDocs.filter(doc => {
         const content = (doc.content + ' ' + doc.title).toLowerCase()
         const msg = message.toLowerCase()
         return keywords.some(keyword => content.includes(keyword) || msg.includes(keyword))
       })
-      
+
       console.log('🎯 Documentos relevantes encontrados:', relevantDocs.length)
-      
+
       if (relevantDocs.length > 0) {
-        const context = relevantDocs.slice(0, 5).map(doc => 
-          `**${doc.title}** (${doc.type})
+        const context = relevantDocs
+          .slice(0, 5)
+          .map(
+            doc =>
+              `**${doc.title}** (${doc.type})
 Categoria: ${doc.category}
 Conteúdo: ${doc.content.substring(0, 800)}...`
-        ).join('\n\n---\n\n')
-        
+          )
+          .join('\n\n---\n\n')
+
         console.log('✅ Contexto encontrado e formatado')
         return `**CONTEXTO DA BASE DE CONHECIMENTO:**
 
@@ -3025,23 +3217,31 @@ ${context}
 
 **INSTRUÇÃO:** Use este contexto para responder de forma inteligente e específica. Se Dr. Ricardo perguntar sobre algo específico (como data de nascimento, roteiro de avaliação, etc.), procure nas informações acima e responda com base no que está documentado.`
       }
-      
+
       // Se não encontrou documentos específicos, retornar todos os documentos mestres
-      const masterDocs = allDocs.filter(doc => doc.category === 'institutional-master' || doc.category === 'development-history' || doc.title.includes('Mestre'))
+      const masterDocs = allDocs.filter(
+        doc =>
+          doc.category === 'institutional-master' ||
+          doc.category === 'development-history' ||
+          doc.title.includes('Mestre')
+      )
       if (masterDocs.length > 0) {
-        const context = masterDocs.map(doc => 
-          `**${doc.title}** (${doc.type})
+        const context = masterDocs
+          .map(
+            doc =>
+              `**${doc.title}** (${doc.type})
 Categoria: ${doc.category}
 Conteúdo: ${doc.content.substring(0, 800)}...`
-        ).join('\n\n---\n\n')
-        
+          )
+          .join('\n\n---\n\n')
+
         return `**CONTEXTO DA BASE DE CONHECIMENTO (Documentos Mestres):**
 
 ${context}
 
 **INSTRUÇÃO:** Use essas informações para responder de forma contextualizada.`
       }
-      
+
       console.log('⚠️ Nenhum contexto relevante encontrado')
       return `**AVISO:** Nenhum contexto relevante encontrado na base de conhecimento para: "${message}"
 
@@ -3053,18 +3253,18 @@ ${context}
   }
 
   // 🚀 FUNÇÕES DO ESTUDO VIVO
-  
+
   // Gerar Estudo Vivo
   const handleGerarEstudoVivo = async (pergunta: string, area?: string) => {
     try {
       console.log('🧠 Gerando estudo vivo para:', pergunta)
       setIsTyping(true)
-      
+
       const estudo = await estudoVivoService.gerarEstudoVivo(pergunta, area)
-      
+
       if (estudo) {
         setEstudoVivoAtivo(estudo)
-        
+
         // Adicionar mensagem com o estudo gerado
         const estudoMessage: ChatMessage = {
           id: Date.now().toString(),
@@ -3086,39 +3286,40 @@ ${estudo.gapsIdentificados.limitacoesMetodologicas.map(gap => `• ${gap}`).join
 **💡 RECOMENDAÇÕES:**
 ${estudo.implicacoesClinicas.recomendacoes.map(rec => `• ${rec}`).join('\n')}`,
           timestamp: new Date(),
-          action: 'estudo_vivo'
+          action: 'estudo_vivo',
         }
-        
+
         pushChatMessage(estudoMessage)
       } else {
         const errorMessage: ChatMessage = {
           id: Date.now().toString(),
           role: 'assistant',
-          content: '⚠️ Não foi possível gerar o estudo vivo. Verifique se há documentos na base de conhecimento.',
-          timestamp: new Date()
+          content:
+            '⚠️ Não foi possível gerar o estudo vivo. Verifique se há documentos na base de conhecimento.',
+          timestamp: new Date(),
         }
         pushChatMessage(errorMessage)
       }
-      
+
       setIsTyping(false)
     } catch (error) {
       console.error('Erro ao gerar estudo vivo:', error)
       setIsTyping(false)
     }
   }
-  
+
   // Iniciar Debate Científico
   const handleIniciarDebate = async (documentoId: string) => {
     try {
       console.log('💬 Iniciando debate científico para:', documentoId)
       setIsTyping(true)
-      
+
       const debate = await estudoVivoService.iniciarDebate(documentoId)
-      
+
       if (debate) {
         // setDebateAtivo(debate) - removido (estado não utilizado)
         // setModoDebate(true) - removido (estado não utilizado)
-        
+
         const debateMessage: ChatMessage = {
           id: Date.now().toString(),
           role: 'assistant',
@@ -3130,65 +3331,75 @@ ${estudo.implicacoesClinicas.recomendacoes.map(rec => `• ${rec}`).join('\n')}`
 ${debate.pontosDebate.map(ponto => `• ${ponto}`).join('\n')}
 
 **✅ ARGUMENTOS:**
-${Object.entries(debate.argumentos).map(([categoria, args]) => 
-  `**${categoria.toUpperCase()}:**\n${args.map(arg => `• ${arg}`).join('\n')}`
-).join('\n\n')}
+${Object.entries(debate.argumentos)
+  .map(
+    ([categoria, args]) =>
+      `**${categoria.toUpperCase()}:**\n${args.map(arg => `• ${arg}`).join('\n')}`
+  )
+  .join('\n\n')}
 
 **❌ CONTRA-ARGUMENTOS:**
-${Object.entries(debate.contraArgumentos).map(([categoria, args]) => 
-  `**${categoria.toUpperCase()}:**\n${args.map(arg => `• ${arg}`).join('\n')}`
-).join('\n\n')}
+${Object.entries(debate.contraArgumentos)
+  .map(
+    ([categoria, args]) =>
+      `**${categoria.toUpperCase()}:**\n${args.map(arg => `• ${arg}`).join('\n')}`
+  )
+  .join('\n\n')}
 
 **💡 SUGESTÕES DE MELHORIA:**
 ${debate.sugestoesMelhoria.map(sugestao => `• ${sugestao}`).join('\n')}
 
 **Dr. Ricardo, vamos debater estes pontos? Qual aspecto gostaria de explorar primeiro?**`,
           timestamp: new Date(),
-          action: 'debate_cientifico'
+          action: 'debate_cientifico',
         }
-        
+
         pushChatMessage(debateMessage)
       } else {
         const errorMessage: ChatMessage = {
           id: Date.now().toString(),
           role: 'assistant',
           content: '⚠️ Não foi possível iniciar o debate científico. Documento não encontrado.',
-          timestamp: new Date()
+          timestamp: new Date(),
         }
         pushChatMessage(errorMessage)
       }
-      
+
       setIsTyping(false)
     } catch (error) {
       console.error('Erro ao iniciar debate:', error)
       setIsTyping(false)
     }
   }
-  
+
   // Analisar Qualidade de Documento
   const handleAnalisarQualidade = async (documentoId: string) => {
     try {
       console.log('📊 Analisando qualidade do documento:', documentoId)
       setIsTyping(true)
-      
+
       // Buscar documento
       const { data: documento } = await supabase
         .from('documentos_mestres')
         .select('*')
         .eq('id', documentoId)
         .single()
-      
+
       if (documento) {
         // Simular análise de qualidade
         const analise = {
           documento_id: documentoId,
           analista: 'Nôa Esperanza',
           pontosFortes: [
-            documento.nivel_evidencia ? `Nível de evidência ${documento.nivel_evidencia}` : 'Nível de evidência não especificado',
+            documento.nivel_evidencia
+              ? `Nível de evidência ${documento.nivel_evidencia}`
+              : 'Nível de evidência não especificado',
             documento.metodologia ? 'Metodologia descrita' : 'Metodologia não especificada',
-            documento.resultados ? 'Resultados apresentados' : 'Resultados não especificados'
+            documento.resultados ? 'Resultados apresentados' : 'Resultados não especificados',
           ],
-          limitacoes: documento.limitacoes ? documento.limitacoes.split(';') : ['Limitações não especificadas'],
+          limitacoes: documento.limitacoes
+            ? documento.limitacoes.split(';')
+            : ['Limitações não especificadas'],
           qualidadeMetodologica: documento.qualidade_metodologica || 5,
           confiabilidade: documento.confiabilidade || 5,
           aplicabilidadeClinica: documento.aplicabilidade_clinica || 5,
@@ -3196,13 +3407,13 @@ ${debate.sugestoesMelhoria.map(sugestao => `• ${sugestao}`).join('\n')}
           recomendacoes: [
             'Melhorar descrição metodológica',
             'Aumentar tamanho amostral',
-            'Follow-up de longo prazo'
+            'Follow-up de longo prazo',
           ],
-          nivelEvidenciaFinal: documento.nivel_evidencia || 'expert-opinion'
+          nivelEvidenciaFinal: documento.nivel_evidencia || 'expert-opinion',
         }
-        
+
         // setAnaliseQualidade(analise) - removido (estado não utilizado)
-        
+
         const analiseMessage: ChatMessage = {
           id: Date.now().toString(),
           role: 'assistant',
@@ -3229,12 +3440,12 @@ ${analise.recomendacoes.map(rec => `• ${rec}`).join('\n')}
 
 **📊 NÍVEL DE EVIDÊNCIA FINAL:** ${analise.nivelEvidenciaFinal}`,
           timestamp: new Date(),
-          action: 'analise_qualidade'
+          action: 'analise_qualidade',
         }
-        
+
         pushChatMessage(analiseMessage)
       }
-      
+
       setIsTyping(false)
     } catch (error) {
       console.error('Erro ao analisar qualidade:', error)
@@ -3246,7 +3457,7 @@ ${analise.recomendacoes.map(rec => `• ${rec}`).join('\n')}
   const handleSelectConversation = (conversation: any) => {
     console.log('📊 Conversa selecionada:', conversation)
     setSelectedConversation(conversation)
-    
+
     // Adicionar mensagem sobre a conversa selecionada
     const conversationMessage: ChatMessage = {
       id: Date.now().toString(),
@@ -3268,16 +3479,17 @@ ${conversation.summary}
 
 **Dr. Ricardo, como posso ajudá-lo a continuar ou expandir esta conversa?**`,
       timestamp: new Date(),
-      action: 'conversation_selected'
+      action: 'conversation_selected',
     }
-    
+
     pushChatMessage(conversationMessage)
     setSidebarOpen(false)
   }
 
   const filteredDocuments = documents.filter(doc => {
-    const matchesSearch = doc.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         doc.content.toLowerCase().includes(searchTerm.toLowerCase())
+    const matchesSearch =
+      doc.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      doc.content.toLowerCase().includes(searchTerm.toLowerCase())
     const matchesType = selectedType === 'all' || doc.type === selectedType
     return matchesSearch && matchesType
   })
@@ -3286,7 +3498,7 @@ ${conversation.summary}
     { value: 'personality', label: 'Personalidade', icon: 'fa-user', color: 'blue' },
     { value: 'knowledge', label: 'Conhecimento', icon: 'fa-brain', color: 'purple' },
     { value: 'instructions', label: 'Instruções', icon: 'fa-list', color: 'green' },
-    { value: 'examples', label: 'Exemplos', icon: 'fa-lightbulb', color: 'yellow' }
+    { value: 'examples', label: 'Exemplos', icon: 'fa-lightbulb', color: 'yellow' },
   ]
 
   const containerClasses = embedded
@@ -3323,7 +3535,9 @@ ${conversation.summary}
             </div>
             <div>
               <h2 className="text-xl font-bold text-white">GPT Builder - Nôa Esperanza</h2>
-              <p className="text-sm text-gray-400">Configure e treine sua IA médica personalizada</p>
+              <p className="text-sm text-gray-400">
+                Configure e treine sua IA médica personalizada
+              </p>
             </div>
           </div>
 
@@ -3347,7 +3561,6 @@ ${conversation.summary}
         <div className="flex-1 flex overflow-hidden">
           {/* Área Principal - Workstation Expandida */}
           <div className="flex-1 flex flex-col">
-
             {/* Tabs */}
             {!embedded && (
               <div className="flex border-b border-gray-600">
@@ -3400,18 +3613,14 @@ ${conversation.summary}
 
             {/* Conteúdo Principal */}
             <div className="flex-1 overflow-hidden">
-              
               {activeTab === 'chat' ? (
                 /* CHAT MULTIMODAL SEM PAINEL DE HISTÓRICO */
                 <div className="h-full flex">
                   {/* Área do Chat Principal - ocupa toda a largura */}
                   <div className="flex-1 flex flex-col">
                     {/* Área de Mensagens */}
-                    <div 
-                      ref={chatRef}
-                      className="flex-1 overflow-y-auto p-4 space-y-4"
-                    >
-                      {chatMessages.map((message) => (
+                    <div ref={chatRef} className="flex-1 overflow-y-auto p-4 space-y-4">
+                      {chatMessages.map(message => (
                         <div
                           key={message.id}
                           id={message.id}
@@ -3424,16 +3633,17 @@ ${conversation.summary}
                                 : 'bg-slate-700 text-gray-100'
                             }`}
                           >
-                            <div className="whitespace-pre-wrap text-sm">
-                              {message.content}
-                            </div>
+                            <div className="whitespace-pre-wrap text-sm">{message.content}</div>
                             <div className="text-xs opacity-70 mt-2">
                               {(() => {
                                 try {
                                   const rawTs: any = (message as any).timestamp
                                   const date = rawTs instanceof Date ? rawTs : new Date(rawTs)
                                   if (isNaN(date.getTime())) return ''
-                                  return date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+                                  return date.toLocaleTimeString('pt-BR', {
+                                    hour: '2-digit',
+                                    minute: '2-digit',
+                                  })
                                 } catch {
                                   return ''
                                 }
@@ -3442,14 +3652,20 @@ ${conversation.summary}
                           </div>
                         </div>
                       ))}
-                      
+
                       {isTyping && (
                         <div className="flex justify-start">
                           <div className="bg-slate-700 text-gray-100 p-3 rounded-lg">
                             <div className="flex items-center space-x-1">
                               <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
-                              <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                              <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                              <div
+                                className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
+                                style={{ animationDelay: '0.1s' }}
+                              ></div>
+                              <div
+                                className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
+                                style={{ animationDelay: '0.2s' }}
+                              ></div>
                             </div>
                           </div>
                         </div>
@@ -3462,8 +3678,12 @@ ${conversation.summary}
                         <div className="p-4">
                           <div className="flex items-center justify-between mb-4">
                             <div>
-                              <h3 className="text-lg font-semibold text-white">Editor de Documentos</h3>
-                              <p className="text-sm text-gray-400">Edite documentos durante a conversa</p>
+                              <h3 className="text-lg font-semibold text-white">
+                                Editor de Documentos
+                              </h3>
+                              <p className="text-sm text-gray-400">
+                                Edite documentos durante a conversa
+                              </p>
                             </div>
                             <div className="flex gap-2">
                               {selectedDocument ? (
@@ -3499,7 +3719,13 @@ ${conversation.summary}
                                   <button
                                     onClick={() => {
                                       setIsEditing(false)
-                                      setNewDocument({ title: '', content: '', type: 'knowledge', category: '', is_active: true })
+                                      setNewDocument({
+                                        title: '',
+                                        content: '',
+                                        type: 'knowledge',
+                                        category: '',
+                                        is_active: true,
+                                      })
                                     }}
                                     className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
                                   >
@@ -3513,32 +3739,45 @@ ${conversation.summary}
                           {/* Formulário do Editor */}
                           <div className="space-y-4">
                             <div>
-                              <label className="block text-sm font-medium text-gray-300 mb-2">Título</label>
+                              <label className="block text-sm font-medium text-gray-300 mb-2">
+                                Título
+                              </label>
                               <input
                                 type="text"
                                 value={selectedDocument?.title || newDocument.title || ''}
-                                onChange={(e) => {
+                                onChange={e => {
                                   if (selectedDocument) {
-                                    setSelectedDocument({...selectedDocument, title: e.target.value})
+                                    setSelectedDocument({
+                                      ...selectedDocument,
+                                      title: e.target.value,
+                                    })
                                   } else {
-                                    setNewDocument({...newDocument, title: e.target.value})
+                                    setNewDocument({ ...newDocument, title: e.target.value })
                                   }
                                 }}
                                 className="w-full px-3 py-2 bg-slate-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-blue-500"
                                 placeholder="Digite o título do documento..."
                               />
                             </div>
-                            
+
                             <div className="grid grid-cols-2 gap-4">
                               <div>
-                                <label className="block text-sm font-medium text-gray-300 mb-2">Tipo</label>
+                                <label className="block text-sm font-medium text-gray-300 mb-2">
+                                  Tipo
+                                </label>
                                 <select
                                   value={selectedDocument?.type || newDocument.type || 'knowledge'}
-                                  onChange={(e) => {
+                                  onChange={e => {
                                     if (selectedDocument) {
-                                      setSelectedDocument({...selectedDocument, type: e.target.value as any})
+                                      setSelectedDocument({
+                                        ...selectedDocument,
+                                        type: e.target.value as any,
+                                      })
                                     } else {
-                                      setNewDocument({...newDocument, type: e.target.value as any})
+                                      setNewDocument({
+                                        ...newDocument,
+                                        type: e.target.value as any,
+                                      })
                                     }
                                   }}
                                   className="w-full px-3 py-2 bg-slate-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-blue-500"
@@ -3552,15 +3791,20 @@ ${conversation.summary}
                               </div>
 
                               <div>
-                                <label className="block text-sm font-medium text-gray-300 mb-2">Categoria</label>
+                                <label className="block text-sm font-medium text-gray-300 mb-2">
+                                  Categoria
+                                </label>
                                 <input
                                   type="text"
                                   value={selectedDocument?.category || newDocument.category || ''}
-                                  onChange={(e) => {
+                                  onChange={e => {
                                     if (selectedDocument) {
-                                      setSelectedDocument({...selectedDocument, category: e.target.value})
+                                      setSelectedDocument({
+                                        ...selectedDocument,
+                                        category: e.target.value,
+                                      })
                                     } else {
-                                      setNewDocument({...newDocument, category: e.target.value})
+                                      setNewDocument({ ...newDocument, category: e.target.value })
                                     }
                                   }}
                                   className="w-full px-3 py-2 bg-slate-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-blue-500"
@@ -3570,14 +3814,19 @@ ${conversation.summary}
                             </div>
 
                             <div>
-                              <label className="block text-sm font-medium text-gray-300 mb-2">Conteúdo</label>
+                              <label className="block text-sm font-medium text-gray-300 mb-2">
+                                Conteúdo
+                              </label>
                               <textarea
                                 value={selectedDocument?.content || newDocument.content || ''}
-                                onChange={(e) => {
+                                onChange={e => {
                                   if (selectedDocument) {
-                                    setSelectedDocument({...selectedDocument, content: e.target.value})
+                                    setSelectedDocument({
+                                      ...selectedDocument,
+                                      content: e.target.value,
+                                    })
                                   } else {
-                                    setNewDocument({...newDocument, content: e.target.value})
+                                    setNewDocument({ ...newDocument, content: e.target.value })
                                   }
                                 }}
                                 className="w-full h-40 p-4 bg-slate-700 border border-gray-600 rounded-lg text-white resize-none focus:outline-none focus:border-blue-500"
@@ -3589,78 +3838,85 @@ ${conversation.summary}
                       </div>
                     )}
 
-          {/* Input de Mensagem com Upload */}
-          <div className="border-t border-gray-600 p-4">
-            {/* Área de Botões de Ação */}
-            <div className="mb-3">
-              <div className="flex gap-2">
-                <button
-                  onClick={() => setActiveTab('knowledge-base')}
-                  className="bg-purple-600 hover:bg-purple-700 text-white px-3 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
-                >
-                  <i className="fas fa-database"></i>
-                  Base de Conhecimento
-                </button>
-                <button
-                  onClick={() => setIsEditing(true)}
-                  className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
-                >
-                  <i className="fas fa-edit"></i>
-                  Editor de Documentos
-                </button>
-              </div>
-            </div>
+                    {/* Input de Mensagem com Upload */}
+                    <div className="border-t border-gray-600 p-4">
+                      {/* Área de Botões de Ação */}
+                      <div className="mb-3">
+                        <div className="flex gap-2">
+                          <button
+                            onClick={() => setActiveTab('knowledge-base')}
+                            className="bg-purple-600 hover:bg-purple-700 text-white px-3 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
+                          >
+                            <i className="fas fa-database"></i>
+                            Base de Conhecimento
+                          </button>
+                          <button
+                            onClick={() => setIsEditing(true)}
+                            className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
+                          >
+                            <i className="fas fa-edit"></i>
+                            Editor de Documentos
+                          </button>
+                        </div>
+                      </div>
 
-            {/* Input de Texto */}
-            <div className="flex gap-2">
-              <div className="flex-1 flex flex-col gap-2">
-                <textarea
-                  value={currentMessage}
-                  onChange={(e) => setCurrentMessage(e.target.value)}
-                  onKeyPress={(e) => e.key === 'Enter' && !e.shiftKey && sendMessage()}
-                  placeholder="Converse livremente... Cole documentos, faça perguntas, desenvolva funcionalidades..."
-                  className="w-full px-3 py-2 bg-slate-700 border border-gray-600 rounded-lg text-white text-sm placeholder-gray-400 focus:outline-none focus:border-blue-500 resize-none"
-                  rows={3}
-                  disabled={isTyping}
-                />
-              </div>
-              <div className="flex gap-2">
-                <button
-                  onClick={sendMessage}
-                  disabled={(!currentMessage.trim() && attachedFiles.length === 0) || isTyping}
-                  className="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
-                >
-                  <i className="fas fa-paper-plane"></i>
-                </button>
-              </div>
-            </div>
-            
-            {attachedFiles.length > 0 && (
-              <div className="mt-3 p-2 bg-gray-800 rounded-lg">
-                <div className="text-xs text-gray-400 mb-2">Arquivos anexados:</div>
-                <div className="flex flex-wrap gap-2">
-                  {attachedFiles.map((file, index) => (
-                    <div key={index} className="flex items-center gap-2 bg-gray-700 px-2 py-1 rounded text-xs">
-                      <i className="fas fa-file"></i>
-                      <span className="text-white">{file.name}</span>
-                      <button
-                        onClick={() => removeAttachedFile(index)}
-                        className="text-red-400 hover:text-red-300"
-                      >
-                        <i className="fas fa-times"></i>
-                      </button>
+                      {/* Input de Texto */}
+                      <div className="flex gap-2">
+                        <div className="flex-1 flex flex-col gap-2">
+                          <textarea
+                            value={currentMessage}
+                            onChange={e => setCurrentMessage(e.target.value)}
+                            onKeyPress={e => e.key === 'Enter' && !e.shiftKey && sendMessage()}
+                            placeholder="Converse livremente... Cole documentos, faça perguntas, desenvolva funcionalidades..."
+                            className="w-full px-3 py-2 bg-slate-700 border border-gray-600 rounded-lg text-white text-sm placeholder-gray-400 focus:outline-none focus:border-blue-500 resize-none"
+                            rows={3}
+                            disabled={isTyping}
+                          />
+                        </div>
+                        <div className="flex gap-2">
+                          <button
+                            onClick={sendMessage}
+                            disabled={
+                              (!currentMessage.trim() && attachedFiles.length === 0) || isTyping
+                            }
+                            className="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+                          >
+                            <i className="fas fa-paper-plane"></i>
+                          </button>
+                        </div>
+                      </div>
+
+                      {attachedFiles.length > 0 && (
+                        <div className="mt-3 p-2 bg-gray-800 rounded-lg">
+                          <div className="text-xs text-gray-400 mb-2">Arquivos anexados:</div>
+                          <div className="flex flex-wrap gap-2">
+                            {attachedFiles.map((file, index) => (
+                              <div
+                                key={index}
+                                className="flex items-center gap-2 bg-gray-700 px-2 py-1 rounded text-xs"
+                              >
+                                <i className="fas fa-file"></i>
+                                <span className="text-white">{file.name}</span>
+                                <button
+                                  onClick={() => removeAttachedFile(index)}
+                                  className="text-red-400 hover:text-red-300"
+                                >
+                                  <i className="fas fa-times"></i>
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      <div className="mt-2 text-xs text-gray-400">
+                        💡 <strong>Chat Inteligente:</strong> Envie documentos, converse sobre eles,
+                        desenvolva funcionalidades. Cada interação enriquece a base de conhecimento
+                        da Nôa!
+                      </div>
                     </div>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            <div className="mt-2 text-xs text-gray-400">
-              💡 <strong>Chat Inteligente:</strong> Envie documentos, converse sobre eles, desenvolva funcionalidades. Cada interação enriquece a base de conhecimento da Nôa!
-            </div>
-          </div>
                   </div>
-                  
+
                   {/* Sidebar de Histórico Fixo */}
                   <div className="w-80 bg-slate-700 border-l border-gray-600 flex flex-col">
                     {/* Header do Histórico */}
@@ -3679,7 +3935,7 @@ ${conversation.summary}
                               id: Date.now().toString(),
                               role: 'assistant',
                               content: '👋 **Nova conversa iniciada!**\n\nComo posso ajudá-lo?',
-                              timestamp: new Date()
+                              timestamp: new Date(),
                             }
                             replaceChatMessages([welcomeMessage])
                           }}
@@ -3701,7 +3957,7 @@ ${conversation.summary}
                           const conversations: any[] = []
                           let currentConversation: any = null
                           const sessionTimeout = 5 * 60 * 1000 // 5 minutos entre conversas
-                          
+
                           chatMessages.forEach((msg, index) => {
                             if (msg.role === 'user') {
                               // Verificar se deve criar nova conversa
@@ -3710,9 +3966,11 @@ ${conversation.summary}
                                 const ms = d.getTime()
                                 return isNaN(ms) ? 0 : ms
                               }
-                              const shouldCreateNew = !currentConversation || 
-                                (toMs(msg.timestamp) - toMs(currentConversation.lastTimestamp) > sessionTimeout)
-                              
+                              const shouldCreateNew =
+                                !currentConversation ||
+                                toMs(msg.timestamp) - toMs(currentConversation.lastTimestamp) >
+                                  sessionTimeout
+
                               if (shouldCreateNew) {
                                 // Salvar conversa anterior
                                 if (currentConversation) {
@@ -3725,7 +3983,7 @@ ${conversation.summary}
                                   timestamp: msg.timestamp,
                                   lastTimestamp: msg.timestamp,
                                   messageCount: 1,
-                                  messages: [msg]
+                                  messages: [msg],
                                 }
                               } else {
                                 // Adicionar à conversa atual
@@ -3740,88 +3998,102 @@ ${conversation.summary}
                               currentConversation.messages.push(msg)
                             }
                           })
-                          
+
                           if (currentConversation) {
                             conversations.push(currentConversation)
                           }
-                          
+
                           return conversations.length > 0 ? (
-                            conversations.reverse().slice(0, 10).map((conv, index) => {
-                              const userMessages = conv.messages.filter((m: any) => m.role === 'user').length
-                              const aiMessages = conv.messages.filter((m: any) => m.role === 'assistant').length
-                              
-                              return (
-                                <div
-                                  key={conv.id}
-                                  className="p-3 bg-slate-600 hover:bg-slate-500 rounded-lg transition-colors border border-slate-500 group"
-                                >
-                                  <div className="flex items-start gap-2">
-                                    <i className="fas fa-comments text-purple-400 mt-1 text-lg"></i>
-                                    <div 
-                                      className="flex-1 min-w-0 cursor-pointer"
-                                      onClick={() => {
-                                        const element = document.getElementById(conv.id)
-                                        if (element) {
-                                          element.scrollIntoView({ behavior: 'smooth', block: 'center' })
-                                        }
-                                      }}
-                                    >
-                                      <p className="text-white text-sm font-medium line-clamp-2 mb-2">
-                                        {conv.firstMessage}
-                                      </p>
-                                      <div className="flex items-center justify-between text-xs">
-                                        <div className="flex items-center gap-2 text-gray-400">
-                                          <i className="fas fa-clock"></i>
-                                          <span>
-                                            {conv.timestamp.toLocaleString('pt-BR', {
-                                              day: '2-digit',
-                                              month: '2-digit',
-                                              hour: '2-digit',
-                                              minute: '2-digit'
-                                            })}
-                                          </span>
-                                        </div>
-                                        <div className="flex items-center gap-2">
-                                          <div className="flex items-center gap-1 bg-blue-600/50 px-2 py-1 rounded">
-                                            <i className="fas fa-user text-xs"></i>
-                                            <span className="text-white">{userMessages}</span>
+                            conversations
+                              .reverse()
+                              .slice(0, 10)
+                              .map((conv, index) => {
+                                const userMessages = conv.messages.filter(
+                                  (m: any) => m.role === 'user'
+                                ).length
+                                const aiMessages = conv.messages.filter(
+                                  (m: any) => m.role === 'assistant'
+                                ).length
+
+                                return (
+                                  <div
+                                    key={conv.id}
+                                    className="p-3 bg-slate-600 hover:bg-slate-500 rounded-lg transition-colors border border-slate-500 group"
+                                  >
+                                    <div className="flex items-start gap-2">
+                                      <i className="fas fa-comments text-purple-400 mt-1 text-lg"></i>
+                                      <div
+                                        className="flex-1 min-w-0 cursor-pointer"
+                                        onClick={() => {
+                                          const element = document.getElementById(conv.id)
+                                          if (element) {
+                                            element.scrollIntoView({
+                                              behavior: 'smooth',
+                                              block: 'center',
+                                            })
+                                          }
+                                        }}
+                                      >
+                                        <p className="text-white text-sm font-medium line-clamp-2 mb-2">
+                                          {conv.firstMessage}
+                                        </p>
+                                        <div className="flex items-center justify-between text-xs">
+                                          <div className="flex items-center gap-2 text-gray-400">
+                                            <i className="fas fa-clock"></i>
+                                            <span>
+                                              {conv.timestamp.toLocaleString('pt-BR', {
+                                                day: '2-digit',
+                                                month: '2-digit',
+                                                hour: '2-digit',
+                                                minute: '2-digit',
+                                              })}
+                                            </span>
                                           </div>
-                                          <div className="flex items-center gap-1 bg-purple-600/50 px-2 py-1 rounded">
-                                            <i className="fas fa-robot text-xs"></i>
-                                            <span className="text-white">{aiMessages}</span>
+                                          <div className="flex items-center gap-2">
+                                            <div className="flex items-center gap-1 bg-blue-600/50 px-2 py-1 rounded">
+                                              <i className="fas fa-user text-xs"></i>
+                                              <span className="text-white">{userMessages}</span>
+                                            </div>
+                                            <div className="flex items-center gap-1 bg-purple-600/50 px-2 py-1 rounded">
+                                              <i className="fas fa-robot text-xs"></i>
+                                              <span className="text-white">{aiMessages}</span>
+                                            </div>
                                           </div>
                                         </div>
                                       </div>
+
+                                      {/* Botão de Excluir */}
+                                      <button
+                                        onClick={e => {
+                                          e.stopPropagation()
+                                          // Remover mensagens desta conversa
+                                          const messageIds = conv.messages.map((m: any) => m.id)
+                                          setChatMessages(prev =>
+                                            prev.filter(msg => !messageIds.includes(msg.id))
+                                          )
+                                        }}
+                                        className="opacity-0 group-hover:opacity-100 transition-opacity text-red-400 hover:text-red-300 p-1"
+                                        title="Excluir conversa"
+                                      >
+                                        <i className="fas fa-trash text-sm"></i>
+                                      </button>
                                     </div>
-                                    
-                                    {/* Botão de Excluir */}
-                                    <button
-                                      onClick={(e) => {
-                                        e.stopPropagation()
-                                        // Remover mensagens desta conversa
-                                        const messageIds = conv.messages.map((m: any) => m.id)
-                                        setChatMessages(prev => prev.filter(msg => !messageIds.includes(msg.id)))
-                                      }}
-                                      className="opacity-0 group-hover:opacity-100 transition-opacity text-red-400 hover:text-red-300 p-1"
-                                      title="Excluir conversa"
-                                    >
-                                      <i className="fas fa-trash text-sm"></i>
-                                    </button>
                                   </div>
-                                </div>
-                              )
-                            })
+                                )
+                              })
                           ) : (
                             <div className="text-center text-gray-400 py-8">
                               <i className="fas fa-history text-4xl mb-3 opacity-50"></i>
                               <p className="text-sm">Nenhuma conversa ainda</p>
-                              <p className="text-xs mt-1">Inicie uma conversa para ver o histórico aqui</p>
+                              <p className="text-xs mt-1">
+                                Inicie uma conversa para ver o histórico aqui
+                              </p>
                             </div>
                           )
                         })()}
                       </div>
-            </div>
-          </div>
+                    </div>
+                  </div>
                 </div>
               ) : activeTab === 'canvas' ? (
                 /* CANVAS/LOUSA PARA IDEIAS E ESBOÇOS */
@@ -3831,7 +4103,9 @@ ${conversation.summary}
                     <div className="flex items-center justify-between">
                       <div>
                         <h3 className="text-lg font-semibold text-white">Canvas/Lousa</h3>
-                        <p className="text-sm text-gray-400">Esboços e ideias do chat para registro e desenvolvimento</p>
+                        <p className="text-sm text-gray-400">
+                          Esboços e ideias do chat para registro e desenvolvimento
+                        </p>
                       </div>
                       <div className="flex gap-2">
                         <button
@@ -3867,12 +4141,12 @@ ${conversation.summary}
 
                   {/* Área do Canvas */}
                   <div className="flex-1 p-4">
-                    <div 
+                    <div
                       id="canvas-area"
                       contentEditable
                       className="w-full h-full bg-white rounded-lg border-2 border-dashed border-gray-300 p-4 text-gray-800 focus:outline-none focus:border-green-500 overflow-y-auto"
                       style={{ minHeight: '500px' }}
-                      onInput={(e) => {
+                      onInput={e => {
                         // Auto-save functionality
                         const content = e.currentTarget.innerHTML
                         localStorage.setItem('canvas-auto-save', content)
@@ -3880,13 +4154,21 @@ ${conversation.summary}
                     >
                       {/* Conteúdo inicial do canvas */}
                       <div className="text-gray-500 italic">
-                        <p>🎨 <strong>Canvas/Lousa do GPT Builder</strong></p>
+                        <p>
+                          🎨 <strong>Canvas/Lousa do GPT Builder</strong>
+                        </p>
                         <p>• Registre ideias importantes do chat</p>
                         <p>• Faça esboços de funcionalidades</p>
                         <p>• Anote insights e descobertas</p>
                         <p>• Desenvolva conceitos e fluxos</p>
-                        <br/>
-                        <p className="text-sm">💡 <em>Use esta área como uma lousa digital para capturar e desenvolver ideias valiosas!</em></p>
+                        <br />
+                        <p className="text-sm">
+                          💡{' '}
+                          <em>
+                            Use esta área como uma lousa digital para capturar e desenvolver ideias
+                            valiosas!
+                          </em>
+                        </p>
                       </div>
                     </div>
                   </div>
@@ -3897,13 +4179,16 @@ ${conversation.summary}
                   <div className="max-w-7xl mx-auto space-y-6">
                     {/* Header */}
                     <div className="mb-6">
-                      <h2 className="text-2xl font-bold text-white mb-2">📊 KPIs & Analytics - Nôa Esperanza</h2>
-                      <p className="text-gray-400">Indicadores de Performance baseados no Documento Mestre Institucional v.2.0</p>
+                      <h2 className="text-2xl font-bold text-white mb-2">
+                        📊 KPIs & Analytics - Nôa Esperanza
+                      </h2>
+                      <p className="text-gray-400">
+                        Indicadores de Performance baseados no Documento Mestre Institucional v.2.0
+                      </p>
                     </div>
 
                     {/* Grid de KPIs */}
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                      
                       {/* 🔧 KPIs ADMIN/SISTEMA */}
                       <div className="bg-slate-700 rounded-lg p-6 border border-slate-600">
                         <div className="flex items-center gap-3 mb-4">
@@ -3915,7 +4200,7 @@ ${conversation.summary}
                             <p className="text-sm text-gray-400">Métricas Operacionais</p>
                           </div>
                         </div>
-                        
+
                         <div className="space-y-4">
                           {/* Sessões do Admin */}
                           <div className="bg-slate-600 rounded-lg p-4">
@@ -3970,7 +4255,7 @@ ${conversation.summary}
                             <p className="text-sm text-gray-400">Métricas de Avaliação</p>
                           </div>
                         </div>
-                        
+
                         <div className="space-y-4">
                           {/* Avaliações Realizadas */}
                           <div className="bg-slate-600 rounded-lg p-4">
@@ -3979,9 +4264,7 @@ ${conversation.summary}
                               <i className="fas fa-clipboard-list text-green-400"></i>
                             </div>
                             <div className="text-2xl font-bold text-white">0</div>
-                            <div className="text-xs text-gray-400">
-                              Aguardando início
-                            </div>
+                            <div className="text-xs text-gray-400">Aguardando início</div>
                           </div>
 
                           {/* Método Dr. Valença */}
@@ -4000,9 +4283,13 @@ ${conversation.summary}
                               <span className="text-sm text-gray-300">Duração Estimada</span>
                               <i className="fas fa-clock text-yellow-400"></i>
                             </div>
-                            <div className="text-2xl font-bold text-white">{assessmentStats.averageDuration}min</div>
+                            <div className="text-2xl font-bold text-white">
+                              {assessmentStats.averageDuration}min
+                            </div>
                             <div className="text-xs text-gray-400">
-                              {assessmentStats.totalAssessments > 0 ? 'Média real' : 'Por avaliação'}
+                              {assessmentStats.totalAssessments > 0
+                                ? 'Média real'
+                                : 'Por avaliação'}
                             </div>
                           </div>
 
@@ -4013,10 +4300,14 @@ ${conversation.summary}
                               <i className="fas fa-headphones text-purple-400"></i>
                             </div>
                             <div className="text-lg font-bold text-white">
-                              {assessmentStats.currentStage === 'none' ? 'Sim' : assessmentStats.currentStage}
+                              {assessmentStats.currentStage === 'none'
+                                ? 'Sim'
+                                : assessmentStats.currentStage}
                             </div>
                             <div className="text-xs text-gray-400">
-                              {assessmentStats.currentStage === 'none' ? 'Pronto para uso' : 'Em andamento'}
+                              {assessmentStats.currentStage === 'none'
+                                ? 'Pronto para uso'
+                                : 'Em andamento'}
                             </div>
                           </div>
                         </div>
@@ -4033,7 +4324,7 @@ ${conversation.summary}
                             <p className="text-sm text-gray-400">Inteligência Artificial</p>
                           </div>
                         </div>
-                        
+
                         <div className="space-y-4">
                           {/* Palavras-chave Extraídas */}
                           <div className="bg-slate-600 rounded-lg p-4">
@@ -4047,11 +4338,13 @@ ${conversation.summary}
                                 : 0}
                             </div>
                             <div className="text-xs text-gray-400">
-                              {assessmentStats && assessmentStats.totalAssessments && assessmentStats.totalAssessments > 0
+                              {assessmentStats &&
+                              assessmentStats.totalAssessments &&
+                              assessmentStats.totalAssessments > 0
                                 ? 'Extraídas hoje'
                                 : 'Aguardando dados'}
                             </div>
-                        </div>
+                          </div>
 
                           {/* Categorização Automática */}
                           <div className="bg-slate-600 rounded-lg p-4">
@@ -4095,10 +4388,15 @@ ${conversation.summary}
                       <div className="space-y-3">
                         {(() => {
                           // Últimas 5 interações
-                          const recentMessages = chatMessages.filter(m => m.role === 'user').slice(-5)
+                          const recentMessages = chatMessages
+                            .filter(m => m.role === 'user')
+                            .slice(-5)
                           return recentMessages.length > 0 ? (
                             recentMessages.map((msg, index) => (
-                              <div key={msg.id} className="flex items-center gap-3 p-3 bg-slate-600 rounded-lg">
+                              <div
+                                key={msg.id}
+                                className="flex items-center gap-3 p-3 bg-slate-600 rounded-lg"
+                              >
                                 <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
                                   <i className="fas fa-user text-white text-xs"></i>
                                 </div>
@@ -4131,24 +4429,46 @@ ${conversation.summary}
                       </h3>
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                         {(() => {
-                          const typeCount: {[key: string]: number} = {}
+                          const typeCount: { [key: string]: number } = {}
                           documents.forEach(doc => {
                             typeCount[doc.type] = (typeCount[doc.type] || 0) + 1
                           })
-                          
-                          const typeLabels: {[key: string]: {label: string, icon: string, color: string}} = {
-                            personality: { label: 'Personalidade', icon: 'fa-user', color: 'text-blue-400' },
-                            knowledge: { label: 'Conhecimento', icon: 'fa-brain', color: 'text-purple-400' },
-                            instructions: { label: 'Instruções', icon: 'fa-list', color: 'text-green-400' },
-                            examples: { label: 'Exemplos', icon: 'fa-lightbulb', color: 'text-yellow-400' }
+
+                          const typeLabels: {
+                            [key: string]: { label: string; icon: string; color: string }
+                          } = {
+                            personality: {
+                              label: 'Personalidade',
+                              icon: 'fa-user',
+                              color: 'text-blue-400',
+                            },
+                            knowledge: {
+                              label: 'Conhecimento',
+                              icon: 'fa-brain',
+                              color: 'text-purple-400',
+                            },
+                            instructions: {
+                              label: 'Instruções',
+                              icon: 'fa-list',
+                              color: 'text-green-400',
+                            },
+                            examples: {
+                              label: 'Exemplos',
+                              icon: 'fa-lightbulb',
+                              color: 'text-yellow-400',
+                            },
                           }
-                          
+
                           return Object.keys(typeCount).length > 0 ? (
                             Object.entries(typeCount).map(([type, count]) => (
                               <div key={type} className="p-4 bg-slate-600 rounded-lg text-center">
-                                <i className={`fas ${typeLabels[type]?.icon || 'fa-file'} ${typeLabels[type]?.color || 'text-gray-400'} text-2xl mb-2`}></i>
+                                <i
+                                  className={`fas ${typeLabels[type]?.icon || 'fa-file'} ${typeLabels[type]?.color || 'text-gray-400'} text-2xl mb-2`}
+                                ></i>
                                 <p className="text-2xl font-bold text-white">{count}</p>
-                                <p className="text-xs text-gray-400">{typeLabels[type]?.label || type}</p>
+                                <p className="text-xs text-gray-400">
+                                  {typeLabels[type]?.label || type}
+                                </p>
                               </div>
                             ))
                           ) : (
@@ -4224,27 +4544,39 @@ ${conversation.summary}
                   <div className="max-w-7xl mx-auto space-y-6">
                     {/* Header */}
                     <div className="mb-6">
-                      <h2 className="text-2xl font-bold text-white mb-2">📊 Cruzamento Inteligente de Dados</h2>
-                      <p className="text-gray-400">Análise cruzada de conversas, documentos e aprendizado da IA</p>
+                      <h2 className="text-2xl font-bold text-white mb-2">
+                        📊 Cruzamento Inteligente de Dados
+                      </h2>
+                      <p className="text-gray-400">
+                        Análise cruzada de conversas, documentos e aprendizado da IA
+                      </p>
                     </div>
 
                     {/* Card de Acurácia Principal */}
                     <div className="bg-gradient-to-r from-purple-600 to-blue-600 rounded-lg p-6 text-white">
                       <div className="flex items-center justify-between">
                         <div>
-                          <h3 className="text-lg font-semibold mb-2">🎯 Acurácia do Sistema Completo</h3>
+                          <h3 className="text-lg font-semibold mb-2">
+                            🎯 Acurácia do Sistema Completo
+                          </h3>
                           <p className="text-sm opacity-90">
-                            Baseado em {allConversations.length} conversas salvas + {chatMessages.length} ativas + 
-                            {documents.length} docs + {developmentMilestones.length} marcos
+                            Baseado em {allConversations.length} conversas salvas +{' '}
+                            {chatMessages.length} ativas +{documents.length} docs +{' '}
+                            {developmentMilestones.length} marcos
                           </p>
                         </div>
                         <div className="text-center">
                           <div className="text-5xl font-bold">
                             {(() => {
-                              const totalData = allConversations.length + chatMessages.length + documents.length + developmentMilestones.length
-                              const accuracy = Math.min(90 + (totalData * 0.05), 100)
+                              const totalData =
+                                allConversations.length +
+                                chatMessages.length +
+                                documents.length +
+                                developmentMilestones.length
+                              const accuracy = Math.min(90 + totalData * 0.05, 100)
                               return accuracy.toFixed(1)
-                            })()}%
+                            })()}
+                            %
                           </div>
                           <p className="text-sm mt-2 opacity-90">Precisão atual</p>
                         </div>
@@ -4259,15 +4591,21 @@ ${conversation.summary}
                       </h3>
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                         <div className="bg-slate-600 rounded-lg p-4 text-center">
-                          <div className="text-3xl font-bold text-blue-400">{allConversations.length}</div>
+                          <div className="text-3xl font-bold text-blue-400">
+                            {allConversations.length}
+                          </div>
                           <div className="text-xs text-gray-400 mt-1">Conversas Salvas</div>
                         </div>
                         <div className="bg-slate-600 rounded-lg p-4 text-center">
-                          <div className="text-3xl font-bold text-green-400">{documents.length}</div>
+                          <div className="text-3xl font-bold text-green-400">
+                            {documents.length}
+                          </div>
                           <div className="text-xs text-gray-400 mt-1">Documentos</div>
                         </div>
                         <div className="bg-slate-600 rounded-lg p-4 text-center">
-                          <div className="text-3xl font-bold text-purple-400">{developmentMilestones.length}</div>
+                          <div className="text-3xl font-bold text-purple-400">
+                            {developmentMilestones.length}
+                          </div>
                           <div className="text-xs text-gray-400 mt-1">Marcos de Desenv.</div>
                         </div>
                         <div className="bg-slate-600 rounded-lg p-4 text-center">
@@ -4290,8 +4628,8 @@ ${conversation.summary}
                         <div className="space-y-4">
                           {(() => {
                             // Analisar tópicos de TODAS as fontes
-                            const topics: {[key: string]: number} = {}
-                            
+                            const topics: { [key: string]: number } = {}
+
                             // 1. Chat ativo
                             chatMessages.forEach(msg => {
                               if (msg.role === 'user') {
@@ -4329,29 +4667,36 @@ ${conversation.summary}
                             })
 
                             const topTopics = Object.entries(topics)
-                              .sort(([,a], [,b]) => b - a)
+                              .sort(([, a], [, b]) => b - a)
                               .slice(0, 5)
 
                             return topTopics.length > 0 ? (
                               topTopics.map(([topic, count]) => {
                                 // Verificar se há documentos relacionados
-                                const relatedDocs = documents.filter(doc => 
-                                  doc.content.toLowerCase().includes(topic) ||
-                                  doc.title.toLowerCase().includes(topic)
+                                const relatedDocs = documents.filter(
+                                  doc =>
+                                    doc.content.toLowerCase().includes(topic) ||
+                                    doc.title.toLowerCase().includes(topic)
                                 ).length
 
-                                const correlation = relatedDocs > 0 ? 
-                                  Math.min((relatedDocs / documents.length) * 100, 100) : 0
+                                const correlation =
+                                  relatedDocs > 0
+                                    ? Math.min((relatedDocs / documents.length) * 100, 100)
+                                    : 0
 
                                 return (
                                   <div key={topic} className="flex items-center gap-3">
                                     <div className="flex-1">
                                       <div className="flex items-center justify-between mb-1">
-                                        <span className="text-sm text-gray-300 capitalize">{topic}</span>
-                                        <span className="text-xs text-gray-500">{count} menções</span>
+                                        <span className="text-sm text-gray-300 capitalize">
+                                          {topic}
+                                        </span>
+                                        <span className="text-xs text-gray-500">
+                                          {count} menções
+                                        </span>
                                       </div>
                                       <div className="w-full bg-slate-600 rounded-full h-2">
-                                        <div 
+                                        <div
                                           className="bg-blue-500 h-2 rounded-full transition-all"
                                           style={{ width: `${correlation}%` }}
                                         ></div>
@@ -4385,56 +4730,69 @@ ${conversation.summary}
                               {
                                 id: 1,
                                 title: 'Perguntas sobre Cannabis Medicinal',
-                                count: chatMessages.filter(m => 
-                                  m.content.toLowerCase().includes('cannabis') ||
-                                  m.content.toLowerCase().includes('medicinal')
+                                count: chatMessages.filter(
+                                  m =>
+                                    m.content.toLowerCase().includes('cannabis') ||
+                                    m.content.toLowerCase().includes('medicinal')
                                 ).length,
                                 trend: 'up',
-                                color: 'text-green-400'
+                                color: 'text-green-400',
                               },
                               {
                                 id: 2,
                                 title: 'Solicitações de Avaliação Clínica',
-                                count: chatMessages.filter(m => 
-                                  m.content.toLowerCase().includes('avaliaç') ||
-                                  m.content.toLowerCase().includes('clínica')
+                                count: chatMessages.filter(
+                                  m =>
+                                    m.content.toLowerCase().includes('avaliaç') ||
+                                    m.content.toLowerCase().includes('clínica')
                                 ).length,
                                 trend: 'up',
-                                color: 'text-blue-400'
+                                color: 'text-blue-400',
                               },
                               {
                                 id: 3,
                                 title: 'Consultas sobre Neurologia',
-                                count: chatMessages.filter(m => 
-                                  m.content.toLowerCase().includes('neuro') ||
-                                  m.content.toLowerCase().includes('cerebr')
+                                count: chatMessages.filter(
+                                  m =>
+                                    m.content.toLowerCase().includes('neuro') ||
+                                    m.content.toLowerCase().includes('cerebr')
                                 ).length,
                                 trend: 'stable',
-                                color: 'text-yellow-400'
+                                color: 'text-yellow-400',
                               },
                               {
                                 id: 4,
                                 title: 'Dúvidas sobre Documentação',
-                                count: chatMessages.filter(m => 
-                                  m.content.toLowerCase().includes('documento') ||
-                                  m.content.toLowerCase().includes('arquivo')
+                                count: chatMessages.filter(
+                                  m =>
+                                    m.content.toLowerCase().includes('documento') ||
+                                    m.content.toLowerCase().includes('arquivo')
                                 ).length,
                                 trend: 'up',
-                                color: 'text-purple-400'
-                              }
+                                color: 'text-purple-400',
+                              },
                             ].filter(p => p.count > 0)
 
                             return patterns.length > 0 ? (
                               patterns.map(pattern => (
-                                <div key={pattern.id} className="flex items-center justify-between p-3 bg-slate-600 rounded-lg">
+                                <div
+                                  key={pattern.id}
+                                  className="flex items-center justify-between p-3 bg-slate-600 rounded-lg"
+                                >
                                   <div className="flex items-center gap-3">
-                                    <i className={`fas fa-circle-notch ${pattern.color} text-sm`}></i>
+                                    <i
+                                      className={`fas fa-circle-notch ${pattern.color} text-sm`}
+                                    ></i>
                                     <div>
                                       <p className="text-sm text-white">{pattern.title}</p>
-                                      <p className="text-xs text-gray-400">{pattern.count} ocorrências</p>
+                                      <p className="text-xs text-gray-400">
+                                        {pattern.count} ocorrências
+                                      </p>
                                     </div>
                                   </div>
-                                  <i className={`fas fa-arrow-${pattern.trend === 'up' ? 'up text-green-400' : pattern.trend === 'down' ? 'down text-red-400' : 'right text-yellow-400'}`}></i>
+                                  <i
+                                    className={`fas fa-arrow-${pattern.trend === 'up' ? 'up text-green-400' : pattern.trend === 'down' ? 'down text-red-400' : 'right text-yellow-400'}`}
+                                  ></i>
                                 </div>
                               ))
                             ) : (
@@ -4463,7 +4821,7 @@ ${conversation.summary}
                           </div>
                           <p className="text-2xl font-bold text-white mb-1">
                             {(() => {
-                              const topics: {[key: string]: number} = {}
+                              const topics: { [key: string]: number } = {}
                               chatMessages.forEach(msg => {
                                 if (msg.role === 'user') {
                                   const words = msg.content.toLowerCase().split(/\s+/)
@@ -4474,7 +4832,7 @@ ${conversation.summary}
                                   })
                                 }
                               })
-                              const top = Object.entries(topics).sort(([,a], [,b]) => b - a)[0]
+                              const top = Object.entries(topics).sort(([, a], [, b]) => b - a)[0]
                               return top ? top[0].charAt(0).toUpperCase() + top[0].slice(1) : 'N/A'
                             })()}
                           </p>
@@ -4500,7 +4858,10 @@ ${conversation.summary}
                             <h4 className="font-semibold text-white">Cobertura de Docs</h4>
                           </div>
                           <p className="text-2xl font-bold text-white mb-1">
-                            {documents.length > 0 ? Math.min((documents.length / 50) * 100, 100).toFixed(0) : 0}%
+                            {documents.length > 0
+                              ? Math.min((documents.length / 50) * 100, 100).toFixed(0)
+                              : 0}
+                            %
                           </p>
                           <p className="text-xs text-gray-400">Meta: 50 documentos completos</p>
                         </div>
@@ -4516,14 +4877,14 @@ ${conversation.summary}
                       <div className="space-y-3">
                         {(() => {
                           const recommendations = []
-                          
+
                           if (documents.length < 20) {
                             recommendations.push({
                               icon: 'fa-upload',
                               color: 'text-blue-400',
                               title: 'Adicionar Mais Documentos',
                               description: `Você tem ${documents.length} documentos. Adicione mais ${20 - documents.length} para melhorar a base de conhecimento.`,
-                              priority: 'Alta'
+                              priority: 'Alta',
                             })
                           }
 
@@ -4532,8 +4893,9 @@ ${conversation.summary}
                               icon: 'fa-comments',
                               color: 'text-green-400',
                               title: 'Aumentar Interações',
-                              description: 'Mais conversas ajudam a IA a aprender padrões e melhorar respostas.',
-                              priority: 'Média'
+                              description:
+                                'Mais conversas ajudam a IA a aprender padrões e melhorar respostas.',
+                              priority: 'Média',
                             })
                           }
 
@@ -4541,21 +4903,29 @@ ${conversation.summary}
                             icon: 'fa-sync',
                             color: 'text-purple-400',
                             title: 'Revisar Padrões Periodicamente',
-                            description: 'Análise semanal dos padrões identificados melhora a precisão em 15%.',
-                            priority: 'Média'
+                            description:
+                              'Análise semanal dos padrões identificados melhora a precisão em 15%.',
+                            priority: 'Média',
                           })
 
                           return recommendations.map((rec, index) => (
-                            <div key={index} className="flex items-start gap-3 p-4 bg-slate-600 rounded-lg">
+                            <div
+                              key={index}
+                              className="flex items-start gap-3 p-4 bg-slate-600 rounded-lg"
+                            >
                               <i className={`fas ${rec.icon} ${rec.color} text-xl mt-1`}></i>
                               <div className="flex-1">
                                 <div className="flex items-center justify-between mb-1">
                                   <h4 className="font-semibold text-white">{rec.title}</h4>
-                                  <span className={`text-xs px-2 py-1 rounded ${
-                                    rec.priority === 'Alta' ? 'bg-red-500/20 text-red-400' :
-                                    rec.priority === 'Média' ? 'bg-yellow-500/20 text-yellow-400' :
-                                    'bg-green-500/20 text-green-400'
-                                  }`}>
+                                  <span
+                                    className={`text-xs px-2 py-1 rounded ${
+                                      rec.priority === 'Alta'
+                                        ? 'bg-red-500/20 text-red-400'
+                                        : rec.priority === 'Média'
+                                          ? 'bg-yellow-500/20 text-yellow-400'
+                                          : 'bg-green-500/20 text-green-400'
+                                    }`}
+                                  >
                                     {rec.priority}
                                   </span>
                                 </div>
@@ -4574,43 +4944,63 @@ ${conversation.summary}
                         Histórico de Análises Cruzadas
                       </h3>
                       <div className="space-y-2">
-                        {chatMessages.filter(m => m.role === 'user').slice(-5).map((msg, index) => {
-                          const relatedDocs = documents.filter(doc => {
-                            const msgWords = msg.content.toLowerCase().split(/\s+/).filter(w => w.length > 4)
-                            return msgWords.some(word => 
-                              doc.content.toLowerCase().includes(word) ||
-                              doc.title.toLowerCase().includes(word)
-                            )
-                          })
+                        {chatMessages
+                          .filter(m => m.role === 'user')
+                          .slice(-5)
+                          .map((msg, index) => {
+                            const relatedDocs = documents.filter(doc => {
+                              const msgWords = msg.content
+                                .toLowerCase()
+                                .split(/\s+/)
+                                .filter(w => w.length > 4)
+                              return msgWords.some(
+                                word =>
+                                  doc.content.toLowerCase().includes(word) ||
+                                  doc.title.toLowerCase().includes(word)
+                              )
+                            })
 
-                          return (
-                            <div key={msg.id} className="flex items-center justify-between p-3 bg-slate-600 rounded-lg hover:bg-slate-500 transition-colors">
-                              <div className="flex-1 min-w-0">
-                                <p className="text-sm text-white truncate">{msg.content}</p>
-                                <p className="text-xs text-gray-400 mt-1">
-                                  {msg.timestamp.toLocaleString('pt-BR')} • {relatedDocs.length} docs relacionados
-                                </p>
-                              </div>
-                              <div className="ml-3 flex items-center gap-2">
-                                <div className={`px-2 py-1 rounded text-xs ${
-                                  relatedDocs.length > 2 ? 'bg-green-500/20 text-green-400' :
-                                  relatedDocs.length > 0 ? 'bg-yellow-500/20 text-yellow-400' :
-                                  'bg-red-500/20 text-red-400'
-                                }`}>
-                                  {relatedDocs.length > 2 ? 'Alta' : relatedDocs.length > 0 ? 'Média' : 'Baixa'}
+                            return (
+                              <div
+                                key={msg.id}
+                                className="flex items-center justify-between p-3 bg-slate-600 rounded-lg hover:bg-slate-500 transition-colors"
+                              >
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-sm text-white truncate">{msg.content}</p>
+                                  <p className="text-xs text-gray-400 mt-1">
+                                    {msg.timestamp.toLocaleString('pt-BR')} • {relatedDocs.length}{' '}
+                                    docs relacionados
+                                  </p>
+                                </div>
+                                <div className="ml-3 flex items-center gap-2">
+                                  <div
+                                    className={`px-2 py-1 rounded text-xs ${
+                                      relatedDocs.length > 2
+                                        ? 'bg-green-500/20 text-green-400'
+                                        : relatedDocs.length > 0
+                                          ? 'bg-yellow-500/20 text-yellow-400'
+                                          : 'bg-red-500/20 text-red-400'
+                                    }`}
+                                  >
+                                    {relatedDocs.length > 2
+                                      ? 'Alta'
+                                      : relatedDocs.length > 0
+                                        ? 'Média'
+                                        : 'Baixa'}
+                                  </div>
                                 </div>
                               </div>
-                            </div>
-                          )
-                        })}
+                            )
+                          })}
                       </div>
                     </div>
 
                     {/* 📈 Configuração de Dados Primários */}
                     <div className="bg-slate-700 rounded-lg p-6 border border-slate-600 mt-6">
-                      <h4 className="text-lg font-semibold text-white mb-4">⚙️ Configuração de Dados Primários</h4>
+                      <h4 className="text-lg font-semibold text-white mb-4">
+                        ⚙️ Configuração de Dados Primários
+                      </h4>
                       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                        
                         {/* Fonte de Dados Semânticos */}
                         <div className="bg-slate-600 rounded-lg p-4">
                           <h5 className="text-white font-medium mb-3">🧠 Dados Semânticos</h5>
@@ -4661,9 +5051,10 @@ ${conversation.summary}
 
                     {/* 🎯 Métricas dos Agentes Modulares */}
                     <div className="bg-slate-700 rounded-lg p-6 border border-slate-600 mt-6">
-                      <h4 className="text-lg font-semibold text-white mb-4">🤖 Performance dos Agentes Modulares</h4>
+                      <h4 className="text-lg font-semibold text-white mb-4">
+                        🤖 Performance dos Agentes Modulares
+                      </h4>
                       <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-                        
                         {/* ClinicalAgent */}
                         <div className="bg-slate-600 rounded-lg p-4 text-center">
                           <div className="w-12 h-12 bg-green-600 rounded-lg flex items-center justify-center mx-auto mb-3">
@@ -4718,7 +5109,9 @@ ${conversation.summary}
 
                     {/* 📊 Resumo Executivo - Estado Atual */}
                     <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg p-6 text-white mt-6">
-                      <h4 className="text-xl font-bold mb-4">📊 Estado Atual - Dr. Ricardo Valença</h4>
+                      <h4 className="text-xl font-bold mb-4">
+                        📊 Estado Atual - Dr. Ricardo Valença
+                      </h4>
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div className="text-center">
                           <div className="text-3xl font-bold">1</div>
@@ -4726,13 +5119,17 @@ ${conversation.summary}
                           <div className="text-xs opacity-75">Dr. Ricardo Valença</div>
                         </div>
                         <div className="text-center">
-                          <div className="text-3xl font-bold">{assessmentStats.totalAssessments}</div>
+                          <div className="text-3xl font-bold">
+                            {assessmentStats.totalAssessments}
+                          </div>
                           <div className="text-sm opacity-90">Avaliações Realizadas</div>
                           <div className="text-xs opacity-75">
                             {/* Corrigido: evitar erro se assessmentStats não estiver definido */}
-                            {(assessmentStats && typeof assessmentStats.completedAssessments === 'number'
+                            {assessmentStats &&
+                            typeof assessmentStats.completedAssessments === 'number'
                               ? assessmentStats.completedAssessments
-                              : 0)} concluídas
+                              : 0}{' '}
+                            concluídas
                           </div>
                         </div>
                         <div className="text-center">
@@ -4742,9 +5139,12 @@ ${conversation.summary}
                         </div>
                       </div>
                       <div className="mt-4 text-sm opacity-90">
-                        <p>💡 <strong>Status:</strong> Sistema configurado e pronto para receber dados primários. 
-                        A próxima fase será configurar a avaliação clínica inicial e conectar as fontes de dados semânticos e clínicos 
-                        para começar a gerar KPIs reais baseados na atividade do usuário.</p>
+                        <p>
+                          💡 <strong>Status:</strong> Sistema configurado e pronto para receber
+                          dados primários. A próxima fase será configurar a avaliação clínica
+                          inicial e conectar as fontes de dados semânticos e clínicos para começar a
+                          gerar KPIs reais baseados na atividade do usuário.
+                        </p>
                       </div>
                     </div>
                   </div>
@@ -4757,7 +5157,9 @@ ${conversation.summary}
                     <div className="flex items-center justify-between">
                       <div>
                         <h3 className="text-lg font-semibold text-white">Base de Conhecimento</h3>
-                        <p className="text-sm text-gray-400">Documentos, imagens, vídeos e textos para treinar a Nôa Esperanza</p>
+                        <p className="text-sm text-gray-400">
+                          Documentos, imagens, vídeos e textos para treinar a Nôa Esperanza
+                        </p>
                       </div>
                       <div className="flex gap-2">
                         {/* Botão Upload de Documentos */}
@@ -4768,17 +5170,21 @@ ${conversation.summary}
                           <i className="fas fa-plus"></i>
                           Novo Documento
                         </button>
-                        
+
                         {/* Botão Verificar Base */}
                         <button
                           onClick={async () => {
                             try {
                               const docs = await gptBuilderService.getDocuments()
                               console.log('📚 Documentos na base:', docs)
-                              alert(`📚 Base de Conhecimento: ${docs.length} documentos encontrados\n\nDocumentos:\n${docs.map(d => `• ${d.title} (${d.category})`).join('\n')}`)
+                              alert(
+                                `📚 Base de Conhecimento: ${docs.length} documentos encontrados\n\nDocumentos:\n${docs.map(d => `• ${d.title} (${d.category})`).join('\n')}`
+                              )
                             } catch (error) {
                               console.error('Erro ao verificar base:', error)
-                              alert(`❌ Erro ao acessar base: ${error instanceof Error ? error.message : String(error)}`)
+                              alert(
+                                `❌ Erro ao acessar base: ${error instanceof Error ? error.message : String(error)}`
+                              )
                             }
                           }}
                           className="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg text-sm font-medium transition-colors flex items-center gap-2"
@@ -4786,7 +5192,7 @@ ${conversation.summary}
                           <i className="fas fa-search"></i>
                           Verificar Base
                         </button>
-                        
+
                         {/* Botão Atualizar */}
                         <button
                           onClick={async () => {
@@ -4811,9 +5217,12 @@ ${conversation.summary}
                   <div className="p-4 border-b border-gray-600 bg-slate-800/50">
                     <div className="flex items-center gap-2 text-sm text-gray-300 mb-3">
                       <i className="fas fa-info-circle text-blue-400"></i>
-                      <span>Envie documentos, imagens, vídeos ou cole texto diretamente para treinar a personalidade da Nôa</span>
+                      <span>
+                        Envie documentos, imagens, vídeos ou cole texto diretamente para treinar a
+                        personalidade da Nôa
+                      </span>
                     </div>
-                    
+
                     <div className="flex gap-4">
                       {/* Botão Upload de Arquivos */}
                       <div className="flex-shrink-0">
@@ -4823,7 +5232,7 @@ ${conversation.summary}
                           <input
                             type="file"
                             accept=".pdf,.doc,.docx,.txt,.png,.jpg,.jpeg,.gif,.mp4,.avi,.mov,.wav,.mp3"
-                            onChange={async (e) => {
+                            onChange={async e => {
                               const files = e.target.files
                               if (files && files.length > 0) {
                                 for (let i = 0; i < files.length; i++) {
@@ -4836,20 +5245,20 @@ ${conversation.summary}
                           />
                         </label>
                       </div>
-                      
+
                       <div className="flex-1">
                         <input
                           type="text"
                           placeholder="Buscar documentos..."
                           value={searchTerm}
-                          onChange={(e) => setSearchTerm(e.target.value)}
+                          onChange={e => setSearchTerm(e.target.value)}
                           className="w-full px-3 py-2 bg-slate-700 border border-gray-600 rounded-lg text-white text-sm placeholder-gray-400 focus:outline-none focus:border-blue-500"
                         />
                       </div>
                       <div className="w-48">
                         <select
                           value={selectedType}
-                          onChange={(e) => setSelectedType(e.target.value)}
+                          onChange={e => setSelectedType(e.target.value)}
                           className="w-full px-3 py-2 bg-slate-700 border border-gray-600 rounded-lg text-white text-sm focus:outline-none focus:border-blue-500"
                         >
                           <option value="all">Todos os tipos</option>
@@ -4873,7 +5282,7 @@ ${conversation.summary}
                       </div>
                     ) : filteredDocuments.length > 0 ? (
                       <div className="space-y-3">
-                        {filteredDocuments.map((doc) => (
+                        {filteredDocuments.map(doc => (
                           <div
                             key={doc.id}
                             onClick={() => {
@@ -4886,7 +5295,9 @@ ${conversation.summary}
                             <div className="flex items-start justify-between">
                               <div className="flex-1">
                                 <div className="flex items-center gap-2 mb-2">
-                                  <i className={`fas fa-${documentTypes.find(t => t.value === doc.type)?.icon} text-${documentTypes.find(t => t.value === doc.type)?.color}-400`}></i>
+                                  <i
+                                    className={`fas fa-${documentTypes.find(t => t.value === doc.type)?.icon} text-${documentTypes.find(t => t.value === doc.type)?.color}-400`}
+                                  ></i>
                                   <h4 className="text-white font-medium">{doc.title}</h4>
                                   {doc.category && (
                                     <span className="px-2 py-1 bg-blue-600 text-white text-xs rounded-full">
@@ -4914,7 +5325,7 @@ ${conversation.summary}
                               </div>
                               <div className="flex gap-2 ml-4">
                                 <button
-                                  onClick={(e) => {
+                                  onClick={e => {
                                     e.stopPropagation()
                                     setSelectedDocument(doc)
                                     setIsEditing(true)
@@ -4934,7 +5345,9 @@ ${conversation.summary}
                       <div className="text-center text-gray-400 py-8">
                         <i className="fas fa-database text-4xl mb-4"></i>
                         <h3 className="text-lg font-semibold mb-2">Base de Conhecimento Vazia</h3>
-                        <p className="text-sm mb-4">Nenhum documento encontrado na base de conhecimento.</p>
+                        <p className="text-sm mb-4">
+                          Nenhum documento encontrado na base de conhecimento.
+                        </p>
                         <p className="text-xs text-gray-500">
                           Envie documentos pelo chat ou use o editor para criar novos documentos.
                         </p>
@@ -4950,10 +5363,14 @@ ${conversation.summary}
                       {/* Header do Documento */}
                       <div className="flex items-center justify-between mb-4">
                         <div>
-                          <h3 className="text-lg font-semibold text-white">{selectedDocument.title}</h3>
+                          <h3 className="text-lg font-semibold text-white">
+                            {selectedDocument.title}
+                          </h3>
                           <p className="text-sm text-gray-400">
-                            Tipo: {documentTypes.find(t => t.value === selectedDocument.type)?.label} • 
-                            Última atualização: {new Date(selectedDocument.updated_at).toLocaleString('pt-BR')}
+                            Tipo:{' '}
+                            {documentTypes.find(t => t.value === selectedDocument.type)?.label} •
+                            Última atualização:{' '}
+                            {new Date(selectedDocument.updated_at).toLocaleString('pt-BR')}
                           </p>
                         </div>
                         <div className="flex gap-2">
@@ -4990,13 +5407,13 @@ ${conversation.summary}
                       <div className="flex-1">
                         <textarea
                           ref={editorRef}
-                          value={selectedDocument?.content ?? ""}
-                          onChange={(e) => {
+                          value={selectedDocument?.content ?? ''}
+                          onChange={e => {
                             if (selectedDocument) {
                               setSelectedDocument({
                                 ...selectedDocument,
-                                content: e.target.value
-                              });
+                                content: e.target.value,
+                              })
                             }
                           }}
                           disabled={!isEditing}
@@ -5010,7 +5427,9 @@ ${conversation.summary}
                       <div className="text-center text-gray-400">
                         <i className="fas fa-database text-4xl mb-4"></i>
                         <p className="text-lg mb-2">Base de Conhecimento Unificada</p>
-                        <p className="text-sm">Todos os documentos estão na aba "Base de Conhecimento"</p>
+                        <p className="text-sm">
+                          Todos os documentos estão na aba "Base de Conhecimento"
+                        </p>
                         <button
                           onClick={() => setActiveTab('knowledge-base')}
                           className="mt-4 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
@@ -5029,10 +5448,8 @@ ${conversation.summary}
           {/* Histórico removido: manter somente painel de conversas */}
         </div>
       </motion.div>
-
     </div>
   )
 }
 
 export default GPTPBuilder
-
