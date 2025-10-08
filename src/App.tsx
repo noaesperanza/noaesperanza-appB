@@ -31,6 +31,7 @@ import Ensino from './pages/Ensino'
 import Pesquisa from './pages/Pesquisa'
 import MedCannLab from './pages/MedCannLab'
 import AvaliacaoClinicaInicial from './pages/AvaliacaoClinicaInicial'
+import TriagemClinica from './pages/triagem'
 
 export type Specialty = 'rim' | 'neuro' | 'cannabis'
 
@@ -233,6 +234,7 @@ function App() {
                       <Route path="/prontuario" element={<Prontuario />} />
                       <Route path="/pagamentos-paciente" element={<PagamentosPaciente />} />
                       <Route path="/avaliacao-inicial" element={<AvaliacaoClinicaInicial />} />
+                      <Route path="/triagem" element={<TriagemClinica />} />
 
                       {/* Páginas de Ensino e Pesquisa */}
                       <Route path="/ensino" element={<Ensino />} />
