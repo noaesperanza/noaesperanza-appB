@@ -58,7 +58,7 @@ const Header = ({ currentSpecialty, setCurrentSpecialty }: HeaderProps) => {
             </div>
           </div>
         ) : (
-          <Link to="/chat" className="flex items-center gap-3">
+          <Link to="/app/admin" className="flex items-center gap-3">
             <div className="w-10 h-10 bg-gradient-to-r from-blue-500 via-green-500 to-yellow-500 rounded-lg flex items-center justify-center overflow-hidden">
               <img
                 src="/logo-noa-triangulo.gif"
@@ -86,7 +86,7 @@ const Header = ({ currentSpecialty, setCurrentSpecialty }: HeaderProps) => {
               className="nav-item text-xs px-3 py-2 bg-gradient-to-r from-emerald-600 to-emerald-700"
             >
               <i className="fas fa-comments text-xs"></i>
-              <span className="text-xs">Chat Nôa</span>
+              <span className="text-xs">ChatGPT Nôa</span>
             </Link>
             <Link to="/app/paciente" className="nav-item text-xs px-3 py-2">
               <i className="fas fa-user text-xs"></i>
@@ -157,7 +157,7 @@ const Header = ({ currentSpecialty, setCurrentSpecialty }: HeaderProps) => {
               onClick={() => setMobileOpen(false)}
             >
               <i className="fas fa-comments text-xs"></i>
-              <span className="text-xs ml-1">Chat Nôa</span>
+              <span className="text-xs ml-1">ChatGPT Nôa</span>
             </Link>
             <Link
               to="/app/paciente"

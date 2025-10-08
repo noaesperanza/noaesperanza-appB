@@ -9,13 +9,5 @@
       "CI": "1"
     }
   },
-  "rewrites": [
-    { "source": "/admin", "destination": "/app/admin" },
-    { "source": "/patient-dashboard", "destination": "/app/paciente" },
-    { "source": "/patient", "destination": "/app/paciente" },
-    { "source": "/ide", "destination": "/index.html" },
-    { "source": "/app", "destination": "/index.html" },
-    { "source": "/app/(.*)", "destination": "/index.html" },
-    { "source": "/(login|register|landing)", "destination": "/index.html" }
-  ]
+  "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
 }

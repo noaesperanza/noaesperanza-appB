@@ -16,64 +16,78 @@ const PagamentosPaciente = () => {
       id: '1',
       date: '2025-01-15',
       description: 'Consulta - Dr. Carlos Silva',
-      amount: 150.00,
+      amount: 150.0,
       status: 'paid',
-      method: 'PIX'
+      method: 'PIX',
     },
     {
       id: '2',
       date: '2025-01-20',
       description: 'Exame - Tomografia',
-      amount: 280.00,
+      amount: 280.0,
       status: 'pending',
-      method: 'Cartão'
+      method: 'Cartão',
     },
     {
       id: '3',
       date: '2024-12-15',
       description: 'Consulta - Retorno',
-      amount: 120.00,
+      amount: 120.0,
       status: 'overdue',
-      method: 'Boleto'
-    }
+      method: 'Boleto',
+    },
   ])
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'paid': return 'bg-green-500/20 text-green-400'
-      case 'pending': return 'bg-yellow-500/20 text-yellow-400'
-      case 'overdue': return 'bg-red-500/20 text-red-400'
-      default: return 'bg-gray-500/20 text-gray-400'
+      case 'paid':
+        return 'bg-green-500/20 text-green-400'
+      case 'pending':
+        return 'bg-yellow-500/20 text-yellow-400'
+      case 'overdue':
+        return 'bg-red-500/20 text-red-400'
+      default:
+        return 'bg-gray-500/20 text-gray-400'
     }
   }
 
   const getStatusText = (status: string) => {
     switch (status) {
-      case 'paid': return 'Pago'
-      case 'pending': return 'Pendente'
-      case 'overdue': return 'Vencido'
-      default: return status
+      case 'paid':
+        return 'Pago'
+      case 'pending':
+        return 'Pendente'
+      case 'overdue':
+        return 'Vencido'
+      default:
+        return status
     }
   }
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('pt-BR', {
       style: 'currency',
-      currency: 'BRL'
+      currency: 'BRL',
     }).format(amount)
   }
 
   const totalPaid = payments.filter(p => p.status === 'paid').reduce((sum, p) => sum + p.amount, 0)
-  const totalPending = payments.filter(p => p.status === 'pending').reduce((sum, p) => sum + p.amount, 0)
-  const totalOverdue = payments.filter(p => p.status === 'overdue').reduce((sum, p) => sum + p.amount, 0)
+  const totalPending = payments
+    .filter(p => p.status === 'pending')
+    .reduce((sum, p) => sum + p.amount, 0)
+  const totalOverdue = payments
+    .filter(p => p.status === 'overdue')
+    .reduce((sum, p) => sum + p.amount, 0)
 
   return (
     <div className="h-full overflow-hidden">
       <div className="max-w-4xl mx-auto px-4 h-full pb-16">
-        
         {/* Header */}
         <div className="mb-4">
-          <Link to="/paciente" className="inline-block text-yellow-400 hover:text-yellow-300 mb-2">
+          <Link
+            to="/app/paciente"
+            className="inline-block text-yellow-400 hover:text-yellow-300 mb-2"
+          >
             <i className="fas fa-arrow-left text-sm"></i> Voltar
           </Link>
           <h1 className="text-xl font-bold text-premium mb-2">Meus Pagamentos</h1>
@@ -104,29 +118,35 @@ const PagamentosPaciente = () => {
               Novo Pagamento
             </button>
           </div>
-          
+
           <div className="space-y-3">
-            {payments.map((payment) => (
-              <div key={payment.id} className="border border-gray-600 rounded-lg p-4 hover:bg-gray-800/50 transition-colors">
+            {payments.map(payment => (
+              <div
+                key={payment.id}
+                className="border border-gray-600 rounded-lg p-4 hover:bg-gray-800/50 transition-colors"
+              >
                 <div className="flex items-center justify-between">
                   <div className="flex-1">
                     <div className="flex items-center gap-3 mb-2">
                       <h3 className="font-semibold text-white">{payment.description}</h3>
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(payment.status)}`}>
+                      <span
+                        className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(payment.status)}`}
+                      >
                         {getStatusText(payment.status)}
                       </span>
                     </div>
-                    
+
                     <div className="grid grid-cols-2 gap-4 text-sm text-gray-300">
                       <div>
-                        <span className="text-gray-400">Data:</span> {new Date(payment.date).toLocaleDateString('pt-BR')}
+                        <span className="text-gray-400">Data:</span>{' '}
+                        {new Date(payment.date).toLocaleDateString('pt-BR')}
                       </div>
                       <div>
                         <span className="text-gray-400">Método:</span> {payment.method}
                       </div>
                     </div>
                   </div>
-                  
+
                   <div className="text-right">
                     <div className="text-xl font-bold text-white mb-1">
                       {formatCurrency(payment.amount)}
@@ -153,7 +173,7 @@ const PagamentosPaciente = () => {
         {/* Payment Methods */}
         <div className="premium-card p-4 mt-4">
           <h3 className="text-lg font-semibold text-premium mb-4">Métodos de Pagamento</h3>
-          
+
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             <div className="flex items-center gap-2 p-3 bg-gray-800/50 rounded-lg">
               <i className="fas fa-qrcode text-green-400"></i>
