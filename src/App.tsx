@@ -157,7 +157,7 @@ function App() {
                   <div className="pt-16 pb-20 h-full overflow-hidden">
                     <Routes>
                       {/* Página inicial do app - REDIRECT para /chat */}
-                      <Route path="/" element={<Navigate to="/chat" replace />} />
+                      <Route index element={<Navigate to="/chat" replace />} />
 
                       {/* Páginas específicas */}
 

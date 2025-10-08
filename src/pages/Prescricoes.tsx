@@ -26,7 +26,7 @@ const Prescricoes = () => {
         // TODO: Implementar carregamento real de prescrições
         // const data = await prescriptionService.getPrescriptions()
         // setPrescriptions(data)
-        
+
         // Por enquanto, array vazio - dados virão de médicos reais
         setPrescriptions([])
       } catch (error) {
@@ -41,29 +41,39 @@ const Prescricoes = () => {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'active': return 'bg-green-500/20 text-green-400'
-      case 'completed': return 'bg-blue-500/20 text-blue-400'
-      case 'expired': return 'bg-red-500/20 text-red-400'
-      default: return 'bg-gray-500/20 text-gray-400'
+      case 'active':
+        return 'bg-green-500/20 text-green-400'
+      case 'completed':
+        return 'bg-blue-500/20 text-blue-400'
+      case 'expired':
+        return 'bg-red-500/20 text-red-400'
+      default:
+        return 'bg-gray-500/20 text-gray-400'
     }
   }
 
   const getStatusText = (status: string) => {
     switch (status) {
-      case 'active': return 'Ativa'
-      case 'completed': return 'Concluída'
-      case 'expired': return 'Expirada'
-      default: return status
+      case 'active':
+        return 'Ativa'
+      case 'completed':
+        return 'Concluída'
+      case 'expired':
+        return 'Expirada'
+      default:
+        return status
     }
   }
 
   return (
     <div className="h-full overflow-hidden">
       <div className="max-w-3xl mx-auto px-3 h-full pb-16">
-        
         {/* Header */}
         <div className="mb-1">
-          <Link to="/paciente" className="inline-block text-yellow-400 hover:text-yellow-300 text-xs">
+          <Link
+            to="/app/paciente"
+            className="inline-block text-yellow-400 hover:text-yellow-300 text-xs"
+          >
             <i className="fas fa-arrow-left text-xs"></i> Voltar
           </Link>
           <h1 className="text-xs font-bold text-premium">Prescrições</h1>
@@ -108,60 +118,71 @@ const Prescricoes = () => {
               ) : prescriptions.length === 0 ? (
                 <div className="text-center py-4">
                   <div className="text-gray-400 text-xs">Nenhuma prescrição encontrada</div>
-                  <div className="text-gray-500 text-xs mt-1">As prescrições aparecerão aqui quando um médico as criar</div>
-                </div>
-              ) : (
-                prescriptions.map((prescription) => (
-                <div key={prescription.id} className="border border-gray-600 rounded-lg p-1 hover:bg-gray-800/50 transition-colors">
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-1">
-                        <h3 className="text-xs font-semibold text-white scale-90">{prescription.medication}</h3>
-                        <span className={`px-1 py-1 rounded-full text-xs font-medium scale-90 ${getStatusColor(prescription.status)}`}>
-                          {getStatusText(prescription.status)}
-                        </span>
-                      </div>
-                      
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-1 text-xs text-gray-300 scale-90">
-                      <div>
-                        <span className="text-gray-400">Dosagem:</span> {prescription.dosage}
-                      </div>
-                      <div>
-                        <span className="text-gray-400">Frequência:</span> {prescription.frequency}
-                      </div>
-                      <div>
-                        <span className="text-gray-400">Duração:</span> {prescription.duration}
-                      </div>
-                      <div>
-                        <span className="text-gray-400">Médico:</span> {prescription.doctor}
-                      </div>
-                    </div>
-
-                    <div className="p-1 bg-gray-800/50 rounded-lg scale-90">
-                      <span className="text-gray-400 text-xs">Instruções:</span>
-                      <p className="text-white text-xs">{prescription.instructions}</p>
-                    </div>
-
-                    <div className="text-xs text-gray-400 scale-90">
-                      <span>Data da prescrição:</span> {new Date(prescription.date).toLocaleDateString('pt-BR')}
-                    </div>
-                    </div>
-
-                    <div className="flex flex-col gap-1 ml-1">
-                      <button className="premium-button text-xs px-1 py-1 w-4 h-4 flex items-center justify-center">
-                        <i className="fas fa-download text-xs"></i>
-                      </button>
-                      <button className="premium-button text-xs px-1 py-1 w-4 h-4 flex items-center justify-center">
-                        <i className="fas fa-eye text-xs"></i>
-                      </button>
-                      {prescription.status === 'active' && (
-                        <button className="premium-button text-xs px-1 py-1 w-4 h-4 flex items-center justify-center">
-                          <i className="fas fa-calendar text-xs"></i>
-                        </button>
-                      )}
-                    </div>
+                  <div className="text-gray-500 text-xs mt-1">
+                    As prescrições aparecerão aqui quando um médico as criar
                   </div>
                 </div>
+              ) : (
+                prescriptions.map(prescription => (
+                  <div
+                    key={prescription.id}
+                    className="border border-gray-600 rounded-lg p-1 hover:bg-gray-800/50 transition-colors"
+                  >
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <div className="flex items-center gap-1">
+                          <h3 className="text-xs font-semibold text-white scale-90">
+                            {prescription.medication}
+                          </h3>
+                          <span
+                            className={`px-1 py-1 rounded-full text-xs font-medium scale-90 ${getStatusColor(prescription.status)}`}
+                          >
+                            {getStatusText(prescription.status)}
+                          </span>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-1 text-xs text-gray-300 scale-90">
+                          <div>
+                            <span className="text-gray-400">Dosagem:</span> {prescription.dosage}
+                          </div>
+                          <div>
+                            <span className="text-gray-400">Frequência:</span>{' '}
+                            {prescription.frequency}
+                          </div>
+                          <div>
+                            <span className="text-gray-400">Duração:</span> {prescription.duration}
+                          </div>
+                          <div>
+                            <span className="text-gray-400">Médico:</span> {prescription.doctor}
+                          </div>
+                        </div>
+
+                        <div className="p-1 bg-gray-800/50 rounded-lg scale-90">
+                          <span className="text-gray-400 text-xs">Instruções:</span>
+                          <p className="text-white text-xs">{prescription.instructions}</p>
+                        </div>
+
+                        <div className="text-xs text-gray-400 scale-90">
+                          <span>Data da prescrição:</span>{' '}
+                          {new Date(prescription.date).toLocaleDateString('pt-BR')}
+                        </div>
+                      </div>
+
+                      <div className="flex flex-col gap-1 ml-1">
+                        <button className="premium-button text-xs px-1 py-1 w-4 h-4 flex items-center justify-center">
+                          <i className="fas fa-download text-xs"></i>
+                        </button>
+                        <button className="premium-button text-xs px-1 py-1 w-4 h-4 flex items-center justify-center">
+                          <i className="fas fa-eye text-xs"></i>
+                        </button>
+                        {prescription.status === 'active' && (
+                          <button className="premium-button text-xs px-1 py-1 w-4 h-4 flex items-center justify-center">
+                            <i className="fas fa-calendar text-xs"></i>
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
                 ))
               )}
             </div>
