@@ -7,20 +7,20 @@ const LoginPage = () => {
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-  
+
   const { signIn, user, loading: authLoading } = useAuth()
   const navigate = useNavigate()
 
   // Redirecionar se já estiver logado
   useEffect(() => {
     if (user && !authLoading) {
-      navigate('/app/')
+      navigate('/app/paciente')
     }
   }, [user, authLoading, navigate])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    
+
     if (!email || !password) {
       setError('Por favor, preencha todos os campos')
       return
@@ -30,7 +30,7 @@ const LoginPage = () => {
       setError('')
       setLoading(true)
       await signIn(email, password)
-      navigate('/app/')
+      navigate('/app/paciente')
     } catch (error: any) {
       setError(error.message || 'Erro ao fazer login')
     } finally {
@@ -57,9 +57,9 @@ const LoginPage = () => {
           {/* Header */}
           <div className="text-center mb-8">
             <div className="w-16 h-16 bg-gradient-to-r from-blue-500 via-green-500 to-yellow-500 rounded-full mx-auto mb-4 flex items-center justify-center">
-              <img 
-                src="/logo-noa-triangulo.gif" 
-                alt="NOA Esperanza" 
+              <img
+                src="/logo-noa-triangulo.gif"
+                alt="NOA Esperanza"
                 className="w-full h-full object-cover rounded-full"
               />
             </div>
@@ -83,7 +83,7 @@ const LoginPage = () => {
                 id="email"
                 type="email"
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={e => setEmail(e.target.value)}
                 className="w-full px-4 py-3 bg-gray-800 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-green-400 focus:ring-1 focus:ring-green-400"
                 placeholder="seu@email.com"
                 required
@@ -98,7 +98,7 @@ const LoginPage = () => {
                 id="password"
                 type="password"
                 value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                onChange={e => setPassword(e.target.value)}
                 className="w-full px-4 py-3 bg-gray-800 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-green-400 focus:ring-1 focus:ring-green-400"
                 placeholder="••••••••"
                 required
@@ -109,8 +109,8 @@ const LoginPage = () => {
               type="submit"
               disabled={loading}
               className={`w-full py-3 rounded-lg font-semibold text-white transition-all ${
-                loading 
-                  ? 'bg-gray-600 cursor-not-allowed' 
+                loading
+                  ? 'bg-gray-600 cursor-not-allowed'
                   : 'bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 transform hover:scale-105'
               }`}
             >
