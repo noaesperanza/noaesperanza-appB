@@ -162,7 +162,7 @@ function App() {
                       {/* Páginas específicas */}
 
                       <Route
-                        path="/medico"
+                        path="medico"
                         element={
                           <DashboardMedico
                             currentSpecialty={currentSpecialty}
@@ -172,7 +172,7 @@ function App() {
                       />
 
                       <Route
-                        path="/paciente"
+                        path="paciente"
                         element={
                           <DashboardPaciente
                             currentSpecialty={currentSpecialty}
@@ -182,7 +182,7 @@ function App() {
                       />
 
                       <Route
-                        path="/profissional"
+                        path="profissional"
                         element={
                           <DashboardProfissional
                             currentSpecialty={currentSpecialty}
@@ -192,25 +192,25 @@ function App() {
                       />
 
                       <Route
-                        path="/admin"
+                        path="admin"
                         element={<AdminDashboard addNotification={addNotification} />}
                       />
-                      <Route path="/ide" element={<IntegratedIDE />} />
+                      <Route path="ide" element={<IntegratedIDE />} />
                       <Route
-                        path="/patient-dashboard"
+                        path="patient-dashboard"
                         element={<Navigate to="/app/paciente" replace />}
                       />
-                      <Route path="/patient" element={<Navigate to="/app/paciente" replace />} />
+                      <Route path="patient" element={<Navigate to="/app/paciente" replace />} />
 
-                      <Route path="/payment" element={<PaymentPage />} />
+                      <Route path="payment" element={<PaymentPage />} />
 
                       <Route
-                        path="/checkout"
+                        path="checkout"
                         element={<CheckoutPage addNotification={addNotification} />}
                       />
 
                       <Route
-                        path="/relatorio"
+                        path="relatorio"
                         element={
                           <RelatorioNarrativo
                             currentSpecialty={currentSpecialty}
@@ -220,36 +220,33 @@ function App() {
                       />
 
                       <Route
-                        path="/config"
+                        path="config"
                         element={<Configuracoes addNotification={addNotification} />}
                       />
 
-                      <Route
-                        path="/perfil"
-                        element={<Perfil addNotification={addNotification} />}
-                      />
+                      <Route path="perfil" element={<Perfil addNotification={addNotification} />} />
 
                       {/* Páginas do Paciente */}
-                      <Route path="/exames" element={<MeusExames />} />
-                      <Route path="/prescricoes" element={<Prescricoes />} />
-                      <Route path="/prontuario" element={<Prontuario />} />
-                      <Route path="/pagamentos-paciente" element={<PagamentosPaciente />} />
-                      <Route path="/avaliacao-inicial" element={<AvaliacaoClinicaInicial />} />
+                      <Route path="exames" element={<MeusExames />} />
+                      <Route path="prescricoes" element={<Prescricoes />} />
+                      <Route path="prontuario" element={<Prontuario />} />
+                      <Route path="pagamentos-paciente" element={<PagamentosPaciente />} />
+                      <Route path="avaliacao-inicial" element={<AvaliacaoClinicaInicial />} />
 
                       {/* Páginas de Ensino e Pesquisa */}
-                      <Route path="/ensino" element={<Ensino />} />
-                      <Route path="/pesquisa" element={<Pesquisa />} />
-                      <Route path="/medcann-lab" element={<MedCannLab />} />
+                      <Route path="ensino" element={<Ensino />} />
+                      <Route path="pesquisa" element={<Pesquisa />} />
+                      <Route path="medcann-lab" element={<MedCannLab />} />
 
                       {/* Migração de Base de Conhecimento */}
                       <Route
-                        path="/migrar-base"
+                        path="migrar-base"
                         element={<MigrarBaseConhecimento addNotification={addNotification} />}
                       />
 
                       {/* Migração de Conversas ChatGPT */}
                       <Route
-                        path="/migrar-chatgpt"
+                        path="migrar-chatgpt"
                         element={<MigracaoChatGPT addNotification={addNotification} />}
                       />
 
