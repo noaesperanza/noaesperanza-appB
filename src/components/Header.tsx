@@ -13,16 +13,16 @@ const Header = ({ currentSpecialty, setCurrentSpecialty }: HeaderProps) => {
   const navigate = useNavigate()
   const location = useLocation()
   const [mobileOpen, setMobileOpen] = useState(false)
-  
+
   // Verificação de segurança para evitar erros durante a inicialização
   const { user, signOut } = auth || { user: null, signOut: () => {} }
-  
+
   // Agora temos um laboratório unificado
   const labInfo = {
     name: 'MedCanLab @ Power By Nôa Esperanza',
     fullName: 'Neurologia • Cannabis • Rim',
     icon: 'fa-flask',
-    description: 'Assistente IA Médica Inteligente'
+    description: 'Assistente IA Médica Inteligente',
   }
 
   const handleLogout = async () => {
@@ -41,15 +41,18 @@ const Header = ({ currentSpecialty, setCurrentSpecialty }: HeaderProps) => {
         {location.pathname === '/landing' ? (
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 bg-gradient-to-r from-blue-500 via-green-500 to-yellow-500 rounded-lg flex items-center justify-center overflow-hidden">
-              <img 
-                src="/logo-noa-triangulo.gif" 
-                alt="MedCanLab" 
+              <img
+                src="/logo-noa-triangulo.gif"
+                alt="MedCanLab"
                 className="w-full h-full object-cover"
               />
             </div>
             <div>
               <div className="text-lg font-bold text-white drop-shadow-md">
-                MedCanLab <span className="text-sm font-normal text-yellow-200">@ Power By Nôa Esperanza</span>
+                MedCanLab{' '}
+                <span className="text-sm font-normal text-yellow-200">
+                  @ Power By Nôa Esperanza
+                </span>
               </div>
               <div className="text-xs text-yellow-100 drop-shadow-sm">{labInfo.fullName}</div>
             </div>
@@ -57,28 +60,33 @@ const Header = ({ currentSpecialty, setCurrentSpecialty }: HeaderProps) => {
         ) : (
           <Link to="/chat" className="flex items-center gap-3">
             <div className="w-10 h-10 bg-gradient-to-r from-blue-500 via-green-500 to-yellow-500 rounded-lg flex items-center justify-center overflow-hidden">
-              <img 
-                src="/logo-noa-triangulo.gif" 
-                alt="MedCanLab" 
+              <img
+                src="/logo-noa-triangulo.gif"
+                alt="MedCanLab"
                 className="w-full h-full object-cover"
               />
             </div>
             <div>
               <div className="text-lg font-bold text-white drop-shadow-md">
-                MedCanLab <span className="text-sm font-normal text-yellow-200">@ Power By Nôa Esperanza</span>
+                MedCanLab{' '}
+                <span className="text-sm font-normal text-yellow-200">
+                  @ Power By Nôa Esperanza
+                </span>
               </div>
               <div className="text-xs text-yellow-100 drop-shadow-sm">{labInfo.fullName}</div>
             </div>
           </Link>
         )}
 
-
         {/* Menu de Tipos de Usuário - não mostrar na landing page */}
         {location.pathname !== '/landing' && (
           <nav className="hidden lg:flex gap-1">
-            <Link to="/chat" className="nav-item text-xs px-3 py-2 bg-gradient-to-r from-emerald-600 to-emerald-700">
+            <Link
+              to="/chat"
+              className="nav-item text-xs px-3 py-2 bg-gradient-to-r from-emerald-600 to-emerald-700"
+            >
               <i className="fas fa-comments text-xs"></i>
-              <span className="text-xs">Chat Nôa</span>
+              <span className="text-xs">ChatGPT Nôa</span>
             </Link>
             <Link to="/app/paciente" className="nav-item text-xs px-3 py-2">
               <i className="fas fa-user text-xs"></i>
@@ -92,12 +100,12 @@ const Header = ({ currentSpecialty, setCurrentSpecialty }: HeaderProps) => {
               <i className="fas fa-user-md text-xs"></i>
               <span className="text-xs">Médico</span>
             </Link>
-            <Link to="/app/estudante" className="nav-item text-xs px-3 py-2">
+            <Link to="/app/profissional" className="nav-item text-xs px-3 py-2">
               <i className="fas fa-graduation-cap text-xs"></i>
               <span className="text-xs">Estudante</span>
             </Link>
             {/* Mostrar ADM/CONFIG apenas para administradores */}
-            {(user?.user_metadata?.role === 'admin' || 
+            {(user?.user_metadata?.role === 'admin' ||
               user?.email === 'eduardoscfaveret@gmail.com' ||
               user?.email === 'eduardo.faveret@noaesperanza.app' ||
               user?.email === 'iaianoaesperanza@gmail.com' ||
@@ -143,32 +151,56 @@ const Header = ({ currentSpecialty, setCurrentSpecialty }: HeaderProps) => {
       {location.pathname !== '/landing' && mobileOpen && (
         <div className="lg:hidden bg-gradient-to-r from-gray-900/95 via-purple-900/95 to-amber-600/95 border-t border-white/10">
           <div className="px-4 py-3 flex flex-wrap gap-2">
-            <Link to="/chat" className="nav-item text-xs px-3 py-2 bg-gradient-to-r from-emerald-600 to-emerald-700" onClick={() => setMobileOpen(false)}>
+            <Link
+              to="/chat"
+              className="nav-item text-xs px-3 py-2 bg-gradient-to-r from-emerald-600 to-emerald-700"
+              onClick={() => setMobileOpen(false)}
+            >
               <i className="fas fa-comments text-xs"></i>
-              <span className="text-xs ml-1">Chat Nôa</span>
+              <span className="text-xs ml-1">ChatGPT Nôa</span>
             </Link>
-            <Link to="/app/paciente" className="nav-item text-xs px-3 py-2" onClick={() => setMobileOpen(false)}>
+            <Link
+              to="/app/paciente"
+              className="nav-item text-xs px-3 py-2"
+              onClick={() => setMobileOpen(false)}
+            >
               <i className="fas fa-user text-xs"></i>
               <span className="text-xs ml-1">Paciente</span>
             </Link>
-            <Link to="/app/avaliacao-inicial" className="nav-item text-xs px-3 py-2" onClick={() => setMobileOpen(false)}>
+            <Link
+              to="/app/avaliacao-inicial"
+              className="nav-item text-xs px-3 py-2"
+              onClick={() => setMobileOpen(false)}
+            >
               <i className="fas fa-clipboard-list text-xs"></i>
               <span className="text-xs ml-1">Avaliação</span>
             </Link>
-            <Link to="/app/medico" className="nav-item text-xs px-3 py-2" onClick={() => setMobileOpen(false)}>
+            <Link
+              to="/app/medico"
+              className="nav-item text-xs px-3 py-2"
+              onClick={() => setMobileOpen(false)}
+            >
               <i className="fas fa-user-md text-xs"></i>
               <span className="text-xs ml-1">Médico</span>
             </Link>
-            <Link to="/app/estudante" className="nav-item text-xs px-3 py-2" onClick={() => setMobileOpen(false)}>
+            <Link
+              to="/app/profissional"
+              className="nav-item text-xs px-3 py-2"
+              onClick={() => setMobileOpen(false)}
+            >
               <i className="fas fa-graduation-cap text-xs"></i>
               <span className="text-xs ml-1">Estudante</span>
             </Link>
-            {(user?.user_metadata?.role === 'admin' || 
+            {(user?.user_metadata?.role === 'admin' ||
               user?.email === 'eduardoscfaveret@gmail.com' ||
               user?.email === 'eduardo.faveret@noaesperanza.app' ||
               user?.email === 'iaianoaesperanza@gmail.com' ||
               user?.email === 'phpg69@gmail.com') && (
-              <Link to="/app/admin" className="nav-item text-xs px-3 py-2" onClick={() => setMobileOpen(false)}>
+              <Link
+                to="/app/admin"
+                className="nav-item text-xs px-3 py-2"
+                onClick={() => setMobileOpen(false)}
+              >
                 <i className="fas fa-cog text-xs"></i>
                 <span className="text-xs ml-1">ADM/CONFIG</span>
               </Link>
