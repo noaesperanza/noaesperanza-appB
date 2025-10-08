@@ -156,8 +156,8 @@ function App() {
                   {/* Container Principal */}
                   <div className="pt-16 pb-20 h-full overflow-hidden">
                     <Routes>
-                      {/* Página inicial do app - REDIRECT para /chat */}
-                      <Route index element={<Navigate to="/chat" replace />} />
+                      {/* Página inicial do app - direciona para o painel administrativo integrado */}
+                      <Route index element={<Navigate to="admin" replace />} />
 
                       {/* Páginas específicas */}
 
