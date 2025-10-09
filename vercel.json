@@ -11,6 +11,8 @@
   },
   "rewrites": [
     { "source": "/admin", "destination": "/app/admin" },
+    { "source": "/chat", "destination": "/index.html" },
+    { "source": "/chat/(.*)", "destination": "/index.html" },
     { "source": "/patient-dashboard", "destination": "/app/paciente" },
     { "source": "/patient", "destination": "/app/paciente" },
     { "source": "/ide", "destination": "/index.html" },
