@@ -152,10 +152,26 @@ vi.mock('../../gpt/clinicalAgent', () => ({
   },
 }))
 
-vi.mock('../../services/openaiService', () => ({
-  openAIService: {
-    sendMessage: vi.fn().mockResolvedValue('Resposta OpenAI simulada'),
-    streamChatCompletion: vi.fn().mockResolvedValue({ content: 'Resposta OpenAI simulada' }),
+vi.mock('../../services/codexService', () => ({
+  codexService: {
+    getNoaResponse: vi.fn().mockResolvedValue('Resposta Codex simulada'),
+    generateClinicalReport: vi.fn().mockResolvedValue({
+      narrative: 'Narrativa simulada',
+      report: {
+        patientName: 'Paciente Teste',
+        mainComplaint: 'Cefaleia',
+        complaintsList: ['Cefaleia'],
+        developmentDetails: '',
+        medicalHistory: [],
+        familyHistory: { maternal: [], paternal: [] },
+        lifestyleHabits: [],
+        medications: { regular: [], sporadic: [] },
+        allergies: [],
+        summary: 'Narrativa simulada',
+        recommendations: [],
+      },
+      inferenceId: 'codex-test',
+    }),
   },
 }))
 

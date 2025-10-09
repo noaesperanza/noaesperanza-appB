@@ -4,7 +4,7 @@
  */
 
 import { supabase } from '../integrations/supabase/client'
-import { openAIService } from './openaiService'
+import { codexService } from './codexService'
 import { clinicalAssessmentService, ClinicalReport } from './clinicalAssessmentService'
 import { logger } from '../utils/logger'
 
@@ -199,9 +199,15 @@ Responda como Nôa Esperanza especialista em avaliação clínica:
     `
 
     try {
-      const response = await openAIService.getNoaResponse(message, [
-        { role: 'system', content: clinicalPrompt },
-      ])
+      const response = await codexService.getNoaResponse(message, [], {
+        route: 'chat',
+        extraInstructions: clinicalPrompt,
+        metadata: {
+          origin: 'clinicalAgent',
+          userId: patientContext.userId,
+          sessionId: patientContext.sessionId,
+        },
+      })
 
       return (
         response || 'Desculpe, não consegui processar sua mensagem. Pode reformular sua pergunta?'

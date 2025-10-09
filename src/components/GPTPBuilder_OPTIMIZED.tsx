@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { gptBuilderService, DocumentMaster, NoaConfig } from '../services/gptBuilderService'
-import { openAIService } from '../services/openaiService'
+import { codexService } from '../services/codexService'
 import { supabase } from '../integrations/supabase/client'
 import { intelligentLearningService } from '../services/intelligentLearningService'
 import { logger } from '../utils/logger'
@@ -35,8 +35,8 @@ const GPTPBuilder_OPTIMIZED: React.FC<GPTPBuilderProps> = ({ onClose }) => {
     recognition: {
       drRicardoValenca: true,
       autoGreeting: true,
-      personalizedResponse: true
-    }
+      personalizedResponse: true,
+    },
   })
 
   // Estados para chat multimodal
@@ -45,28 +45,28 @@ const GPTPBuilder_OPTIMIZED: React.FC<GPTPBuilderProps> = ({ onClose }) => {
   const [isTyping, setIsTyping] = useState(false)
   const [activeTab, setActiveTab] = useState<'editor' | 'chat'>('chat')
   const [attachedFiles, setAttachedFiles] = useState<File[]>([])
-  
+
   // Estados para Estudo Vivo
   const [estudoVivoAtivo, setEstudoVivoAtivo] = useState<any>(null)
-  
+
   // Estados para Sidebar de Histórico INTEGRADO
   const [historyOpen, setHistoryOpen] = useState(false)
   const [selectedConversation, setSelectedConversation] = useState<any>(null)
-  
+
   // Estado para attention semântica
   const [userContext, setUserContext] = useState<any>(null)
   const [semanticAttentionActive, setSemanticAttentionActive] = useState(false)
-  
+
   // 🧠 Estado para Reasoning Layer
   const [reasoningActive, setReasoningActive] = useState(false)
   const [currentReasoningChain, setCurrentReasoningChain] = useState<any>(null)
-  
+
   // 🛠️ Estados para Medical Tools
   const [medicalToolsActive, setMedicalToolsActive] = useState(false)
-  
+
   // 🎨 Estados para Harmony Format
   const [harmonyActive, setHarmonyActive] = useState(false)
-  
+
   const editorRef = useRef<HTMLTextAreaElement>(null)
   const chatEndRef = useRef<HTMLDivElement>(null)
 
@@ -75,37 +75,37 @@ const GPTPBuilder_OPTIMIZED: React.FC<GPTPBuilderProps> = ({ onClose }) => {
     const initializeSequentially = async () => {
       try {
         console.log('🚀 Inicializando GPT Builder otimizado...')
-        
+
         // 1. Carregar documentos
         await loadDocuments()
-        
+
         // 2. Carregar configuração
         await loadNoaConfig()
-        
+
         // 3. Ativar attention semântica
         await activateSemanticAttention()
-        
+
         // 4. Inicializar chat
         await initializeChat()
-        
+
         console.log('✅ GPT Builder otimizado inicializado com sucesso!')
       } catch (error) {
         console.error('❌ Erro na inicialização:', error)
       }
     }
-    
+
     initializeSequentially()
   }, [])
-  
+
   // Ativar attention semântica para Dr. Ricardo
   const activateSemanticAttention = async () => {
     try {
       console.log('🧠 Ativando attention semântica para Dr. Ricardo...')
-      
+
       setSemanticAttentionActive(true)
-      
+
       console.log('✅ Attention semântica ativada com sucesso!')
-      
+
       // Adicionar mensagem inicial
       const welcomeMessage: ChatMessage = {
         id: Date.now().toString(),
@@ -118,13 +118,12 @@ const GPTPBuilder_OPTIMIZED: React.FC<GPTPBuilderProps> = ({ onClose }) => {
 
 Como posso ajudá-lo hoje?`,
         timestamp: new Date(),
-        action: 'attention_semantica_ativa'
+        action: 'attention_semantica_ativa',
       }
       setChatMessages(prev => [...prev, welcomeMessage])
-      
     } catch (error) {
       console.error('❌ Erro ao ativar attention semântica:', error)
-      
+
       // Fallback para modo padrão
       const fallbackMessage: ChatMessage = {
         id: Date.now().toString(),
@@ -133,7 +132,7 @@ Como posso ajudá-lo hoje?`,
 
 Sistema inicializado. Como posso ajudá-lo hoje?`,
         timestamp: new Date(),
-        action: 'fallback'
+        action: 'fallback',
       }
       setChatMessages(prev => [...prev, fallbackMessage])
     }
@@ -168,7 +167,7 @@ Sistema inicializado. Como posso ajudá-lo hoje?`,
   const initializeChat = async () => {
     try {
       console.log('💬 Inicializando chat...')
-      
+
       // Carregar conversas recentes do banco
       const { data: recentConversations, error } = await supabase
         .from('conversation_history')
@@ -176,9 +175,9 @@ Sistema inicializado. Como posso ajudá-lo hoje?`,
         .eq('user_id', 'dr-ricardo-valenca')
         .order('created_at', { ascending: false })
         .limit(10)
-      
+
       let chatMessages: ChatMessage[] = []
-      
+
       if (!error && recentConversations) {
         // Converter conversas do banco para formato do chat
         recentConversations.reverse().forEach(conv => {
@@ -187,22 +186,21 @@ Sistema inicializado. Como posso ajudá-lo hoje?`,
             id: `user_${conv.id}`,
             role: 'user',
             content: conv.content,
-            timestamp: new Date(conv.created_at)
+            timestamp: new Date(conv.created_at),
           })
-          
+
           // Resposta da IA
           chatMessages.push({
             id: `ai_${conv.id}`,
             role: 'assistant',
             content: conv.response,
-            timestamp: new Date(conv.created_at)
+            timestamp: new Date(conv.created_at),
           })
         })
       }
-      
+
       setChatMessages(chatMessages)
       console.log(`💬 ${chatMessages.length} mensagens carregadas do histórico`)
-      
     } catch (error) {
       console.error('❌ Erro ao inicializar chat:', error)
     }
@@ -211,38 +209,49 @@ Sistema inicializado. Como posso ajudá-lo hoje?`,
   // Enviar mensagem
   const sendMessage = async () => {
     if (!currentMessage.trim() && attachedFiles.length === 0) return
-    
+
     const messageToProcess = currentMessage.trim()
     setCurrentMessage('')
     setIsTyping(true)
-    
+
     // Adicionar mensagem do usuário
     const userMessage: ChatMessage = {
       id: Date.now().toString(),
       role: 'user',
       content: messageToProcess,
       timestamp: new Date(),
-      attachedFiles: [...attachedFiles]
+      attachedFiles: [...attachedFiles],
     }
-    
+
     setChatMessages(prev => [...prev, userMessage])
     setAttachedFiles([])
-    
+
     try {
       // Buscar contexto histórico
       const historicalContext = await getHistoricalContextSimple(messageToProcess)
-      
+
       // Buscar base de conhecimento
       const knowledgeBase = await getKnowledgeBaseForResponse(messageToProcess)
-      
+
       // Chamar OpenAI com contexto e base de conhecimento
-      const aiResponse = await openAIService.getNoaResponse(messageToProcess, [
-        ...chatMessages.slice(-6).map(msg => ({
-          role: msg.role as 'user' | 'assistant' | 'system',
-          content: msg.content
-        }))
-      ], knowledgeBase)
-      
+      const aiResponse = await codexService.getNoaResponse(
+        messageToProcess,
+        [
+          ...chatMessages.slice(-6).map(msg => ({
+            role: msg.role as 'user' | 'assistant' | 'system',
+            content: msg.content,
+          })),
+        ],
+        {
+          route: 'chat',
+          knowledgeBase,
+          metadata: {
+            origin: 'gptBuilder.optimized',
+            historicalContextSize: historicalContext?.length ?? 0,
+          },
+        }
+      )
+
       // Adicionar resposta da IA
       const assistantMessage: ChatMessage = {
         id: (Date.now() + 1).toString(),
@@ -250,25 +259,24 @@ Sistema inicializado. Como posso ajudá-lo hoje?`,
         content: aiResponse,
         timestamp: new Date(),
         action: 'resposta_contextualizada_ia',
-        data: { hasContext: true, contextLength: historicalContext?.length || 0 }
+        data: { hasContext: true, contextLength: historicalContext?.length || 0 },
       }
 
       setChatMessages(prev => [...prev, assistantMessage])
 
       // Salvar conversa no sistema híbrido
       await saveConversationHybrid(messageToProcess, aiResponse, 'resposta_contextualizada_ia')
-      
     } catch (error) {
       console.error('❌ Erro em sendMessage:', error)
-      
+
       const errorMessage: ChatMessage = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
         content: 'Desculpe, ocorreu um erro ao processar sua mensagem. Tente novamente.',
         timestamp: new Date(),
-        action: 'error'
+        action: 'error',
       }
-      
+
       setChatMessages(prev => [...prev, errorMessage])
     } finally {
       setIsTyping(false)
@@ -279,24 +287,24 @@ Sistema inicializado. Como posso ajudá-lo hoje?`,
   const getHistoricalContextSimple = async (message: string) => {
     try {
       console.log('📚 Buscando contexto histórico...')
-      
+
       const { data, error } = await supabase
         .from('conversation_history')
         .select('content, response, created_at')
         .eq('user_id', 'dr-ricardo-valenca')
         .order('created_at', { ascending: false })
         .limit(5)
-      
+
       if (error) {
         console.warn('⚠️ Erro ao buscar contexto histórico:', error)
         return null
       }
-      
+
       if (data && data.length > 0) {
         console.log(`✅ Contexto histórico carregado: ${data.length} conversas`)
         return data
       }
-      
+
       return null
     } catch (error) {
       console.warn('⚠️ Erro na busca de contexto histórico:', error)
@@ -308,30 +316,30 @@ Sistema inicializado. Como posso ajudá-lo hoje?`,
   const getKnowledgeBaseForResponse = async (message: string) => {
     try {
       console.log('📚 Buscando base de conhecimento...')
-      
+
       // Buscar documentos da base de conhecimento
       const { data: documents, error } = await supabase
         .from('documentos_mestres')
         .select('title, content, type, category')
         .eq('is_active', true)
         .order('created_at', { ascending: false })
-      
+
       if (error) {
         console.warn('⚠️ Erro ao buscar base de conhecimento:', error)
         return ''
       }
-      
+
       if (documents && documents.length > 0) {
         console.log(`✅ ${documents.length} documentos da base de conhecimento encontrados`)
-        
+
         // Construir string da base de conhecimento
-        const knowledgeBase = documents.map(doc => 
-          `**${doc.title}** (${doc.type}):\n${doc.content.substring(0, 500)}...`
-        ).join('\n\n')
-        
+        const knowledgeBase = documents
+          .map(doc => `**${doc.title}** (${doc.type}):\n${doc.content.substring(0, 500)}...`)
+          .join('\n\n')
+
         return knowledgeBase
       }
-      
+
       console.log('⚠️ Nenhum documento encontrado na base de conhecimento')
       return ''
     } catch (error) {
@@ -341,21 +349,23 @@ Sistema inicializado. Como posso ajudá-lo hoje?`,
   }
 
   // Salvar conversa no sistema híbrido
-  const saveConversationHybrid = async (userMessage: string, aiResponse: string, action: string) => {
+  const saveConversationHybrid = async (
+    userMessage: string,
+    aiResponse: string,
+    action: string
+  ) => {
     try {
       console.log('💾 Salvando conversa no sistema híbrido...')
-      
+
       // 1. Salvar no Supabase (se online)
       try {
-        const { error: supabaseError } = await supabase
-          .from('conversation_history')
-          .insert({
-            user_id: 'dr-ricardo-valenca',
-            content: userMessage,
-            response: aiResponse,
-            created_at: new Date().toISOString()
-          })
-        
+        const { error: supabaseError } = await supabase.from('conversation_history').insert({
+          user_id: 'dr-ricardo-valenca',
+          content: userMessage,
+          response: aiResponse,
+          created_at: new Date().toISOString(),
+        })
+
         if (supabaseError) {
           console.warn('⚠️ Erro ao salvar no Supabase:', supabaseError)
         } else {
@@ -364,7 +374,7 @@ Sistema inicializado. Como posso ajudá-lo hoje?`,
       } catch (supabaseError) {
         console.warn('⚠️ Erro no Supabase:', supabaseError)
       }
-      
+
       // 2. Salvar localmente (sempre)
       const localConversation = {
         id: `local_${Date.now()}`,
@@ -372,24 +382,27 @@ Sistema inicializado. Como posso ajudá-lo hoje?`,
         aiResponse,
         action,
         timestamp: new Date(),
-        synced: false
+        synced: false,
       }
-      
+
       // Salvar no localStorage
       const existingLocal = JSON.parse(localStorage.getItem('local_conversations') || '[]')
       existingLocal.push(localConversation)
       localStorage.setItem('local_conversations', JSON.stringify(existingLocal))
-      
+
       console.log('✅ Conversa salva localmente')
-      
+
       // 3. Aprendizado inteligente
       try {
-        await intelligentLearningService.learnFromConversation(userMessage, aiResponse, 'chat_interaction')
+        await intelligentLearningService.learnFromConversation(
+          userMessage,
+          aiResponse,
+          'chat_interaction'
+        )
         console.log('🧠 Aprendizado inteligente processado')
       } catch (learningError) {
         console.warn('⚠️ Erro no aprendizado:', learningError)
       }
-      
     } catch (error) {
       console.error('❌ Erro ao salvar conversa:', error)
     }
@@ -410,7 +423,7 @@ Sistema inicializado. Como posso ajudá-lo hoje?`,
   const handleSelectConversation = (conversation: any) => {
     console.log('📊 Conversa selecionada:', conversation)
     setSelectedConversation(conversation)
-    
+
     // Adicionar mensagem sobre a conversa selecionada
     const conversationMessage: ChatMessage = {
       id: Date.now().toString(),
@@ -427,9 +440,9 @@ ${conversation.summary}
 
 **Dr. Ricardo, como posso ajudá-lo a continuar ou expandir esta conversa?**`,
       timestamp: new Date(),
-      action: 'conversation_selected'
+      action: 'conversation_selected',
     }
-    
+
     setChatMessages(prev => [...prev, conversationMessage])
     setHistoryOpen(false)
   }
@@ -443,12 +456,12 @@ ${conversation.summary}
         .eq('user_id', 'dr-ricardo-valenca')
         .order('created_at', { ascending: false })
         .limit(20)
-      
+
       if (error) {
         console.error('❌ Erro ao carregar histórico:', error)
         return []
       }
-      
+
       return data || []
     } catch (error) {
       console.error('❌ Erro ao carregar histórico:', error)
@@ -457,8 +470,9 @@ ${conversation.summary}
   }
 
   const filteredDocuments = documents.filter(doc => {
-    const matchesSearch = doc.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         doc.content.toLowerCase().includes(searchTerm.toLowerCase())
+    const matchesSearch =
+      doc.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      doc.content.toLowerCase().includes(searchTerm.toLowerCase())
     const matchesType = selectedType === 'all' || doc.type === selectedType
     return matchesSearch && matchesType
   })
@@ -467,7 +481,7 @@ ${conversation.summary}
     { value: 'personality', label: 'Personalidade', icon: 'fa-user', color: 'blue' },
     { value: 'knowledge', label: 'Conhecimento', icon: 'fa-brain', color: 'purple' },
     { value: 'instructions', label: 'Instruções', icon: 'fa-list', color: 'green' },
-    { value: 'examples', label: 'Exemplos', icon: 'fa-lightbulb', color: 'yellow' }
+    { value: 'examples', label: 'Exemplos', icon: 'fa-lightbulb', color: 'yellow' },
   ]
 
   return (
@@ -486,8 +500,10 @@ ${conversation.summary}
             </div>
             <div>
               <h2 className="text-xl font-bold text-white">GPT Builder - Nôa Esperanza</h2>
-              <p className="text-sm text-gray-400">Configure e treine sua IA médica personalizada</p>
-              
+              <p className="text-sm text-gray-400">
+                Configure e treine sua IA médica personalizada
+              </p>
+
               {/* 🚀 Indicadores de Sistemas Ativos */}
               <div className="flex gap-2 mt-2">
                 {semanticAttentionActive && (
@@ -514,13 +530,13 @@ ${conversation.summary}
                     <span>Harmony</span>
                   </div>
                 )}
-                
+
                 {/* Indicador de Fluidez */}
                 <div className="bg-emerald-600 text-white px-2 py-1 rounded text-xs flex items-center gap-1">
                   <i className="fas fa-comments"></i>
                   <span>Fluida</span>
                 </div>
-                
+
                 {/* Indicador de Acurácia */}
                 <div className="bg-yellow-600 text-white px-2 py-1 rounded text-xs flex items-center gap-1">
                   <i className="fas fa-bullseye"></i>
@@ -529,10 +545,7 @@ ${conversation.summary}
               </div>
             </div>
           </div>
-          <button
-            onClick={onClose}
-            className="text-gray-400 hover:text-white p-2"
-          >
+          <button onClick={onClose} className="text-gray-400 hover:text-white p-2">
             <i className="fas fa-times text-xl"></i>
           </button>
         </div>
@@ -540,7 +553,6 @@ ${conversation.summary}
         <div className="flex-1 flex overflow-hidden">
           {/* Sidebar - Base de Conhecimento */}
           <div className="w-80 bg-slate-700 border-r border-gray-600 flex flex-col">
-            
             {/* Filtros */}
             <div className="p-4 border-b border-gray-600">
               <div className="mb-3">
@@ -548,19 +560,21 @@ ${conversation.summary}
                   type="text"
                   placeholder="Buscar documentos..."
                   value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
+                  onChange={e => setSearchTerm(e.target.value)}
                   className="w-full px-3 py-2 bg-slate-600 border border-gray-500 rounded-lg text-white text-sm placeholder-gray-400"
                 />
               </div>
-              
+
               <select
                 value={selectedType}
-                onChange={(e) => setSelectedType(e.target.value)}
+                onChange={e => setSelectedType(e.target.value)}
                 className="w-full px-3 py-2 bg-slate-600 border border-gray-500 rounded-lg text-white text-sm"
               >
                 <option value="all">Todos os tipos</option>
                 {documentTypes.map(type => (
-                  <option key={type.value} value={type.value}>{type.label}</option>
+                  <option key={type.value} value={type.value}>
+                    {type.label}
+                  </option>
                 ))}
               </select>
             </div>
@@ -571,7 +585,7 @@ ${conversation.summary}
                 {loading ? (
                   <div className="text-center text-gray-400 py-4">Carregando...</div>
                 ) : filteredDocuments.length > 0 ? (
-                  filteredDocuments.map((doc) => (
+                  filteredDocuments.map(doc => (
                     <div
                       key={doc.id}
                       onClick={() => setSelectedDocument(doc)}
@@ -582,10 +596,14 @@ ${conversation.summary}
                       }`}
                     >
                       <div className="flex items-center gap-2 mb-1">
-                        <i className={`fas fa-${documentTypes.find(t => t.value === doc.type)?.icon} text-${documentTypes.find(t => t.value === doc.type)?.color}-400`}></i>
+                        <i
+                          className={`fas fa-${documentTypes.find(t => t.value === doc.type)?.icon} text-${documentTypes.find(t => t.value === doc.type)?.color}-400`}
+                        ></i>
                         <span className="text-white font-medium text-sm">{doc.title}</span>
                       </div>
-                      <p className="text-gray-400 text-xs line-clamp-2">{doc.content.substring(0, 100)}...</p>
+                      <p className="text-gray-400 text-xs line-clamp-2">
+                        {doc.content.substring(0, 100)}...
+                      </p>
                       <div className="flex items-center justify-between mt-2">
                         <span className="text-xs text-gray-500">{doc.category}</span>
                         <span className="text-xs text-gray-500">
@@ -614,7 +632,7 @@ ${conversation.summary}
                   <i className="fas fa-comments mr-2"></i>
                   Chat
                 </button>
-                
+
                 <button
                   onClick={() => setActiveTab('editor')}
                   className={`flex-1 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
@@ -627,7 +645,7 @@ ${conversation.summary}
                   Editor
                 </button>
               </div>
-              
+
               <button
                 onClick={() => setHistoryOpen(!historyOpen)}
                 className="w-full bg-purple-600 hover:bg-purple-700 text-white px-3 py-2 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2"
@@ -647,7 +665,7 @@ ${conversation.summary}
                 <div className="h-full flex flex-col">
                   {/* Mensagens do Chat */}
                   <div className="flex-1 overflow-y-auto p-4 space-y-4">
-                    {chatMessages.map((message) => (
+                    {chatMessages.map(message => (
                       <div
                         key={message.id}
                         className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
@@ -666,22 +684,28 @@ ${conversation.summary}
                         </div>
                       </div>
                     ))}
-                    
+
                     {isTyping && (
                       <div className="flex justify-start">
                         <div className="bg-slate-700 text-gray-100 p-3 rounded-lg">
                           <div className="flex items-center gap-2">
                             <div className="flex gap-1">
                               <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
-                              <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                              <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                              <div
+                                className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
+                                style={{ animationDelay: '0.1s' }}
+                              ></div>
+                              <div
+                                className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
+                                style={{ animationDelay: '0.2s' }}
+                              ></div>
                             </div>
                             <span className="text-sm">Nôa está digitando...</span>
                           </div>
                         </div>
                       </div>
                     )}
-                    
+
                     <div ref={chatEndRef} />
                   </div>
 
@@ -691,14 +715,14 @@ ${conversation.summary}
                       <div className="flex-1 flex flex-col gap-2">
                         <textarea
                           value={currentMessage}
-                          onChange={(e) => setCurrentMessage(e.target.value)}
-                          onKeyPress={(e) => e.key === 'Enter' && !e.shiftKey && sendMessage()}
+                          onChange={e => setCurrentMessage(e.target.value)}
+                          onKeyPress={e => e.key === 'Enter' && !e.shiftKey && sendMessage()}
                           placeholder="Converse livremente... Cole documentos, faça perguntas, desenvolva funcionalidades..."
                           className="w-full px-3 py-2 bg-slate-700 border border-gray-600 rounded-lg text-white text-sm placeholder-gray-400 focus:outline-none focus:border-blue-500 resize-none"
                           rows={3}
                           disabled={isTyping}
                         />
-                        
+
                         {/* Upload de arquivo integrado */}
                         <div className="flex items-center gap-2">
                           <label className="bg-gray-600 hover:bg-gray-500 text-white px-3 py-1 rounded text-xs cursor-pointer flex items-center gap-1">
@@ -713,27 +737,33 @@ ${conversation.summary}
                             Anexar
                           </label>
                           <span className="text-xs text-gray-400">
-                            {attachedFiles.length > 0 && `${attachedFiles.length} arquivo(s) anexado(s)`}
+                            {attachedFiles.length > 0 &&
+                              `${attachedFiles.length} arquivo(s) anexado(s)`}
                           </span>
                         </div>
                       </div>
-                      
+
                       <button
                         onClick={sendMessage}
-                        disabled={(!currentMessage.trim() && attachedFiles.length === 0) || isTyping}
+                        disabled={
+                          (!currentMessage.trim() && attachedFiles.length === 0) || isTyping
+                        }
                         className="bg-blue-600 hover:bg-blue-700 disabled:opacity-50 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
                       >
                         <i className="fas fa-paper-plane"></i>
                       </button>
                     </div>
-                    
+
                     {/* Área de Arquivos Anexados */}
                     {attachedFiles.length > 0 && (
                       <div className="mt-3 p-2 bg-gray-800 rounded-lg">
                         <div className="text-xs text-gray-400 mb-2">Arquivos anexados:</div>
                         <div className="flex flex-wrap gap-2">
                           {attachedFiles.map((file, index) => (
-                            <div key={index} className="flex items-center gap-2 bg-gray-700 px-2 py-1 rounded text-xs">
+                            <div
+                              key={index}
+                              className="flex items-center gap-2 bg-gray-700 px-2 py-1 rounded text-xs"
+                            >
                               <i className="fas fa-file"></i>
                               <span className="text-white">{file.name}</span>
                               <button
@@ -749,7 +779,9 @@ ${conversation.summary}
                     )}
 
                     <div className="mt-2 text-xs text-gray-400">
-                      💡 <strong>Chat Inteligente:</strong> Envie documentos, converse sobre eles, desenvolva funcionalidades. Cada interação enriquece a base de conhecimento da Nôa!
+                      💡 <strong>Chat Inteligente:</strong> Envie documentos, converse sobre eles,
+                      desenvolva funcionalidades. Cada interação enriquece a base de conhecimento da
+                      Nôa!
                     </div>
                   </div>
                 </div>
@@ -761,17 +793,23 @@ ${conversation.summary}
                       {/* Header do Documento */}
                       <div className="flex items-center justify-between mb-4">
                         <div>
-                          <h3 className="text-lg font-semibold text-white">{selectedDocument.title}</h3>
+                          <h3 className="text-lg font-semibold text-white">
+                            {selectedDocument.title}
+                          </h3>
                           <p className="text-sm text-gray-400">
-                            Tipo: {documentTypes.find(t => t.value === selectedDocument.type)?.label} • 
-                            Última atualização: {new Date(selectedDocument.updated_at).toLocaleString('pt-BR')}
+                            Tipo:{' '}
+                            {documentTypes.find(t => t.value === selectedDocument.type)?.label} •
+                            Última atualização:{' '}
+                            {new Date(selectedDocument.updated_at).toLocaleString('pt-BR')}
                           </p>
                         </div>
                         <div className="flex gap-2">
                           {isEditing ? (
                             <>
                               <button
-                                onClick={() => {/* saveDocument */}}
+                                onClick={() => {
+                                  /* saveDocument */
+                                }}
                                 disabled={loading}
                                 className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
                               >
@@ -802,7 +840,9 @@ ${conversation.summary}
                         <textarea
                           ref={editorRef}
                           value={selectedDocument.content}
-                          onChange={(e) => setSelectedDocument({...selectedDocument, content: e.target.value})}
+                          onChange={e =>
+                            setSelectedDocument({ ...selectedDocument, content: e.target.value })
+                          }
                           disabled={!isEditing}
                           className="w-full h-full p-4 bg-slate-700 border border-gray-600 rounded-lg text-white resize-none focus:outline-none focus:border-blue-500 disabled:opacity-50"
                           placeholder="Digite o conteúdo do documento..."

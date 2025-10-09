@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Specialty } from '../App'
-import { openAIService, ChatMessage } from '../services/openaiService'
+import { codexService, ChatMessage } from '../services/codexService'
 import { elevenLabsService } from '../services/elevenLabsService'
 import { noaVoiceService } from '../services/noaVoiceService'
 import { APP_CONFIG } from '../config/appConfig'
@@ -1555,7 +1555,10 @@ CONTEXTO ATUAL: ${modoAvaliacao ? 'Usuário está em avaliação clínica triaxi
       ]
 
       // Chama OpenAI para gerar resposta (fallback quando NoaGPT não reconhece)
-      const openAIResponse = await openAIService.getNoaResponse(userMessage)
+      const openAIResponse = await codexService.getNoaResponse(userMessage, [], {
+        route: 'chat',
+        metadata: { origin: 'legacyHome' },
+      })
       console.log('✅ OpenAI respondeu:', openAIResponse.substring(0, 100) + '...')
 
       // Remove a mensagem de "pensando" e adiciona a resposta real

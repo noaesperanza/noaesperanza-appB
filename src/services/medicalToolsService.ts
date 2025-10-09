@@ -2,7 +2,7 @@
 // Ferramentas médicas específicas adaptadas para nossa plataforma
 
 import { supabase } from '../integrations/supabase/client'
-import { openAIService } from './openaiService'
+import { codexService } from './codexService'
 
 export interface MedicalTool {
   id: string
@@ -195,7 +195,10 @@ INSTRUÇÕES:
 - Seja prática e aplicável
 `
 
-      return await openAIService.getNoaResponse(prompt, [])
+      return await codexService.getNoaResponse(prompt, [], {
+        route: 'chat',
+        metadata: { origin: 'medicalTools', tool: 'calculator' },
+      })
     } catch (error) {
       return `Erro ao aplicar protocolo: ${error}`
     }
@@ -346,7 +349,10 @@ INSTRUÇÕES:
 `
 
     try {
-      const result = await openAIService.getNoaResponse(prompt, [])
+      const result = await codexService.getNoaResponse(prompt, [], {
+        route: 'chat',
+        metadata: { origin: 'medicalTools', tool: 'reasoning' },
+      })
       return { output: result }
     } catch (error) {
       return { output: '', error: error as string }
@@ -381,7 +387,10 @@ INSTRUÇÕES:
 `
 
     try {
-      const result = await openAIService.getNoaResponse(prompt, [])
+      const result = await codexService.getNoaResponse(prompt, [], {
+        route: 'chat',
+        metadata: { origin: 'medicalTools', tool: 'guidelineSearch' },
+      })
 
       // Extrair valor, unidade e fórmula da resposta
       const valueMatch = result.match(/(\d+\.?\d*)/)

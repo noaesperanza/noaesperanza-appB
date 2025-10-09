@@ -13,10 +13,12 @@ vi.mock('../supabase/embeddingClient', () => ({
   }),
 }))
 
-vi.mock('../openaiService', () => ({
-  sendToOpenAI: vi.fn(async (prompt: string) => {
-    return 'Resposta mockada da Nôa Esperanza baseada no prompt: ' + prompt.substring(0, 50)
-  }),
+vi.mock('../codexService', () => ({
+  codexService: {
+    getNoaResponse: vi.fn(async (prompt: string) => {
+      return 'Resposta mockada da Nôa Esperanza baseada no prompt: ' + prompt.substring(0, 50)
+    }),
+  },
 }))
 
 describe('GPT Builder V2 - Integration Tests', () => {

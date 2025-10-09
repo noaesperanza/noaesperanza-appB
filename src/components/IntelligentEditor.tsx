@@ -3,7 +3,7 @@
 
 import React, { useState, useRef, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { openAIService } from '../services/openaiService'
+import { codexService } from '../services/codexService'
 import { activeContextService } from '../services/activeContextService'
 
 interface IntelligentEditorProps {
@@ -86,7 +86,7 @@ MELHORIA: [sugestão de melhoria]
 CONTINUAÇÃO: [sugestão de continuação]
 `
 
-      const response = await openAIService.getNoaResponse(suggestionsPrompt, [])
+      const response = await codexService.getNoaResponse(suggestionsPrompt, [])
 
       // Processar resposta e extrair sugestões
       const newSuggestions = parseSuggestions(response)
