@@ -1,37 +1,36 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, lazy, Suspense } from 'react'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import ErrorBoundary from './components/ErrorBoundary'
 import Header from './components/Header'
 // Sidebar removido - chat limpo sem sidebar
-import Footer from './components/Footer'
 import HomeFooter from './components/HomeFooter'
-import PremiumBackground from './components/PremiumBackground'
-import Home from './pages/Home'
-import HomeNew from './pages/HomeNew'
-import DashboardMedico from './pages/DashboardMedico'
-import DashboardPaciente from './pages/DashboardPaciente'
-import DashboardProfissional from './pages/DashboardProfissional'
-import AdminDashboard from './pages/AdminDashboard'
-import IntegratedIDE from './components/IntegratedIDE'
-import RelatorioNarrativo from './pages/RelatorioNarrativo'
-import Configuracoes from './pages/Configuracoes'
-import Perfil from './pages/Perfil'
-import PaymentPage from './pages/PaymentPage'
-import CheckoutPage from './pages/CheckoutPage'
+import LandingPage from './pages/LandingPage'
 import LoginPage from './pages/LoginPage'
 import RegisterPage from './pages/RegisterPage'
-import LandingPage from './pages/LandingPage'
-import NotFound from './pages/NotFound'
-import MeusExames from './pages/MeusExames'
-import Prescricoes from './pages/Prescricoes'
-import Prontuario from './pages/Prontuario'
-import PagamentosPaciente from './pages/PagamentosPaciente'
-import Ensino from './pages/Ensino'
-import Pesquisa from './pages/Pesquisa'
-import MedCannLab from './pages/MedCannLab'
-import AvaliacaoClinicaInicial from './pages/AvaliacaoClinicaInicial'
-import TriagemClinica from './pages/triagem'
+
+// Lazy load components for better code splitting
+const HomeNew = lazy(() => import('./pages/HomeNew'))
+const DashboardMedico = lazy(() => import('./pages/DashboardMedico'))
+const DashboardPaciente = lazy(() => import('./pages/DashboardPaciente'))
+const DashboardProfissional = lazy(() => import('./pages/DashboardProfissional'))
+const AdminDashboard = lazy(() => import('./pages/AdminDashboard'))
+const IntegratedIDE = lazy(() => import('./components/IntegratedIDE'))
+const RelatorioNarrativo = lazy(() => import('./pages/RelatorioNarrativo'))
+const Configuracoes = lazy(() => import('./pages/Configuracoes'))
+const Perfil = lazy(() => import('./pages/Perfil'))
+const PaymentPage = lazy(() => import('./pages/PaymentPage'))
+const CheckoutPage = lazy(() => import('./pages/CheckoutPage'))
+const NotFound = lazy(() => import('./pages/NotFound'))
+const MeusExames = lazy(() => import('./pages/MeusExames'))
+const Prescricoes = lazy(() => import('./pages/Prescricoes'))
+const Prontuario = lazy(() => import('./pages/Prontuario'))
+const PagamentosPaciente = lazy(() => import('./pages/PagamentosPaciente'))
+const Ensino = lazy(() => import('./pages/Ensino'))
+const Pesquisa = lazy(() => import('./pages/Pesquisa'))
+const MedCannLab = lazy(() => import('./pages/MedCannLab'))
+const AvaliacaoClinicaInicial = lazy(() => import('./pages/AvaliacaoClinicaInicial'))
+const TriagemClinica = lazy(() => import('./pages/triagem'))
 
 export type Specialty = 'rim' | 'neuro' | 'cannabis'
 
@@ -59,6 +58,13 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
 
   return <>{children}</>
 }
+
+// Loading fallback component
+const LoadingFallback = () => (
+  <div className="h-screen flex items-center justify-center">
+    <div className="text-white text-xl">Carregando...</div>
+  </div>
+)
 
 function App() {
   const [currentSpecialty, setCurrentSpecialty] = useState<Specialty>('rim')
@@ -129,7 +135,9 @@ function App() {
             path="/chat"
             element={
               <ProtectedRoute>
-                <HomeNew />
+                <Suspense fallback={<LoadingFallback />}>
+                  <HomeNew />
+                </Suspense>
               </ProtectedRoute>
             }
           />
@@ -154,96 +162,98 @@ function App() {
 
                   {/* Container Principal */}
                   <div className="pt-16 pb-20 h-full overflow-hidden">
-                    <Routes>
-                      {/* Página inicial do app - REDIRECT para /app/paciente */}
-                      <Route path="/" element={<Navigate to="/app/paciente" replace />} />
+                    <Suspense fallback={<LoadingFallback />}>
+                      <Routes>
+                        {/* Página inicial do app - REDIRECT para /app/paciente */}
+                        <Route path="/" element={<Navigate to="/app/paciente" replace />} />
 
-                      {/* Páginas específicas */}
+                        {/* Páginas específicas */}
 
-                      <Route
-                        path="/medico"
-                        element={
-                          <DashboardMedico
-                            currentSpecialty={currentSpecialty}
-                            addNotification={addNotification}
-                          />
-                        }
-                      />
+                        <Route
+                          path="/medico"
+                          element={
+                            <DashboardMedico
+                              currentSpecialty={currentSpecialty}
+                              addNotification={addNotification}
+                            />
+                          }
+                        />
 
-                      <Route
-                        path="/paciente"
-                        element={
-                          <DashboardPaciente
-                            currentSpecialty={currentSpecialty}
-                            addNotification={addNotification}
-                          />
-                        }
-                      />
+                        <Route
+                          path="/paciente"
+                          element={
+                            <DashboardPaciente
+                              currentSpecialty={currentSpecialty}
+                              addNotification={addNotification}
+                            />
+                          }
+                        />
 
-                      <Route
-                        path="/profissional"
-                        element={
-                          <DashboardProfissional
-                            currentSpecialty={currentSpecialty}
-                            addNotification={addNotification}
-                          />
-                        }
-                      />
+                        <Route
+                          path="/profissional"
+                          element={
+                            <DashboardProfissional
+                              currentSpecialty={currentSpecialty}
+                              addNotification={addNotification}
+                            />
+                          }
+                        />
 
-                      <Route
-                        path="/admin"
-                        element={<AdminDashboard addNotification={addNotification} />}
-                      />
-                      <Route path="/ide" element={<IntegratedIDE />} />
-                      <Route
-                        path="/patient-dashboard"
-                        element={<Navigate to="/app/paciente" replace />}
-                      />
-                      <Route path="/patient" element={<Navigate to="/app/paciente" replace />} />
+                        <Route
+                          path="/admin"
+                          element={<AdminDashboard addNotification={addNotification} />}
+                        />
+                        <Route path="/ide" element={<IntegratedIDE />} />
+                        <Route
+                          path="/patient-dashboard"
+                          element={<Navigate to="/app/paciente" replace />}
+                        />
+                        <Route path="/patient" element={<Navigate to="/app/paciente" replace />} />
 
-                      <Route path="/payment" element={<PaymentPage />} />
+                        <Route path="/payment" element={<PaymentPage />} />
 
-                      <Route
-                        path="/checkout"
-                        element={<CheckoutPage addNotification={addNotification} />}
-                      />
+                        <Route
+                          path="/checkout"
+                          element={<CheckoutPage addNotification={addNotification} />}
+                        />
 
-                      <Route
-                        path="/relatorio"
-                        element={
-                          <RelatorioNarrativo
-                            currentSpecialty={currentSpecialty}
-                            addNotification={addNotification}
-                          />
-                        }
-                      />
+                        <Route
+                          path="/relatorio"
+                          element={
+                            <RelatorioNarrativo
+                              currentSpecialty={currentSpecialty}
+                              addNotification={addNotification}
+                            />
+                          }
+                        />
 
-                      <Route
-                        path="/config"
-                        element={<Configuracoes addNotification={addNotification} />}
-                      />
+                        <Route
+                          path="/config"
+                          element={<Configuracoes addNotification={addNotification} />}
+                        />
 
-                      <Route
-                        path="/perfil"
-                        element={<Perfil addNotification={addNotification} />}
-                      />
+                        <Route
+                          path="/perfil"
+                          element={<Perfil addNotification={addNotification} />}
+                        />
 
-                      {/* Páginas do Paciente */}
-                      <Route path="/exames" element={<MeusExames />} />
-                      <Route path="/prescricoes" element={<Prescricoes />} />
-                      <Route path="/prontuario" element={<Prontuario />} />
-                      <Route path="/pagamentos-paciente" element={<PagamentosPaciente />} />
-                      <Route path="/avaliacao-inicial" element={<AvaliacaoClinicaInicial />} />
-                      <Route path="/triagem" element={<TriagemClinica />} />
+                        {/* Páginas do Paciente */}
+                        <Route path="/exames" element={<MeusExames />} />
+                        <Route path="/prescricoes" element={<Prescricoes />} />
+                        <Route path="/prontuario" element={<Prontuario />} />
+                        <Route path="/pagamentos-paciente" element={<PagamentosPaciente />} />
+                        <Route path="/avaliacao-inicial" element={<AvaliacaoClinicaInicial />} />
+                        <Route path="/triagem" element={<TriagemClinica />} />
 
-                      {/* Páginas de Ensino e Pesquisa */}
-                      <Route path="/ensino" element={<Ensino />} />
-                      <Route path="/pesquisa" element={<Pesquisa />} />
-                      <Route path="/medcann-lab" element={<MedCannLab />} />
+                        {/* Páginas de Ensino e Pesquisa */}
+                        <Route path="/ensino" element={<Ensino />} />
+                        <Route path="/pesquisa" element={<Pesquisa />} />
+                        <Route path="/medcann-lab" element={<MedCannLab />} />
 
-                      {/* 404 */}
-                      <Route path="*" element={<NotFound />} />
-                    </Routes>
+                        {/* 404 */}
+                        <Route path="*" element={<NotFound />} />
+                      </Routes>
+                    </Suspense>
                   </div>
 
                   {/* Footer Compacto para Home - Fixo na parte inferior */}
