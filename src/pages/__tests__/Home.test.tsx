@@ -24,6 +24,7 @@ vi.mock('../../contexts/AuthContext', () => ({
 vi.mock('../../services/noaSystemService', () => ({
   noaSystemService: {
     registerNoaConversation: vi.fn().mockResolvedValue(true),
+    registerConversationFlow: vi.fn().mockResolvedValue(true),
     setUserType: vi.fn().mockResolvedValue(true),
     initializeUserSession: vi.fn().mockResolvedValue(true),
     saveAILearning: vi.fn().mockResolvedValue(true),
@@ -53,6 +54,21 @@ vi.mock('../../services/noaVoiceService', () => ({
     isCurrentlySpeaking: vi.fn().mockReturnValue(false),
     isSupported: vi.fn().mockReturnValue(true),
   },
+}))
+
+vi.mock('../../services/personalizedProfilesService', () => ({
+  personalizedProfilesService: {
+    getProfile: vi.fn(() => ({
+      id: 'dr_ricardo_valenca',
+      name: 'Dr. Ricardo Valença',
+      role: 'creator',
+    })),
+    saveActiveProfile: vi.fn(),
+  },
+}))
+
+vi.mock('../../services/noaPromptLoader', () => ({
+  loadNoaPrompt: vi.fn(() => 'prompt'),
 }))
 
 vi.mock('../../services/aiLearningService', () => ({

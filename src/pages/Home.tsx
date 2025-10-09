@@ -6,7 +6,6 @@ import { openAIService, ChatMessage } from '../services/openaiService'
 import { elevenLabsService } from '../services/elevenLabsService'
 import { noaVoiceService } from '../services/noaVoiceService'
 import { APP_CONFIG } from '../config/appConfig'
-import { dataService } from '../services/supabaseService'
 import { supabase } from '../integrations/supabase/client'
 import { aiLearningService } from '../services/aiLearningService'
 import { cleanTextForAudio } from '../utils/textUtils'
@@ -24,6 +23,8 @@ import ThoughtBubble from '../components/ThoughtBubble'
 import MatrixBackground from '../components/MatrixBackground'
 import { useAuth } from '../contexts/AuthContext'
 import { testSupabaseConnection } from '../utils/supabaseTest'
+import { personalizedProfilesService } from '../services/personalizedProfilesService'
+import { loadNoaPrompt } from '../services/noaPromptLoader'
 
 interface Message {
   id: string
@@ -52,234 +53,6 @@ interface ExpandedCard {
   content: string
   type: 'consulta' | 'analise' | 'protocolo' | 'pesquisa' | 'avaliacao'
 }
-
-// Interface para Avaliação Clínica Triaxial
-interface AvaliacaoClinicaData {
-  sessionId: string
-  status: 'in_progress' | 'completed'
-  etapa_atual: string
-  dados: {
-    apresentacao?: string
-    cannabis_medicinal?: string
-    lista_indiciaria: string[]
-    queixa_principal?: string
-    desenvolvimento_indiciario?: {
-      localizacao?: string
-      inicio?: string
-      qualidade?: string
-      sintomas_associados?: string
-      fatores_melhora?: string
-      fatores_piora?: string
-    }
-    historia_patologica: string[]
-    historia_familiar: {
-      mae: string[]
-      pai: string[]
-    }
-    habitos_vida: string[]
-    medicacoes?: {
-      continuas?: string
-      eventuais?: string
-    }
-    alergias?: string
-    relatorio_narrativo?: string
-    concordancia_final?: boolean
-  }
-}
-
-// Etapas da Avaliação Clínica Triaxial
-const ETAPAS_AVALIACAO = [
-  {
-    id: 'abertura',
-    title: 'Abertura Exponencial',
-    pergunta:
-      'Olá! Eu sou Nôa Esperanza, assistente médica do MedCanLab. Por favor, apresente-se também e vamos iniciar a sua avaliação inicial para consultas com Dr. Ricardo Valença.',
-    opcoes: [
-      'Olá, sou [seu nome], tenho [idade] anos',
-      'Meu nome é [nome], sou [profissão]',
-      'Sou [nome], venho de [cidade]',
-    ],
-  },
-  {
-    id: 'cannabis_medicinal',
-    title: 'Cannabis Medicinal',
-    pergunta: 'Você já utilizou canabis medicinal?',
-    opcoes: [
-      'Sim, já utilizei',
-      'Não, nunca utilizei',
-      'Estou considerando usar',
-      'Não sei o que é',
-      'Prefiro não responder',
-    ],
-  },
-  {
-    id: 'lista_indiciaria',
-    title: 'Lista Indiciária',
-    pergunta: 'O que trouxe você à nossa avaliação hoje?',
-    opcoes: [
-      'Dor de cabeça',
-      'Dor no peito',
-      'Falta de ar',
-      'Dor abdominal',
-      'Cansaço',
-      'Outro sintoma',
-    ],
-  },
-  {
-    id: 'queixa_principal',
-    title: 'Queixa Principal',
-    pergunta: 'De todas essas questões, qual mais o(a) incomoda?',
-    opcoes: [
-      'A primeira que mencionei',
-      'A segunda que mencionei',
-      'A terceira que mencionei',
-      'Todas me incomodam igualmente',
-    ],
-  },
-  {
-    id: 'desenvolvimento_localizacao',
-    title: 'Desenvolvimento Indiciário - Localização',
-    pergunta: 'Vamos explorar suas queixas mais detalhadamente. Onde você sente [queixa]?',
-    opcoes: ['Cabeça', 'Peito', 'Abdômen', 'Costas', 'Pernas', 'Braços', 'Todo o corpo'],
-  },
-  {
-    id: 'desenvolvimento_inicio',
-    title: 'Início',
-    pergunta: 'Quando essa [queixa] começou?',
-    opcoes: ['Hoje', 'Ontem', 'Esta semana', 'Este mês', 'Há alguns meses', 'Há mais de um ano'],
-  },
-  {
-    id: 'desenvolvimento_qualidade',
-    title: 'Qualidade',
-    pergunta: 'Como é a [queixa]?',
-    opcoes: [
-      'Dor aguda',
-      'Dor latejante',
-      'Dor em queimação',
-      'Dor em pontada',
-      'Desconforto',
-      'Pressão',
-    ],
-  },
-  {
-    id: 'desenvolvimento_sintomas',
-    title: 'Sintomas Associados',
-    pergunta: 'O que mais você sente quando está com a [queixa]?',
-    opcoes: ['Náusea', 'Tontura', 'Suor', 'Falta de ar', 'Cansaço', 'Nenhum sintoma adicional'],
-  },
-  {
-    id: 'desenvolvimento_melhora',
-    title: 'Fatores de Melhora',
-    pergunta: 'O que melhora a [queixa]?',
-    opcoes: ['Repouso', 'Medicação', 'Calor', 'Frio', 'Massagem', 'Nada melhora'],
-  },
-  {
-    id: 'desenvolvimento_piora',
-    title: 'Fatores de Piora',
-    pergunta: 'O que piora a [queixa]?',
-    opcoes: ['Movimento', 'Esforço', 'Estresse', 'Alimentação', 'Posição', 'Nada piora'],
-  },
-  {
-    id: 'historia_patologica',
-    title: 'História Patológica Pregressa',
-    pergunta:
-      'E agora, sobre o restante sua vida até aqui, desde seu nascimento, quais as questões de saúde que você já viveu? Vamos ordenar do mais antigo para o mais recente, o que veio primeiro?',
-    opcoes: [
-      'Nenhuma',
-      'Hipertensão',
-      'Diabetes',
-      'Problemas cardíacos',
-      'Cirurgias',
-      'Outras doenças',
-    ],
-  },
-  {
-    id: 'historia_familiar_mae',
-    title: 'História Familiar - Mãe',
-    pergunta:
-      'E na sua família? Começando pela parte de sua mãe, quais as questões de saúde dela e desse lado da família?',
-    opcoes: [
-      'Nenhuma',
-      'Hipertensão',
-      'Diabetes',
-      'Câncer',
-      'Problemas cardíacos',
-      'Outras doenças',
-    ],
-  },
-  {
-    id: 'historia_familiar_pai',
-    title: 'História Familiar - Pai',
-    pergunta: 'E por parte do pai?',
-    opcoes: [
-      'Nenhuma',
-      'Hipertensão',
-      'Diabetes',
-      'Câncer',
-      'Problemas cardíacos',
-      'Outras doenças',
-    ],
-  },
-  {
-    id: 'habitos_vida',
-    title: 'Hábitos de Vida',
-    pergunta:
-      'Além dos hábitos de vida que já verificamos em nossa conversa, que outros hábitos você acha importante mencionar?',
-    opcoes: [
-      'Fumo',
-      'Bebida alcoólica',
-      'Exercícios',
-      'Alimentação',
-      'Sono',
-      'Estresse no trabalho',
-    ],
-  },
-  {
-    id: 'alergias',
-    title: 'Alergias',
-    pergunta: 'Você tem alguma alergia (mudança de tempo, medicação, poeira...)?',
-    opcoes: ['Nenhuma', 'Poeira', 'Pólen', 'Medicamentos', 'Alimentos', 'Mudança de tempo'],
-  },
-  {
-    id: 'medicacoes_continuas',
-    title: 'Medicações Contínuas',
-    pergunta: 'Quais medicações utiliza regularmente?',
-    opcoes: [
-      'Nenhuma',
-      'Anti-hipertensivo',
-      'Antidiabético',
-      'Analgésico',
-      'Vitaminas',
-      'Outras medicações',
-    ],
-  },
-  {
-    id: 'medicacoes_eventuais',
-    title: 'Medicações Eventuais',
-    pergunta:
-      'Quais as medicações você utiliza esporadicamente (de vez em quando) e porque utiliza?',
-    opcoes: [
-      'Nenhuma',
-      'Analgésico para dor',
-      'Antitérmico para febre',
-      'Antiácido',
-      'Antialérgico',
-      'Outras medicações',
-    ],
-  },
-  {
-    id: 'fechamento',
-    title: 'Fechamento Consensual',
-    pergunta:
-      'Vamos revisar a sua história rapidamente para garantir que não perdemos nenhum detalhe importante.',
-    opcoes: [
-      'Sim, vamos revisar',
-      'Está tudo correto',
-      'Quero adicionar algo',
-      'Há algo a corrigir',
-    ],
-  },
-]
 
 interface HomeProps {
   currentSpecialty: Specialty
@@ -337,29 +110,140 @@ const Home = ({
     setThoughts(newThoughts)
   }
 
+  const startRealClinicalAssessment = async (origin: 'chat' | 'card' | 'cta' = 'chat') => {
+    const redirectMessage: Message = {
+      id: crypto.randomUUID(),
+      message:
+        '🩺 Estou abrindo o módulo seguro de Avaliação Clínica Inicial com o protocolo do Dr. Ricardo Valença. Vamos continuar por lá.',
+      sender: 'noa',
+      timestamp: new Date(),
+      conversation_type: 'general',
+      session_id: sessionId,
+    }
+
+    setMessages(prev => {
+      const withoutTyping = prev.filter(msg => !msg.isTyping)
+      return [...withoutTyping, redirectMessage]
+    })
+
+    try {
+      closeExpandedCard()
+    } catch {}
+
+    try {
+      const profile = personalizedProfilesService.getProfile('dr_ricardo_valenca')
+      if (profile) {
+        personalizedProfilesService.saveActiveProfile(profile)
+        const prompt = loadNoaPrompt({
+          userContext: {
+            name: profile.name,
+            role: profile.role,
+            recognizedAs: profile.name,
+            profileId: profile.id,
+          },
+          modulo: 'clinico',
+        })
+        sessionStorage.setItem('noa_active_prompt', prompt)
+      }
+    } catch (error) {
+      console.warn('Não foi possível preparar o prompt clínico personalizado:', error)
+    }
+
+    try {
+      await playNoaAudioWithText(
+        'Abrindo o módulo dedicado de avaliação clínica inicial com o método IMRE do Dr. Ricardo Valença.'
+      )
+    } catch (error) {
+      console.warn('Não foi possível reproduzir áudio de transição para avaliação clínica:', error)
+    }
+
+    let resolvedUserId: string | null = null
+
+    try {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser()
+      resolvedUserId = user?.id || null
+    } catch (error) {
+      console.warn('Não foi possível obter usuário autenticado para avaliação clínica:', error)
+    }
+
+    if (!resolvedUserId) {
+      try {
+        resolvedUserId = localStorage.getItem('noa_guest_id')
+      } catch {
+        resolvedUserId = null
+      }
+    }
+
+    if (!resolvedUserId) {
+      resolvedUserId = `guest_${crypto.randomUUID()}`
+      try {
+        localStorage.setItem('noa_guest_id', resolvedUserId)
+      } catch {}
+    }
+
+    const newSessionId = `assessment_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`
+    setSessionId(newSessionId)
+
+    try {
+      sessionStorage.setItem('noa_active_assessment_session', newSessionId)
+      sessionStorage.setItem('noa_active_assessment_user', resolvedUserId)
+      sessionStorage.setItem('noa_active_assessment_origin', origin)
+    } catch (error) {
+      console.warn('Não foi possível registrar dados da avaliação na sessão:', error)
+    }
+
+    try {
+      await noaSystemService.setUserType('paciente')
+    } catch (error) {
+      console.warn('Não foi possível definir tipo de usuário para avaliação clínica:', error)
+    }
+
+    try {
+      await noaSystemService.registerConversationFlow(
+        newSessionId,
+        'evaluation_redirect',
+        {
+          origin,
+          started_at: new Date().toISOString(),
+        },
+        0
+      )
+    } catch (error) {
+      console.warn('Não foi possível registrar o redirecionamento da avaliação clínica:', error)
+    }
+
+    try {
+      await avaliacaoClinicaService.iniciarAvaliacao(resolvedUserId, newSessionId)
+    } catch (error) {
+      console.warn('Avaliação clínica estruturada indisponível para inicialização imediata:', error)
+    }
+
+    setConversationType('clinical_evaluation')
+    setUserType('paciente')
+
+    navigate('/app/avaliacao-inicial', {
+      state: {
+        sessionId: newSessionId,
+        userId: resolvedUserId,
+        origin: 'home',
+      },
+    })
+
+    setIsProcessing(false)
+  }
+
   // Estado do NoaGPT
   const [noaGPT, setNoaGPT] = useState<NoaGPT | null>(null)
-
-  // Estados para Avaliação Clínica Triaxial
-  const [modoAvaliacao, setModoAvaliacao] = useState(false)
-  const [etapaAtual, setEtapaAtual] = useState(0)
 
   // 🧠 Estados do sistema de reconhecimento de identidade
   const [recognizedUser, setRecognizedUser] = useState<UserProfile | null>(null)
   const [isPersonalizedMode, setIsPersonalizedMode] = useState(false)
   const [availableCommands, setAvailableCommands] = useState<string[]>([])
-  const [perguntandoMais, setPerguntandoMais] = useState(false)
 
   // Estado para efeito matrix eterno
   const [matrixActive, setMatrixActive] = useState(true)
-  const [dadosAvaliacao, setDadosAvaliacao] = useState<AvaliacaoClinicaData['dados']>({
-    cannabis_medicinal: '',
-    lista_indiciaria: [],
-    historia_patologica: [],
-    historia_familiar: { mae: [], pai: [] },
-    habitos_vida: [],
-    desenvolvimento_indiciario: {},
-  })
 
   // Estados para Sistema MedCanLab Integrado
   const [userType, setUserType] = useState<'aluno' | 'profissional' | 'paciente' | null>(null)
@@ -371,7 +255,6 @@ const Home = ({
     'presentation' | 'user_type_selection' | 'clinical_evaluation' | 'general'
   >('general')
   const [isFirstResponse, setIsFirstResponse] = useState<boolean>(true)
-  const [evaluationId, setEvaluationId] = useState<string | null>(null)
   const [userName, setUserName] = useState<string | null>(null) // Nome do usuário persistente
   const [isAdminMode, setIsAdminMode] = useState<boolean>(false) // Modo admin ativado
   const [adminCardType, setAdminCardType] = useState<'stats' | 'editor' | 'users' | 'ia' | null>(
@@ -409,31 +292,6 @@ const Home = ({
     const updatedMemory = { ...userMemory, ...newMemory, lastVisit: new Date().toISOString() }
     setUserMemory(updatedMemory)
     localStorage.setItem('noa_user_memory', JSON.stringify(updatedMemory))
-  }
-
-  // Salva avaliação no Supabase
-  const saveEvaluationToSupabase = async (isCompleted: boolean = false) => {
-    try {
-      const evaluationData = {
-        session_id: sessionId,
-        status: (isCompleted ? 'completed' : 'in_progress') as 'completed' | 'in_progress',
-        etapa_atual: ETAPAS_AVALIACAO[etapaAtual]?.id || 'fechamento',
-        dados: dadosAvaliacao,
-        user_id: userMemory.name ? userMemory.name : null,
-      }
-
-      if (evaluationId) {
-        // Atualiza avaliação existente
-        await dataService.updateClinicalEvaluation(evaluationId, evaluationData)
-      } else {
-        // Cria nova avaliação
-        const result = await dataService.createClinicalEvaluation(evaluationData)
-        setEvaluationId(result.id)
-      }
-    } catch (error) {
-      console.error('Erro ao salvar avaliação no Supabase:', error)
-      // Não mostra erro para o usuário, apenas loga
-    }
   }
 
   // useEffect de scroll DESABILITADO para evitar scroll infinito
@@ -603,95 +461,28 @@ const Home = ({
 
     // 🩺 TRIGGER DE AVALIAÇÃO CLÍNICA (ANTES DO SISTEMA DE MODOS)
     const mensagemLower = userMessage.toLowerCase()
-    const querAvaliacao =
-      mensagemLower.includes('arte da entrevista') ||
-      mensagemLower.includes('entrevista clínica') ||
-      mensagemLower.includes('entrevista clinica') ||
-      mensagemLower.includes('iniciar avaliação') ||
-      mensagemLower.includes('iniciar avaliacao') ||
-      mensagemLower.includes('avaliação clínica') ||
-      mensagemLower.includes('avaliacao clinica') ||
-      mensagemLower.includes('fazer avaliação') ||
-      mensagemLower.includes('fazer avaliacao') ||
-      mensagemLower.includes('quero fazer entrevista') ||
-      mensagemLower.includes('começar avaliação') ||
-      mensagemLower.includes('comecar avaliacao') ||
-      mensagemLower.includes('avaliacao') ||
-      mensagemLower.includes('avaliação') ||
-      mensagemLower.includes('fazer avaliacao') ||
-      mensagemLower.includes('começar avaliacao') ||
-      mensagemLower.includes('comecar avaliação') ||
-      mensagemLower.includes('iniciar avaliacao') ||
-      mensagemLower.includes('começar') ||
-      mensagemLower.includes('comecar')
+    const querAvaliacao = [
+      'arte da entrevista',
+      'entrevista clínica',
+      'entrevista clinica',
+      'iniciar avaliação clínica',
+      'iniciar avaliacao clinica',
+      'iniciar avaliação inicial',
+      'iniciar avaliacao inicial',
+      'avaliação clínica inicial',
+      'avaliacao clinica inicial',
+      'avaliação clínica',
+      'avaliacao clinica',
+      'fazer avaliação clínica',
+      'fazer avaliacao clinica',
+      'quero fazer a avaliação clínica',
+      'quero fazer a avaliacao clinica',
+      'quero fazer avaliação clínica',
+      'quero fazer avaliacao clinica',
+    ].some(trigger => mensagemLower.includes(trigger))
 
-    if (querAvaliacao && !modoAvaliacao) {
-      console.log('✅ Trigger de avaliação detectado - Abrindo card automaticamente!')
-
-      // Ativa o modo de avaliação
-      setModoAvaliacao(true)
-      setEtapaAtual(0)
-      setConversationType('clinical_evaluation')
-
-      // Expande o card da Avaliação Clínica automaticamente
-      expandCard({
-        id: 'avaliacao-clinica-inicial',
-        title: 'Avaliação Clínica Inicial',
-        description: 'Arte da Entrevista Clínica - Método IMRE (28 Blocos)',
-        content:
-          'Iniciando sua avaliação clínica completa com 28 perguntas estruturadas do método IMRE desenvolvido pelo Dr. Ricardo Valença.',
-        type: 'avaliacao',
-      })
-
-      // Força a abertura do card
-      setExpandedCard({
-        id: 'avaliacao-clinica-inicial',
-        title: 'Avaliação Clínica Inicial',
-        description: 'Arte da Entrevista Clínica - Método IMRE (28 Blocos)',
-        content:
-          'Iniciando sua avaliação clínica completa com 28 perguntas estruturadas do método IMRE desenvolvido pelo Dr. Ricardo Valença.',
-        type: 'avaliacao',
-      })
-
-      // Resposta imediata
-      const avaliacaoMessage: Message = {
-        id: crypto.randomUUID(),
-        message:
-          '🩺 **Avaliação Clínica Inicial Iniciada**\n\nOlá! Vou conduzi-lo através de uma avaliação clínica completa seguindo o método IMRE do Dr. Ricardo Valença.\n\nEsta avaliação possui 28 blocos estruturados que nos ajudarão a compreender melhor sua condição de saúde.\n\nVamos começar?',
-        sender: 'noa',
-        timestamp: new Date(),
-        conversation_type: 'clinical_evaluation',
-        session_id: sessionId,
-      }
-
-      setMessages(prev => {
-        const withoutTyping = prev.filter(msg => !msg.isTyping)
-        return [...withoutTyping, avaliacaoMessage]
-      })
-
-      // Tocar áudio da resposta
-      await playNoaAudioWithText(avaliacaoMessage.message)
-
-      // 🎯 BUSCAR PRIMEIRA PERGUNTA IMRE
-      try {
-        const primeiraPergunta = await avaliacaoClinicaService.getProximaPergunta(0)
-        if (primeiraPergunta) {
-          const perguntaMessage: Message = {
-            id: crypto.randomUUID(),
-            message: primeiraPergunta,
-            sender: 'noa',
-            timestamp: new Date(),
-            conversation_type: 'clinical_evaluation',
-            session_id: sessionId,
-          }
-
-          setMessages(prev => [...prev, perguntaMessage])
-          await playNoaAudioWithText(primeiraPergunta)
-        }
-      } catch (error) {
-        console.error('❌ Erro ao buscar primeira pergunta:', error)
-      }
-
+    if (querAvaliacao) {
+      await startRealClinicalAssessment('chat')
       setIsTyping(false)
       return
     }
@@ -1080,336 +871,6 @@ const Home = ({
         return
       }
 
-      // 🩺 SISTEMA DE AVALIAÇÃO CLÍNICA TRIAXIAL INTEGRADO (Documento Mestre v.2.0)
-      // Verifica se deve iniciar avaliação clínica usando o fluxo correto
-      console.log('🔍 Verificando se deve iniciar avaliação clínica...')
-
-      // Verifica se o usuário confirmou a avaliação
-      if (
-        (mensagemLower.includes('sim') ||
-          mensagemLower.includes('começar') ||
-          mensagemLower.includes('comecar')) &&
-        modoAvaliacao &&
-        etapaAtual === 0
-      ) {
-        console.log('✅ Usuário confirmou avaliação - Iniciando com contexto inteligente')
-
-        // 🧠 INICIAR CONTEXTO INTELIGENTE DE AVALIAÇÃO
-        const {
-          data: { user },
-        } = await supabase.auth.getUser()
-        await avaliacaoClinicaService.iniciarAvaliacao(user?.id || crypto.randomUUID())
-
-        // Avança para a primeira pergunta real
-        setEtapaAtual(1)
-
-        // Registra o início da avaliação no sistema
-        await noaSystemService.registerConversationFlow(
-          sessionId,
-          'evaluation_started',
-          { user_type: userType, timestamp: new Date().toISOString() },
-          1
-        )
-
-        // 🧠 CONTEXTUALIZAÇÃO INTELIGENTE:
-        // Verifica se usuário já se apresentou antes
-        const usuarioJaSeApresentou = messages.some(
-          msg =>
-            msg.sender === 'user' &&
-            (msg.message.toLowerCase().includes('meu nome') ||
-              msg.message.toLowerCase().includes('sou ') ||
-              msg.message.match(/\b[A-Z][a-z]+ [A-Z][a-z]+\b/)) // Nome próprio
-        )
-
-        // Se tem nome salvo OU já se apresentou, pula bloco 1 e vai direto para bloco 2
-        if (userName || usuarioJaSeApresentou || jaSeApresentou) {
-          console.log('✅ Usuário já se apresentou - Pulando bloco 1')
-          setEtapaAtual(1) // Começa no bloco 2 (motivo_detalhado)
-
-          const blocoMotivo = await noaSystemService.getImreBlock(2)
-          const perguntaContextual =
-            blocoMotivo?.block_prompt || 'O que trouxe você à nossa avaliação hoje?'
-
-          // Personaliza mensagem com nome do usuário
-          const mensagemPersonalizada = userName
-            ? `✅ **Perfeito, ${userName}! Vamos começar.**\n\n${perguntaContextual}`
-            : `✅ **Vamos começar!**\n\n${perguntaContextual}`
-
-          const audioPersonalizado = userName
-            ? `Perfeito, ${userName}! ${perguntaContextual}`
-            : perguntaContextual
-
-          const noaMessage: Message = {
-            id: crypto.randomUUID(),
-            message: mensagemPersonalizada,
-            sender: 'noa',
-            timestamp: new Date(),
-            conversation_type: 'clinical_evaluation',
-            user_type: userType || 'paciente',
-            session_id: sessionId,
-          }
-          setMessages(prev => [...prev, noaMessage])
-          await playNoaAudioWithText(audioPersonalizado)
-        } else {
-          // Primeira vez - usa bloco 1 normal
-          console.log('✅ Primeira vez - Usando bloco 1 (apresentação)')
-          setEtapaAtual(1) // Avança para primeira pergunta real
-
-          const etapa = ETAPAS_AVALIACAO[0]
-          const imreBlock = await noaSystemService.getImreBlock(1)
-          const perguntaTexto = imreBlock?.block_prompt || etapa.pergunta
-
-          const noaMessage: Message = {
-            id: crypto.randomUUID(),
-            message: perguntaTexto,
-            sender: 'noa',
-            timestamp: new Date(),
-            conversation_type: 'clinical_evaluation',
-            user_type: userType || 'paciente',
-            session_id: sessionId,
-          }
-          setMessages(prev => [...prev, noaMessage])
-
-          // Registra o bloco no fluxo
-          await noaSystemService.registerConversationFlow(
-            sessionId,
-            'imre_block',
-            {
-              block_order: 1,
-              block_name: imreBlock?.block_name || 'Abertura Exponencial',
-              user_response: userMessage,
-            },
-            2
-          )
-
-          // Toca áudio da primeira pergunta
-          await playNoaAudioWithText(perguntaTexto)
-        }
-
-        setIsTyping(false)
-        console.log('✅ Avaliação iniciada com fluxo correto, saindo da função')
-        return
-      }
-
-      // 🔴 CANCELAR/FECHAR AVALIAÇÃO
-      const querCancelar =
-        mensagemLower.includes('cancelar') ||
-        mensagemLower.includes('fechar') ||
-        mensagemLower.includes('sair') ||
-        mensagemLower.includes('parar avaliação') ||
-        mensagemLower.includes('parar avaliacao')
-
-      if (querCancelar || mensagemLower.includes('não') || mensagemLower.includes('nao')) {
-        console.log('🔴 Usuário cancelou - Voltando ao chat normal')
-
-        // Volta ao modo normal
-        const estavaNaAvaliacao = modoAvaliacao
-        setModoAvaliacao(false)
-        setEtapaAtual(0)
-        setConversationType('general')
-
-        // Fecha o card
-        closeExpandedCard()
-
-        // Registra cancelamento se estava em avaliação
-        if (estavaNaAvaliacao) {
-          await noaSystemService.registerConversationFlow(
-            sessionId,
-            'evaluation_cancelled',
-            { etapa_cancelada: etapaAtual, timestamp: new Date().toISOString() },
-            998
-          )
-        }
-
-        setMessages(prev => {
-          const withoutTyping = prev.filter(msg => !msg.isTyping)
-          const cancelMessage: Message = {
-            id: crypto.randomUUID(),
-            message:
-              '✅ **Voltamos ao chat normal!**\n\nFique à vontade para me perguntar sobre qualquer assunto ou iniciar a avaliação quando quiser.\n\nComo posso ajudar você agora?',
-            sender: 'noa',
-            timestamp: new Date(),
-            conversation_type: 'general',
-          }
-          return [...withoutTyping, cancelMessage]
-        })
-
-        await playNoaAudioWithText('Voltamos ao chat normal! Como posso ajudar você agora?')
-        setIsTyping(false)
-        return
-      }
-
-      // 🛡️ PROTEÇÃO: Se está em modo avaliação, BLOQUEIA qualquer outra lógica
-      // Avaliação Clínica Inicial roda SEM INTERRUPÇÃO até o fim
-      if (modoAvaliacao) {
-        console.log('🩺 MODO AVALIAÇÃO ATIVO - Fluxo protegido e isolado')
-        console.log('📝 Resposta do usuário:', userMessage)
-        console.log('📊 Etapa:', etapaAtual + 1, '/ 28 blocos IMRE')
-
-        // 🔍 VERIFICAR SE É COMANDO DE SAÍDA
-        const comandosSaida = [
-          'cancelar',
-          'sair',
-          'parar',
-          'desistir',
-          'abortar',
-          'fechar avaliação',
-        ]
-        if (comandosSaida.some(cmd => mensagemLower.includes(cmd))) {
-          console.log('🛑 Usuário cancelou a avaliação')
-          setModoAvaliacao(false)
-          setEtapaAtual(0)
-
-          const msgCancelamento: Message = {
-            id: crypto.randomUUID(),
-            message:
-              '❌ Avaliação cancelada. Você pode retomar quando quiser dizendo "iniciar avaliação clínica inicial".',
-            sender: 'noa',
-            timestamp: new Date(),
-          }
-          setMessages(prev => [...prev, msgCancelamento])
-          await playNoaAudioWithText('Avaliação cancelada. Pode retomar quando quiser.')
-          setIsTyping(false)
-          return
-        }
-
-        try {
-          // Buscar bloco IMRE atual do banco
-          let blocoAtual = await noaSystemService.getImreBlock(etapaAtual + 1)
-          if (!blocoAtual) {
-            console.error('❌ Bloco IMRE não encontrado para etapa:', etapaAtual)
-            // Usar etapas locais como fallback
-            const etapaLocal = ETAPAS_AVALIACAO[etapaAtual]
-            if (etapaLocal) {
-              blocoAtual = {
-                id: etapaAtual + 1,
-                block_order: etapaAtual + 1,
-                block_name: etapaLocal.title,
-                block_description: etapaLocal.title,
-                block_prompt: etapaLocal.pergunta,
-                block_type: 'pergunta',
-                is_active: true,
-              }
-            } else {
-              // Se não há etapa local, usar pergunta genérica
-              blocoAtual = {
-                id: etapaAtual + 1,
-                block_order: etapaAtual + 1,
-                block_name: 'Pergunta Personalizada',
-                block_description: 'Por favor, me conte mais sobre sua situação de saúde atual.',
-                block_prompt: 'Por favor, me conte mais sobre sua situação de saúde atual.',
-                block_type: 'pergunta',
-                is_active: true,
-              }
-            }
-          }
-
-          // 🧠 PROCESSAR RESPOSTA COM SERVIÇO INTELIGENTE
-          const contextoAtualizado = await avaliacaoClinicaService.processarResposta(
-            sessionId,
-            userMessage,
-            blocoAtual
-          )
-
-          console.log('✅ Contexto atualizado:', contextoAtualizado.variaveisCapturadas)
-
-          // Verifica se é a última etapa (28 blocos IMRE do banco, não ETAPAS_AVALIACAO)
-          const totalBlocosImre = 28
-          if (etapaAtual >= totalBlocosImre - 1) {
-            console.log('🎉 Avaliação concluída! Gerando relatório...')
-
-            // 📊 GERAR RELATÓRIO FINAL
-            const relatorio = await avaliacaoClinicaService.gerarRelatorio(sessionId)
-
-            // 🧠 SALVAR PARA APRENDIZADO CONTÍNUO
-            await avaliacaoClinicaService.salvarParaAprendizado(sessionId)
-
-            // 🪙 GERAR NFT HASH
-            const { data: nftData } = await supabase.rpc('gerar_nft_hash', {
-              session_id_param: sessionId,
-            })
-
-            console.log('✅ Relatório gerado:', relatorio)
-            console.log('🪙 NFT Hash:', nftData)
-
-            setModoAvaliacao(false)
-
-            const mensagemConclusao = `**🎉 AVALIAÇÃO CLÍNICA CONCLUÍDA!**\n\n✅ Relatório gerado com sucesso!\n🪙 NFT: ${nftData?.substring(0, 16)}...\n📊 Completude: ${relatorio.completude}%\n⏱️ Duração: ${relatorio.duracaoMinutos} minutos\n\n**Seu relatório está disponível no dashboard!**\n\nRecomendo marcar consulta com Dr. Ricardo Valença para aprofundar a avaliação.\n\n*Método IMRE - Arte da Entrevista Clínica*`
-
-            const noaMessage: Message = {
-              id: crypto.randomUUID(),
-              message: mensagemConclusao,
-              sender: 'noa',
-              timestamp: new Date(),
-              conversation_type: 'clinical_evaluation',
-              session_id: sessionId,
-            }
-            setMessages(prev => [...prev, noaMessage])
-
-            // 🎤 ÁUDIO E VÍDEO para conclusão
-            await playNoaAudioWithText(
-              `Avaliação concluída, ${contextoAtualizado.variaveisCapturadas.nome || 'paciente'}! Seu relatório foi gerado e está disponível no dashboard. Recomendo consulta com Dr. Ricardo Valença.`
-            )
-
-            setIsTyping(false)
-            return
-          }
-
-          // Avança para a próxima etapa
-          const proximaEtapa = etapaAtual + 1
-          setEtapaAtual(proximaEtapa)
-
-          // Busca próximo bloco IMRE do banco
-          const proximoBlocoImre = await noaSystemService.getImreBlock(proximaEtapa + 1)
-
-          const proximaEtapaData = ETAPAS_AVALIACAO[proximaEtapa]
-          const perguntaTexto = proximoBlocoImre?.block_prompt || proximaEtapaData.pergunta
-
-          const noaMessage: Message = {
-            id: crypto.randomUUID(),
-            message: perguntaTexto,
-            sender: 'noa',
-            timestamp: new Date(),
-            conversation_type: 'clinical_evaluation',
-            session_id: sessionId,
-          }
-          setMessages(prev => [...prev, noaMessage])
-
-          // 🎤 ATIVA ÁUDIO E VÍDEO DA NÔA (estava faltando!)
-          console.log('🎤 Ativando áudio e vídeo para pergunta:', perguntaTexto.substring(0, 50))
-          await playNoaAudioWithText(perguntaTexto)
-
-          // 💾 SALVA PARA APRENDIZADO CONTÍNUO
-          const etapaData = ETAPAS_AVALIACAO[proximaEtapa]
-          await noaSystemService.saveAILearning(
-            userMessage,
-            perguntaTexto,
-            'clinical_evaluation',
-            0.9,
-            [etapaData?.id || 'imre_step', 'imre', 'avaliacao_clinica']
-          )
-
-          // 📊 Registra interação no fluxo
-          await noaSystemService.registerConversationFlow(
-            sessionId,
-            'imre_block_response',
-            {
-              block_order: proximaEtapa,
-              block_name: proximaEtapaData?.title,
-              user_response: userMessage,
-              timestamp: new Date().toISOString(),
-            },
-            proximaEtapa
-          )
-
-          setIsTyping(false)
-          return
-        } catch (error) {
-          console.error('Erro no fluxo de avaliação:', error)
-          // Continua para o fluxo normal se houver erro
-        }
-      }
-
       // Detecta se o usuário está se apresentando (salva nome, mas usa ChatGPT para resposta)
       if (
         !userMemory.name &&
@@ -1541,7 +1002,11 @@ FECHAMENTO CONSENSUAL:
 - Formule hipóteses sindrômicas se concordar
 - Faça recomendação final específica
 
-CONTEXTO ATUAL: ${modoAvaliacao ? 'Usuário está em avaliação clínica triaxial' : 'Conversa geral'}`
+CONTEXTO ATUAL: ${
+        conversationType === 'clinical_evaluation'
+          ? 'Usuário está em avaliação clínica triaxial'
+          : 'Conversa geral'
+      }`
 
       const conversationHistory: ChatMessage[] = [
         { role: 'system', content: systemContext },
@@ -1602,305 +1067,6 @@ CONTEXTO ATUAL: ${modoAvaliacao ? 'Usuário está em avaliação clínica triaxi
       console.log('🏁 FINALIZANDO getNoaResponse - setIsTyping(false)')
       setIsTyping(false)
     }
-  }
-
-  // Processa resposta da avaliação clínica
-  const processarRespostaAvaliacao = async (resposta: string) => {
-    const etapa = ETAPAS_AVALIACAO[etapaAtual]
-
-    // Verifica se é uma resposta "não" ou "nenhuma" para pular "O que mais?"
-    const respostaNegativa =
-      resposta.toLowerCase().includes('não') ||
-      resposta.toLowerCase().includes('nenhuma') ||
-      resposta.toLowerCase().includes('nada') ||
-      resposta.toLowerCase().includes('nunca')
-
-    // Salva a resposta na etapa atual
-    if (etapa.id === 'abertura') {
-      setDadosAvaliacao(prev => ({ ...prev, apresentacao: resposta }))
-    } else if (etapa.id === 'cannabis_medicinal') {
-      setDadosAvaliacao(prev => ({ ...prev, cannabis_medicinal: resposta }))
-    } else if (etapa.id === 'lista_indiciaria') {
-      setDadosAvaliacao(prev => ({
-        ...prev,
-        lista_indiciaria: [...prev.lista_indiciaria, resposta],
-      }))
-
-      // Pergunta "O que mais?" removida - usa ChatGPT
-    } else if (etapa.id === 'queixa_principal') {
-      setDadosAvaliacao(prev => ({ ...prev, queixa_principal: resposta }))
-    } else if (etapa.id === 'desenvolvimento_localizacao') {
-      setDadosAvaliacao(prev => ({
-        ...prev,
-        desenvolvimento_indiciario: {
-          ...prev.desenvolvimento_indiciario,
-          localizacao: resposta,
-        },
-      }))
-    } else if (etapa.id === 'desenvolvimento_inicio') {
-      setDadosAvaliacao(prev => ({
-        ...prev,
-        desenvolvimento_indiciario: {
-          ...prev.desenvolvimento_indiciario,
-          inicio: resposta,
-        },
-      }))
-    } else if (etapa.id === 'desenvolvimento_qualidade') {
-      setDadosAvaliacao(prev => ({
-        ...prev,
-        desenvolvimento_indiciario: {
-          ...prev.desenvolvimento_indiciario,
-          qualidade: resposta,
-        },
-      }))
-    } else if (etapa.id === 'desenvolvimento_sintomas') {
-      setDadosAvaliacao(prev => ({
-        ...prev,
-        desenvolvimento_indiciario: {
-          ...prev.desenvolvimento_indiciario,
-          sintomas_associados: resposta,
-        },
-      }))
-    } else if (etapa.id === 'desenvolvimento_melhora') {
-      setDadosAvaliacao(prev => ({
-        ...prev,
-        desenvolvimento_indiciario: {
-          ...prev.desenvolvimento_indiciario,
-          fatores_melhora: resposta,
-        },
-      }))
-    } else if (etapa.id === 'desenvolvimento_piora') {
-      setDadosAvaliacao(prev => ({
-        ...prev,
-        desenvolvimento_indiciario: {
-          ...prev.desenvolvimento_indiciario,
-          fatores_piora: resposta,
-        },
-      }))
-    } else if (etapa.id === 'historia_patologica') {
-      setDadosAvaliacao(prev => ({
-        ...prev,
-        historia_patologica: [...prev.historia_patologica, resposta],
-      }))
-
-      // Pergunta "O que mais?" removida - usa ChatGPT
-    } else if (etapa.id === 'historia_familiar_mae') {
-      setDadosAvaliacao(prev => ({
-        ...prev,
-        historia_familiar: {
-          ...prev.historia_familiar,
-          mae: [...prev.historia_familiar.mae, resposta],
-        },
-      }))
-
-      // Pergunta "O que mais?" removida - usa ChatGPT
-    } else if (etapa.id === 'historia_familiar_pai') {
-      setDadosAvaliacao(prev => ({
-        ...prev,
-        historia_familiar: {
-          ...prev.historia_familiar,
-          pai: [...prev.historia_familiar.pai, resposta],
-        },
-      }))
-
-      // Pergunta "O que mais?" removida - usa ChatGPT
-    } else if (etapa.id === 'habitos_vida') {
-      setDadosAvaliacao(prev => ({
-        ...prev,
-        habitos_vida: [...prev.habitos_vida, resposta],
-      }))
-
-      // Pergunta "O que mais?" removida - usa ChatGPT
-    } else if (etapa.id === 'alergias') {
-      setDadosAvaliacao(prev => ({ ...prev, alergias: resposta }))
-    } else if (etapa.id === 'medicacoes_continuas') {
-      setDadosAvaliacao(prev => ({
-        ...prev,
-        medicacoes: {
-          ...prev.medicacoes,
-          continuas: resposta,
-        },
-      }))
-    } else if (etapa.id === 'medicacoes_eventuais') {
-      setDadosAvaliacao(prev => ({
-        ...prev,
-        medicacoes: {
-          ...prev.medicacoes,
-          eventuais: resposta,
-        },
-      }))
-    } else if (etapa.id === 'fechamento') {
-      // Gera relatório narrativo
-      const relatorio = gerarRelatorioNarrativo()
-      setDadosAvaliacao(prev => ({ ...prev, relatorio_narrativo: relatorio }))
-    }
-
-    // Se estava perguntando "O que mais?" e recebeu resposta negativa, avança
-    if (perguntandoMais && respostaNegativa) {
-      setPerguntandoMais(false)
-    }
-
-    // Salva progresso no Supabase
-    await saveEvaluationToSupabase(false)
-
-    // Avança para próxima etapa
-    if (etapaAtual < ETAPAS_AVALIACAO.length - 1) {
-      setEtapaAtual(prev => prev + 1)
-      const proximaEtapa = ETAPAS_AVALIACAO[etapaAtual + 1]
-
-      // Próxima pergunta removida - usa ChatGPT
-    } else {
-      // Finaliza avaliação
-      await finalizarAvaliacao()
-    }
-  }
-
-  // Gera relatório narrativo
-  const gerarRelatorioNarrativo = () => {
-    const dados = dadosAvaliacao
-    return `
-**RELATÓRIO DE AVALIAÇÃO CLÍNICA INICIAL**
-*Método Triaxial - Dr. Ricardo Valença*
-
-**APRESENTAÇÃO:** ${dados.apresentacao || 'Não informado'}
-
-**CANNABIS MEDICINAL:** ${dados.cannabis_medicinal || 'Não informado'}
-
-**QUEIXAS PRINCIPAIS:** ${dados.lista_indiciaria.join(', ')}
-
-**QUEIXA PRINCIPAL:** ${dados.queixa_principal || 'Não especificada'}
-
-**DESENVOLVIMENTO INDICIÁRIO:**
-- Localização: ${dados.desenvolvimento_indiciario?.localizacao || 'Não informado'}
-- Início: ${dados.desenvolvimento_indiciario?.inicio || 'Não informado'}
-- Qualidade: ${dados.desenvolvimento_indiciario?.qualidade || 'Não informado'}
-- Sintomas associados: ${dados.desenvolvimento_indiciario?.sintomas_associados || 'Não informado'}
-- Fatores de melhora: ${dados.desenvolvimento_indiciario?.fatores_melhora || 'Não informado'}
-- Fatores de piora: ${dados.desenvolvimento_indiciario?.fatores_piora || 'Não informado'}
-
-**HISTÓRIA PATOLÓGICA:** ${dados.historia_patologica.join(', ') || 'Nenhuma'}
-
-**HISTÓRIA FAMILIAR:**
-- Mãe: ${dados.historia_familiar.mae.join(', ') || 'Nenhuma'}
-- Pai: ${dados.historia_familiar.pai.join(', ') || 'Nenhuma'}
-
-**HÁBITOS DE VIDA:** ${dados.habitos_vida.join(', ') || 'Não informado'}
-
-**ALERGIAS:** ${dados.alergias || 'Nenhuma'}
-
-**MEDICAÇÕES:**
-- Contínuas: ${dados.medicacoes?.continuas || 'Nenhuma'}
-- Eventuais: ${dados.medicacoes?.eventuais || 'Nenhuma'}
-
-*Relatório gerado em: ${new Date().toLocaleString('pt-BR')}*
-    `.trim()
-  }
-
-  // Finaliza avaliação
-  const finalizarAvaliacao = async () => {
-    setModoAvaliacao(false)
-
-    const relatorio = gerarRelatorioNarrativo()
-    setDadosAvaliacao(prev => ({ ...prev, relatorio_narrativo: relatorio }))
-
-    // Fechamento consensual detalhado
-    const fechamentoConsensual: Message = {
-      id: crypto.randomUUID(),
-      message: `**FECHAMENTO CONSENSUAL**\n\nVamos revisar sua história para garantir que não perdemos nenhum detalhe importante.\n\n**RESUMO DA SUA HISTÓRIA:**\n\n${relatorio}\n\n**O que posso melhorar no meu entendimento?**`,
-      sender: 'noa',
-      timestamp: new Date(),
-      options: [
-        'Está tudo correto',
-        'Gostaria de adicionar algo',
-        'Há algo que não entendi bem',
-        'Posso melhorar alguma resposta',
-      ],
-    }
-
-    setMessages(prev => [...prev, fechamentoConsensual])
-    playNoaAudioWithText(fechamentoConsensual.message)
-
-    // Aguarda resposta do fechamento consensual
-    setTimeout(() => {
-      const concordancia: Message = {
-        id: crypto.randomUUID(),
-        message: `**Você concorda com o meu entendimento?**\n\nHá mais alguma coisa que gostaria de adicionar sobre a história que construímos?`,
-        sender: 'noa',
-        timestamp: new Date(),
-        options: ['Sim, concordo', 'Quero adicionar algo', 'Há algo a corrigir', 'Está perfeito'],
-      }
-
-      setMessages(prev => [...prev, concordancia])
-      playNoaAudioWithText(concordancia.message)
-
-      // Finalização com recomendação específica
-      setTimeout(async () => {
-        // Pede consentimento antes de enviar para dashboard
-        const consentimentoMessage: Message = {
-          id: crypto.randomUUID(),
-          message:
-            '🔐 **CONSENTIMENTO PARA DASHBOARD**\n\nVocê concorda em enviar este relatório para o seu dashboard pessoal?\n\nO relatório ficará disponível para você e poderá ser compartilhado com o Dr. Ricardo Valença.\n\n**Responda:**\n• SIM - Enviar para dashboard\n• NÃO - Apenas visualizar',
-          sender: 'noa',
-          timestamp: new Date(),
-          conversation_type: 'clinical_evaluation',
-          session_id: sessionId,
-        }
-        setMessages(prev => [...prev, consentimentoMessage])
-        await playNoaAudioWithText(
-          'Você concorda em enviar este relatório para o seu dashboard pessoal? Responda SIM para enviar ou NÃO para apenas visualizar.'
-        )
-
-        // TODO: Aguardar resposta do usuário antes de finalizar
-        // Por enquanto, vamos assumir consentimento após timeout
-        setTimeout(async () => {
-          // Cria o relatório NFT no sistema
-          const nftReport = await noaSystemService.completeClinicalEvaluation(sessionId, {
-            ...dadosAvaliacao,
-            relatorio_narrativo: relatorio,
-            blocks_completed: ETAPAS_AVALIACAO.length,
-            user_type: userType,
-            timestamp: new Date().toISOString(),
-            consent_given: true, // Consentimento registrado
-          })
-
-          const finalizacao: Message = {
-            id: crypto.randomUUID(),
-            message: `**🎉 AVALIAÇÃO CLÍNICA CONCLUÍDA!**\n\n✅ Seu relatório foi gerado e certificado com NFT!\n🪙 **NFT Hash:** ${nftReport?.nft_hash || 'Gerando...'}\n📊 **Dashboard:** Relatório enviado com sucesso!\n\n**RECOMENDAÇÃO FINAL:**\n\nEssa é uma avaliação inicial de acordo com o método desenvolvido pelo Dr. Ricardo Valença com o objetivo de aperfeiçoar o seu atendimento. Ao final, recomendo a marcação de uma consulta com o Dr. Ricardo Valença pelo site.\n\n💡 **Próximos passos:**\n- Acesse seu dashboard para ver o relatório completo\n- Compartilhe com o Dr. Ricardo Valença\n- Agende sua consulta\n- Prepare suas dúvidas\n\n*Método Arte da Entrevista Clínica - Dr. Ricardo Valença*`,
-            sender: 'noa',
-            timestamp: new Date(),
-            conversation_type: 'clinical_evaluation',
-            user_type: userType || 'paciente',
-            session_id: sessionId,
-          }
-
-          setMessages(prev => [...prev, finalizacao])
-          playNoaAudioWithText(
-            'Avaliação clínica concluída! Seu relatório foi gerado, certificado com NFT e enviado para o seu dashboard. Você pode acessá-lo a qualquer momento e compartilhar com o Dr. Ricardo Valença.'
-          )
-
-          // Salva avaliação concluída no Supabase
-          saveEvaluationToSupabase(true).then(() => {
-            console.log('✅ Avaliação salva no Supabase:', evaluationId)
-          })
-
-          // Registra a conclusão no fluxo e envia para dashboard
-          await noaSystemService.registerConversationFlow(
-            sessionId,
-            'evaluation_completed',
-            {
-              nft_report_id: nftReport?.id,
-              nft_hash: nftReport?.nft_hash,
-              evaluation_data: dadosAvaliacao,
-              sent_to_dashboard: true,
-              consent_given: true,
-            },
-            999
-          )
-
-          console.log('📊 Relatório enviado para dashboard do paciente!')
-        }, 3000)
-      }, 3000)
-    }, 3000)
   }
 
   const handleSendMessage = (messageText?: string) => {
@@ -2109,49 +1275,9 @@ CONTEXTO ATUAL: ${modoAvaliacao ? 'Usuário está em avaliação clínica triaxi
         }
       case 'avaliacao':
         return {
-          label: '🩺 Iniciar Avaliação IMRE (28 Blocos)',
+          label: '🩺 Abrir Avaliação Clínica Real',
           action: async () => {
-            console.log('🩺 Iniciando Avaliação Clínica IMRE via card')
-
-            // Inicia o modo avaliação
-            setModoAvaliacao(true)
-            setEtapaAtual(0)
-            setConversationType('clinical_evaluation')
-
-            // Registra início no sistema
-            await noaSystemService.registerConversationFlow(
-              sessionId,
-              'evaluation_started',
-              { trigger: 'card_click', timestamp: new Date().toISOString() },
-              0
-            )
-
-            // Busca primeiro bloco IMRE do banco
-            const primeiroBloco = await noaSystemService.getImreBlock(1)
-
-            // Mostra mensagem de início no chat principal
-            const inicioMessage: Message = {
-              id: crypto.randomUUID(),
-              message:
-                '🩺 **AVALIAÇÃO CLÍNICA INICIADA**\n\nVamos começar a Arte da Entrevista Clínica. Todas as respostas serão salvas e ao final você receberá um relatório completo.\n\n' +
-                (primeiroBloco?.block_prompt || ETAPAS_AVALIACAO[0].pergunta),
-              sender: 'noa',
-              timestamp: new Date(),
-              conversation_type: 'clinical_evaluation',
-              session_id: sessionId,
-            }
-            setMessages(prev => [...prev, inicioMessage])
-
-            // Nôa fala
-            await playNoaAudioWithText(primeiroBloco?.block_prompt || ETAPAS_AVALIACAO[0].pergunta)
-
-            // Registra conversa
-            await noaSystemService.registerNoaConversation(
-              'Iniciar avaliação clínica',
-              inicioMessage.message,
-              'clinical_evaluation',
-              userType || 'paciente'
-            )
+            await startRealClinicalAssessment('card')
           },
           color: 'bg-green-500 hover:bg-green-600',
         }
@@ -2460,28 +1586,7 @@ CONTEXTO ATUAL: ${modoAvaliacao ? 'Usuário está em avaliação clínica triaxi
                   </button>
 
                   <button
-                    onClick={() => {
-                      console.log('🩺 Iniciando Avaliação Clínica Inicial - Arte da Entrevista')
-
-                      // Ativa o modo de avaliação
-                      setModoAvaliacao(true)
-                      setEtapaAtual(0)
-                      setConversationType('clinical_evaluation')
-
-                      // Expande o card da Avaliação Clínica
-                      expandCard({
-                        id: 'avaliacao-clinica-inicial',
-                        title: 'Avaliação Clínica Inicial',
-                        description: 'Arte da Entrevista Clínica - Método IMRE (28 Blocos)',
-                        content:
-                          'Vou guiá-lo através de uma avaliação clínica completa baseada no método Arte da Entrevista Clínica desenvolvido pelo Dr. Ricardo Valença. São 28 perguntas estruturadas que nos ajudarão a entender melhor sua situação de saúde.',
-                        type: 'avaliacao',
-                      })
-                      // E também inicia no chat
-                      setTimeout(() => {
-                        handleSendMessage('iniciar avaliação clínica inicial')
-                      }, 500)
-                    }}
+                    onClick={() => startRealClinicalAssessment('cta')}
                     className="px-3 py-1.5 bg-green-100 hover:bg-green-200 border border-green-300 rounded-lg text-xs text-green-800 transition-colors font-semibold"
                     title="Iniciar Avaliação Clínica Inicial - Arte da Entrevista Clínica"
                   >
@@ -2729,7 +1834,7 @@ CONTEXTO ATUAL: ${modoAvaliacao ? 'Usuário está em avaliação clínica triaxi
               exit={{ x: -100, opacity: 0 }}
               transition={{ duration: 0.5, ease: 'easeInOut' }}
               className={`fixed left-64 z-50 w-96 max-h-[70vh] overflow-y-auto ${
-                expandedCard.type === 'avaliacao' && modoAvaliacao
+                expandedCard.type === 'avaliacao' && conversationType === 'clinical_evaluation'
                   ? 'ring-2 ring-green-400/50 shadow-2xl shadow-green-400/20'
                   : ''
               }`}
@@ -2760,142 +1865,45 @@ CONTEXTO ATUAL: ${modoAvaliacao ? 'Usuário está em avaliação clínica triaxi
                     <p className="text-white text-sm leading-relaxed">{expandedCard.content}</p>
                   </div>
 
-                  {/* 🩺 CARD DE AVALIAÇÃO CLÍNICA MELHORADO */}
-                  {expandedCard.type === 'avaliacao' && modoAvaliacao && (
+                  {/* 🩺 CARD DE AVALIAÇÃO CLÍNICA */}
+                  {expandedCard.type === 'avaliacao' && (
                     <div className="space-y-4">
-                      {/* Header da Avaliação */}
                       <div className="bg-gradient-to-r from-green-500/20 to-blue-500/20 rounded-lg p-4 border border-green-400/30">
-                        <div className="flex items-center justify-between mb-3">
-                          <h3 className="text-white font-bold text-lg">
-                            🩺 Avaliação Clínica IMRE
-                          </h3>
-                          <div className="text-right">
-                            <p className="text-green-400 font-bold text-sm">
-                              {etapaAtual + 1} / 28
-                            </p>
-                            <p className="text-gray-300 text-xs">
-                              {Math.round(((etapaAtual + 1) / 28) * 100)}% concluído
-                            </p>
-                          </div>
-                        </div>
-
-                        {/* Barra de progresso melhorada */}
-                        <div className="w-full bg-gray-700 rounded-full h-3 mb-3">
-                          <div
-                            className="bg-gradient-to-r from-green-400 via-blue-400 to-purple-500 h-3 rounded-full transition-all duration-700 ease-out"
-                            style={{ width: `${((etapaAtual + 1) / 28) * 100}%` }}
-                          />
-                        </div>
-
-                        {/* Etapa atual destacada */}
-                        <div className="bg-white/10 rounded-lg p-3">
-                          <p className="text-gray-300 text-xs mb-1">🎯 Etapa atual:</p>
-                          <p className="text-white font-semibold text-sm">
-                            {ETAPAS_AVALIACAO[etapaAtual]?.title || 'Aguardando início'}
-                          </p>
-                        </div>
+                        <h3 className="text-white font-bold text-lg mb-1">
+                          🩺 Avaliação Clínica Inicial
+                        </h3>
+                        <p className="text-gray-200 text-sm leading-relaxed">
+                          O protocolo IMRE completo acontece no módulo dedicado da plataforma.
+                          Abrirei a rota segura para que você responda às 28 etapas oficiais
+                          desenvolvidas pelo Dr. Ricardo Valença.
+                        </p>
                       </div>
 
-                      {/* Pergunta Atual - DESTACADA */}
-                      {etapaAtual > 0 && (
-                        <div className="bg-blue-500/20 rounded-lg p-4 border border-blue-400/30">
-                          <div className="flex items-start space-x-3">
-                            <div className="bg-blue-500 rounded-full p-2 flex-shrink-0">
-                              <span className="text-white text-sm font-bold">{etapaAtual}</span>
-                            </div>
-                            <div className="flex-1">
-                              <p className="text-blue-300 text-xs font-semibold mb-2">
-                                Pergunta {etapaAtual} de 28
-                              </p>
-                              <p className="text-white text-sm leading-relaxed">
-                                {(() => {
-                                  const pergunta =
-                                    ETAPAS_AVALIACAO[etapaAtual]?.pergunta ||
-                                    'Carregando pergunta...'
-                                  // Substitui [queixa] pela queixa principal capturada
-                                  return pergunta.replace(
-                                    /\[queixa\]/g,
-                                    dadosAvaliacao.queixa_principal || 'sua queixa'
-                                  )
-                                })()}
-                              </p>
-                            </div>
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Área de Resposta */}
-                      {etapaAtual > 0 && (
-                        <div className="bg-white/5 rounded-lg p-4 border border-gray-600/30">
-                          <label className="block text-gray-300 text-xs font-semibold mb-2">
-                            💬 Sua resposta:
-                          </label>
-                          <textarea
-                            className="w-full bg-gray-800/50 border border-gray-600 rounded-lg p-3 text-white text-sm placeholder-gray-400 focus:border-green-400 focus:ring-1 focus:ring-green-400 transition-colors resize-none"
-                            rows={3}
-                            placeholder="Digite sua resposta aqui..."
-                            value={inputMessage}
-                            onChange={e => setInputMessage(e.target.value)}
-                            onKeyDown={e => {
-                              if (e.key === 'Enter' && !e.shiftKey) {
-                                e.preventDefault()
-                                handleSendMessage(inputMessage)
-                              }
-                            }}
-                          />
-                          <div className="flex justify-between items-center mt-2">
-                            <p className="text-gray-400 text-xs">Pressione Enter para enviar</p>
-                            <button
-                              onClick={() => handleSendMessage(inputMessage)}
-                              className="px-2 py-1 bg-green-500 hover:bg-green-600 text-white rounded text-xs transition-colors"
-                              disabled={!inputMessage.trim()}
-                            >
-                              Enviar
-                            </button>
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Botões de Navegação */}
-                      <div className="flex justify-between items-center gap-2">
-                        <button
-                          onClick={() => {
-                            if (etapaAtual > 1) {
-                              setEtapaAtual(etapaAtual - 1)
-                            }
-                          }}
-                          className="px-2 py-1 bg-gray-600 hover:bg-gray-700 text-white rounded text-xs transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                          disabled={etapaAtual <= 1}
-                        >
-                          ← Anterior
-                        </button>
-
-                        <button
-                          onClick={() => {
-                            setModoAvaliacao(false)
-                            setEtapaAtual(0)
-                            setExpandedCard(null)
-                          }}
-                          className="px-2 py-1 bg-red-500 hover:bg-red-600 text-white rounded text-xs transition-colors"
-                        >
-                          ❌ Cancelar
-                        </button>
-
-                        <button
-                          onClick={() => {
-                            if (etapaAtual < 27) {
-                              setEtapaAtual(etapaAtual + 1)
-                            }
-                          }}
-                          className="px-2 py-1 bg-blue-500 hover:bg-blue-600 text-white rounded text-xs transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                          disabled={etapaAtual >= 27}
-                        >
-                          Próximo →
-                        </button>
+                      <div className="bg-white/10 rounded-lg p-3 text-sm text-slate-200">
+                        <p>
+                          📍 Rota:{' '}
+                          <code className="text-green-300 font-mono">/app/avaliacao-inicial</code>
+                        </p>
+                        <p>
+                          🔐 Persistência: respostas salvas no Supabase com geração de relatório
+                          clínico estruturado.
+                        </p>
                       </div>
+
+                      <button
+                        onClick={() => startRealClinicalAssessment('card')}
+                        className="w-full bg-green-500/80 hover:bg-green-500 text-white text-sm font-semibold py-2 rounded-lg transition-colors"
+                      >
+                        Abrir módulo clínico seguro
+                      </button>
+
+                      <p className="text-xs text-slate-300">
+                        Ao clicar, você será direcionado para o fluxo real de avaliação, com prompt
+                        especializado para o perfil do Dr. Valença e armazenamento estruturado dos
+                        dados clínicos.
+                      </p>
                     </div>
                   )}
-
                   {/* Área de interação */}
                   <div className="space-y-3">
                     <p className="text-gray-300 text-xs">💬 Faça perguntas no chat</p>
