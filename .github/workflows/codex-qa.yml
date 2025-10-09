@@ -20,7 +20,7 @@ jobs:
         run: npm audit --audit-level=high || true
 
       - name: Testar performance
-        run: npm run test:performance || echo "Falha de performance detectada"
+        run: npm run test:performance || true
 
       - name: Emitir relatório final
         run: cat codex-report.json || echo "Sem relatório gerado"
