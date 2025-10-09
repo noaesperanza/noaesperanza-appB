@@ -16,6 +16,8 @@
     "test:cypress:open": "cypress open",
     "test:cypress:component": "cypress run --component",
     "test:cypress:e2e": "cypress run --e2e",
+    "test:e2e": "cypress run --e2e",
+    "test:performance": "cypress run --spec 'cypress/e2e/performance.cy.ts'",
     "sonar": "sonar-scanner",
     "quality": "npm run lint && npm run type-check && npm run test:coverage && npm run test:cypress && npm run sonar",
     "quality:quick": "npm run lint && npm run type-check && npm run test",

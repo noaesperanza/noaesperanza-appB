@@ -8,19 +8,29 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repo
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
 
       - name: Instalar dependências
-        run: npm ci
+        run: CYPRESS_INSTALL_BINARY=0 npm ci
 
       - name: Verificar qualidade (eslint + prettier)
         run: npm run lint && npm run format:check
 
-      - name: Testar segurança (snyk / npm audit)
+      - name: Testar TypeScript
+        run: npm run type-check
+
+      - name: Testar segurança (npm audit)
         run: npm audit --audit-level=high || true
+        continue-on-error: true
 
-      - name: Testar performance
-        run: npm run test:performance || echo "Falha de performance detectada"
+      - name: Executar testes unitários
+        run: npm run test
 
-      - name: Emitir relatório final
-        run: cat codex-report.json || echo "Sem relatório gerado"
+      - name: Build da aplicação
+        run: npm run build
