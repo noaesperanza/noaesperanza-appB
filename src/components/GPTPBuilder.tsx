@@ -1,7 +1,10 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import CollaborativeDevelopmentPanel from './CollaborativeDevelopmentPanel'
-import { personalizedProfilesService, PersonalizedProfile } from '../services/personalizedProfilesService'
+import {
+  personalizedProfilesService,
+  PersonalizedProfile,
+} from '../services/personalizedProfilesService'
 import { gptBuilderService, DocumentMaster, NoaConfig } from '../services/gptBuilderService'
 import { openAIService } from '../services/openaiService'
 import { supabase } from '../integrations/supabase/client'
@@ -29,6 +32,7 @@ import {
 } from '../services/realTimeConsultationService'
 import { conversationManager, NamedConversation } from '../services/conversationManagerService'
 import { ConversationHistory } from './ConversationHistory'
+import { extractTextFromDocx } from '../utils/docxParser'
 
 interface GPTPBuilderProps {
   /**
@@ -1344,15 +1348,13 @@ Sou a **Nôa Esperanza**, sua mentora especializada. Estou pronta para apoiar ${
         // Para DOCX, vamos extrair o texto real
         try {
           const arrayBuffer = await file.arrayBuffer()
-          const mammoth = await import('mammoth')
-          const result = await mammoth.extractRawText({ arrayBuffer })
+          const { text: extractedText, warnings } = await extractTextFromDocx(arrayBuffer)
           content =
-            result.value ||
+            extractedText ||
             `[CONTEÚDO DO DOCX: ${file.name}]\n\nDocumento Word processado. Conteúdo extraído para análise.`
 
-          // Adicionar avisos se houver
-          if (result.messages && result.messages.length > 0) {
-            content += `\n\n⚠️ Avisos durante o processamento:\n${result.messages.map(msg => `- ${msg.message}`).join('\n')}`
+          if (warnings.length > 0) {
+            content += `\n\n⚠️ Avisos durante o processamento:\n${warnings.map(message => `- ${message}`).join('\n')}`
           }
         } catch (docxError) {
           console.log('Erro ao processar DOCX, usando fallback:', docxError)
@@ -1644,32 +1646,35 @@ Detalhes do erro: ${error instanceof Error ? error.message : String(error)}
 
       // ⚡ RECONHECIMENTO DE PERFIS PERSONALIZADOS
       const detectedProfile = personalizedProfilesService.detectProfile(messageToProcess)
-      
+
       if (detectedProfile) {
         console.log('👤 Perfil detectado:', detectedProfile.name)
-        
+
         // Salvar perfil ativo
         personalizedProfilesService.saveActiveProfile(detectedProfile)
-        
+
         // Salvar também no formato antigo para compatibilidade
-        localStorage.setItem('noa_recognized_user', JSON.stringify({
-          name: detectedProfile.name,
-          role: detectedProfile.role,
-          profileId: detectedProfile.id,
-          accessLevel: 5,
-          recognizedAt: new Date().toISOString()
-        }))
-        
+        localStorage.setItem(
+          'noa_recognized_user',
+          JSON.stringify({
+            name: detectedProfile.name,
+            role: detectedProfile.role,
+            profileId: detectedProfile.id,
+            accessLevel: 5,
+            recognizedAt: new Date().toISOString(),
+          })
+        )
+
         const recognizedMessage: ChatMessage = {
           id: (Date.now() + 1).toString(),
           role: 'assistant',
           content: detectedProfile.greeting,
           timestamp: new Date(),
           action: 'user_recognized',
-          data: { 
+          data: {
             profileId: detectedProfile.id,
             profileName: detectedProfile.name,
-            recognizedAs: detectedProfile.name 
+            recognizedAs: detectedProfile.name,
           },
         }
 
