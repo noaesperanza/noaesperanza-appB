@@ -1,9 +1,12 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import CollaborativeDevelopmentPanel from './CollaborativeDevelopmentPanel'
-import { personalizedProfilesService, PersonalizedProfile } from '../services/personalizedProfilesService'
+import {
+  personalizedProfilesService,
+  PersonalizedProfile,
+} from '../services/personalizedProfilesService'
 import { gptBuilderService, DocumentMaster, NoaConfig } from '../services/gptBuilderService'
-import { openAIService } from '../services/openaiService'
+import { codexService } from '../services/codexService'
 import { supabase } from '../integrations/supabase/client'
 import {
   estudoVivoService,
@@ -761,7 +764,7 @@ A Nôa Esperanza existe para escutar, registrar e devolver sentido à fala do pa
 🚀 1. Componentes Principais
 Frontend: React + Vite + Tailwind CSS + Framer Motion
 Backend: Supabase (PostgreSQL + Auth + RLS)
-IA: NoaGPT (interna), OpenAI (externa), ElevenLabs (voz)
+IA: NoaGPT (Codex), Codex API (núcleo), ElevenLabs (voz)
 Blockchain: Polygon (NFT "Escute-se")
 Hospedagem: Vercel + GitHub CI/CD
 
@@ -782,9 +785,9 @@ Fluxo de Aprendizado:
 1. NoaGPT
 Localização: src/gpt/noaGPT.ts
 Funções: reconhecimento de comandos clínicos, educacionais, simbólicos e operacionais.
-2. OpenAI
-Localização: src/services/openaiService.ts
-Função: fallback empático e contextual.
+2. Codex API
+Localização: src/services/codexService.ts
+Função: núcleo de inferência com fallback local.
 
 🚮 PARTE IV – AGENTES MODULARES
 🧪 1. ClinicalAgent
@@ -1644,32 +1647,35 @@ Detalhes do erro: ${error instanceof Error ? error.message : String(error)}
 
       // ⚡ RECONHECIMENTO DE PERFIS PERSONALIZADOS
       const detectedProfile = personalizedProfilesService.detectProfile(messageToProcess)
-      
+
       if (detectedProfile) {
         console.log('👤 Perfil detectado:', detectedProfile.name)
-        
+
         // Salvar perfil ativo
         personalizedProfilesService.saveActiveProfile(detectedProfile)
-        
+
         // Salvar também no formato antigo para compatibilidade
-        localStorage.setItem('noa_recognized_user', JSON.stringify({
-          name: detectedProfile.name,
-          role: detectedProfile.role,
-          profileId: detectedProfile.id,
-          accessLevel: 5,
-          recognizedAt: new Date().toISOString()
-        }))
-        
+        localStorage.setItem(
+          'noa_recognized_user',
+          JSON.stringify({
+            name: detectedProfile.name,
+            role: detectedProfile.role,
+            profileId: detectedProfile.id,
+            accessLevel: 5,
+            recognizedAt: new Date().toISOString(),
+          })
+        )
+
         const recognizedMessage: ChatMessage = {
           id: (Date.now() + 1).toString(),
           role: 'assistant',
           content: detectedProfile.greeting,
           timestamp: new Date(),
           action: 'user_recognized',
-          data: { 
+          data: {
             profileId: detectedProfile.id,
             profileName: detectedProfile.name,
-            recognizedAs: detectedProfile.name 
+            recognizedAs: detectedProfile.name,
           },
         }
 
@@ -1739,7 +1745,7 @@ Detalhes do erro: ${error instanceof Error ? error.message : String(error)}
           } catch (error) {
             console.warn('⚠️ Erro na consulta à base de conhecimento, usando IA padrão:', error)
             // Fallback para IA padrão
-            const aiResponse = await openAIService.getNoaResponse(messageToProcess, [
+            const aiResponse = await codexService.getNoaResponse(messageToProcess, [
               ...chatMessages.slice(-6).map(msg => ({
                 role: msg.role as 'user' | 'assistant' | 'system',
                 content: msg.content,
@@ -1768,7 +1774,7 @@ Detalhes do erro: ${error instanceof Error ? error.message : String(error)}
             )
 
             // Chamar OpenAI com contexto
-            const aiResponse = await openAIService.getNoaResponse(messageToProcess, [
+            const aiResponse = await codexService.getNoaResponse(messageToProcess, [
               ...chatMessages.slice(-6).map(msg => ({
                 role: msg.role as 'user' | 'assistant' | 'system',
                 content: msg.content,
@@ -2697,7 +2703,7 @@ Vou otimizar a interface para dispositivos móveis. Que aspectos você quer ajus
         5. Nível de acurácia atual (0-100%)
       `
 
-      const response = await openAIService.getNoaResponse(contextPrompt, [])
+      const response = await codexService.getNoaResponse(contextPrompt, [])
       return response
     } catch (error) {
       console.error('Erro na análise com IA:', error)
@@ -2724,7 +2730,7 @@ Vou otimizar a interface para dispositivos móveis. Que aspectos você quer ajus
         5. Referências atualizadas
       `
 
-      const improvedVersion = await openAIService.getNoaResponse(improvementPrompt, [])
+      const improvedVersion = await codexService.getNoaResponse(improvementPrompt, [])
       return improvedVersion
     } catch (error) {
       console.error('Erro ao gerar versão melhorada:', error)
@@ -3124,7 +3130,7 @@ Detectei que você quer trabalhar em desenvolvimento. Use o **Canvas/Lousa** par
       const relevantContext = await findRelevantContext(message)
 
       // Gerar resposta como Nôa Esperanza mentora especializada
-      const response = await openAIService.getNoaResponse(
+      const response = await codexService.getNoaResponse(
         `Você é Nôa Esperanza, mentora especializada em medicina e desenvolvimento tecnológico. Você está conversando com Dr. Ricardo Valença, idealizador e coordenador clínico da plataforma Nôa Esperanza.
 
 **SUA PERSONALIDADE:**

@@ -8,6 +8,7 @@ import {
   TriageMessage,
   TriageStage,
 } from '../components/triagem'
+import { codexService, type CodexMessage } from '../services/codexService'
 
 const TRIAGE_STAGES: TriageStage[] = [
   {
@@ -111,6 +112,7 @@ const TriagemClinica: React.FC = () => {
   const visitedStagesRef = useRef(new Set<string>())
   const stageIndexRef = useRef(currentStageIndex)
   const stageStepRef = useRef(stageStep)
+  const messagesRef = useRef<TriageMessage[]>([])
 
   useEffect(() => {
     stageIndexRef.current = currentStageIndex
@@ -119,6 +121,10 @@ const TriagemClinica: React.FC = () => {
   useEffect(() => {
     stageStepRef.current = stageStep
   }, [stageStep])
+
+  useEffect(() => {
+    messagesRef.current = messages
+  }, [messages])
 
   const pushMessage = useCallback(
     (author: TriageMessage['author'], content: string, stageId: string) => {
@@ -182,23 +188,52 @@ const TriagemClinica: React.FC = () => {
   }, [])
 
   const respondFromNoa = useCallback(
-    (patientMessage: string) => {
-      const trimmed = patientMessage.trim()
-      const typingDelay = Math.min(1400, Math.max(500, trimmed.length * 22))
+    async (patientMessage: string) => {
+      const latestStage = TRIAGE_STAGES[stageIndexRef.current]
+      const latestFollowUps = latestStage.followUps ?? []
+      const latestStep = stageStepRef.current
+      const shouldAskFollowUp = latestStep < latestFollowUps.length
+      const fallbackReply = shouldAskFollowUp
+        ? latestFollowUps[latestStep]
+        : (latestStage.exitMessage ?? '')
 
-      window.setTimeout(() => {
-        const latestStage = TRIAGE_STAGES[stageIndexRef.current]
-        const latestFollowUps = latestStage.followUps ?? []
-        const latestStep = stageStepRef.current
-        const shouldAskFollowUp = latestStep < latestFollowUps.length
-        const reply = shouldAskFollowUp
-          ? latestFollowUps[latestStep]
-          : (latestStage.exitMessage ?? '')
+      const conversationHistory: CodexMessage[] = messagesRef.current
+        .filter(message => message.author === 'paciente' || message.author === 'noa')
+        .map(message => ({
+          role: message.author === 'paciente' ? 'user' : 'assistant',
+          content: message.content,
+        }))
 
+      try {
+        const response = await codexService.getNoaResponse(patientMessage, conversationHistory, {
+          route: 'triagem',
+          triageContext: {
+            stageId: latestStage.id,
+            stageLabel: latestStage.label,
+            followUps: latestFollowUps,
+            exitMessage: latestStage.exitMessage,
+            step: latestStep,
+          },
+          extraInstructions: `Etapa atual: ${latestStage.label}. Objetivo: ${latestStage.description}.
+Etapas futuras: ${latestFollowUps.slice(latestStep).join(' | ') || 'encerramento'}.
+Certifique-se de manter o tom clínico acolhedor e registrar a síntese.`,
+          metadata: {
+            stageIndex: stageIndexRef.current,
+            stageStep: latestStep,
+            sessionCompleted,
+          },
+        })
+
+        const reply = response || fallbackReply
         if (reply) {
           pushMessage('noa', reply, latestStage.id)
         }
-
+      } catch (error) {
+        console.error('⚠️ Falha ao gerar resposta da triagem via Codex:', error)
+        if (fallbackReply) {
+          pushMessage('noa', fallbackReply, latestStage.id)
+        }
+      } finally {
         setIsTyping(false)
 
         if (shouldAskFollowUp) {
@@ -210,13 +245,13 @@ const TriagemClinica: React.FC = () => {
         } else {
           handleAutomatedAdvance()
         }
-      }, typingDelay)
+      }
     },
-    [handleAutomatedAdvance, pushMessage]
+    [handleAutomatedAdvance, pushMessage, sessionCompleted]
   )
 
   const sendMessage = useCallback(
-    (rawContent: string) => {
+    async (rawContent: string) => {
       const trimmed = rawContent.trim()
       if (!trimmed) {
         setError('Digite uma mensagem antes de enviar.')
@@ -226,19 +261,24 @@ const TriagemClinica: React.FC = () => {
       setError(null)
 
       const stageId = TRIAGE_STAGES[stageIndexRef.current]?.id ?? 'acolhimento'
-      setMessages(prev => [...prev, messageFactory('paciente', trimmed, stageId)])
+      const newMessage = messageFactory('paciente', trimmed, stageId)
+      setMessages(prev => {
+        const next = [...prev, newMessage]
+        messagesRef.current = next
+        return next
+      })
       setInputValue('')
       setIsTyping(true)
 
-      respondFromNoa(trimmed)
+      await respondFromNoa(trimmed)
     },
     [respondFromNoa]
   )
 
   const handleFormSubmit = useCallback(
-    (event: React.FormEvent<HTMLFormElement>) => {
+    async (event: React.FormEvent<HTMLFormElement>) => {
       event.preventDefault()
-      sendMessage(inputValue)
+      await sendMessage(inputValue)
     },
     [inputValue, sendMessage]
   )
@@ -247,7 +287,7 @@ const TriagemClinica: React.FC = () => {
     (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
       if (event.key === 'Enter' && !event.shiftKey) {
         event.preventDefault()
-        sendMessage(inputValue)
+        void sendMessage(inputValue)
       }
     },
     [inputValue, sendMessage]
@@ -255,7 +295,7 @@ const TriagemClinica: React.FC = () => {
 
   const handleSuggestion = useCallback(
     (suggestion: string) => {
-      sendMessage(suggestion)
+      void sendMessage(suggestion)
     },
     [sendMessage]
   )

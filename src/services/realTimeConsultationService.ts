@@ -4,7 +4,7 @@
  */
 
 import { gptBuilderService, DocumentMaster } from './gptBuilderService'
-import { openAIService } from './openaiService'
+import { codexService } from './codexService'
 import { logger } from '../utils/logger'
 
 export interface ConsultationResult {
@@ -165,9 +165,19 @@ INSTRUÇÕES:
 Responda de forma clara e útil:
       `
 
-      const response = await openAIService.getNoaResponse(context.userQuery, [
-        { role: 'system', content: prompt },
-      ])
+      const conversationHistory = (context.conversationHistory ?? []).map(entry => ({
+        role: entry.role === 'assistant' ? ('assistant' as const) : ('user' as const),
+        content: entry.content,
+      }))
+
+      const response = await codexService.getNoaResponse(context.userQuery, conversationHistory, {
+        route: 'chat',
+        metadata: {
+          origin: 'realTimeConsultation',
+          documents: documentsContext,
+          query: context.userQuery,
+        },
+      })
 
       return response || this.generateFallbackResponse(context.userQuery)
     } catch (error) {

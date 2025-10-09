@@ -6,7 +6,7 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { personalizedProfilesService } from '../services/personalizedProfilesService'
-import { openAIService, ChatMessage as OpenAIMessage } from '../services/openaiService'
+import { codexService, type CodexMessage } from '../services/codexService'
 import { useAuth } from '../contexts/AuthContext'
 
 interface ChatMessage {
@@ -29,57 +29,57 @@ const GPT_PRESETS: GPTPreset[] = [
     id: 'explorer',
     name: 'Explorar',
     icon: '🧭',
-    description: 'Explore todas as funcionalidades'
+    description: 'Explore todas as funcionalidades',
   },
   {
     id: 'entrevista',
     name: 'Arte da Entrevista Clínica',
     icon: '🎭',
-    description: 'Metodologia clínica do Dr. Ricardo Valença'
+    description: 'Metodologia clínica do Dr. Ricardo Valença',
   },
   {
     id: 'osteorrenal',
     name: 'Assistente Ósteorrenal',
     icon: '🦴',
-    description: 'Especialista em nefrologia e metabolismo ósseo'
+    description: 'Especialista em nefrologia e metabolismo ósseo',
   },
   {
     id: 'comunitario',
     name: 'Nôa. Comunitário - EXT-001',
     icon: '🏘️',
-    description: 'Saúde comunitária e extensão'
+    description: 'Saúde comunitária e extensão',
   },
   {
     id: 'juridico',
     name: 'Nôa. Jurídico - JUR-001',
     icon: '⚖️',
-    description: 'Assessoria jurídica em saúde'
+    description: 'Assessoria jurídica em saúde',
   },
   {
     id: 'desenvolvimento',
     name: 'Nôa. Desenvolvimento de Pr...',
     icon: '💻',
-    description: 'Desenvolvimento de projetos'
+    description: 'Desenvolvimento de projetos',
   },
   {
     id: 'clinico',
     name: 'Nôa. Clínico - EDU-001',
     icon: '🩺',
-    description: 'Assistência clínica educacional'
+    description: 'Assistência clínica educacional',
   },
   {
     id: 'drc',
     name: 'Nôa Esperanza - DRC',
     icon: '💚',
-    description: 'Doença Renal Crônica'
-  }
+    description: 'Doença Renal Crônica',
+  },
 ]
 
 const STARTER_PROMPTS = [
   'Apresente a Nôa Esperanza para novos usuários',
   'Explique como funciona a integração de...',
   'Mostre como segurança e simbolismo se...',
-  'Crie um checklist de boas práticas para a Nôa'
+  'Crie um checklist de boas práticas para a Nôa',
 ]
 
 const HomeNew: React.FC = () => {
@@ -109,7 +109,7 @@ const HomeNew: React.FC = () => {
       id: Date.now().toString(),
       role: 'user',
       content: input,
-      timestamp: new Date()
+      timestamp: new Date(),
     }
 
     setMessages(prev => [...prev, userMessage])
@@ -119,49 +119,60 @@ const HomeNew: React.FC = () => {
     try {
       // Verificar reconhecimento de perfil
       const detectedProfile = personalizedProfilesService.detectProfile(input)
-      
+
       if (detectedProfile) {
         personalizedProfilesService.saveActiveProfile(detectedProfile)
         setActiveProfile(detectedProfile)
-        
+
         const assistantMessage: ChatMessage = {
           id: (Date.now() + 1).toString(),
           role: 'assistant',
           content: detectedProfile.greeting,
-          timestamp: new Date()
+          timestamp: new Date(),
         }
-        
+
         setMessages(prev => [...prev, assistantMessage])
         setIsLoading(false)
         return
       }
 
       // Processar com OpenAI
-      const conversationHistory: OpenAIMessage[] = messages.map(m => ({
+      const conversationHistory: CodexMessage[] = messages.map(m => ({
         role: m.role,
-        content: m.content
+        content: m.content,
       }))
 
-      const response = await openAIService.getNoaResponse(input, conversationHistory)
+      const response = await codexService.getNoaResponse(input, conversationHistory, {
+        route: 'chat',
+        userContext: {
+          sessionId: user?.id,
+          userId: user?.id,
+          name: user?.user_metadata?.full_name,
+        },
+        metadata: {
+          preset: selectedGPT,
+          conversationSize: messages.length,
+        },
+      })
 
       const assistantMessage: ChatMessage = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
         content: response,
-        timestamp: new Date()
+        timestamp: new Date(),
       }
 
       setMessages(prev => [...prev, assistantMessage])
     } catch (error) {
       console.error('Erro ao enviar mensagem:', error)
-      
+
       const errorMessage: ChatMessage = {
         id: (Date.now() + 1).toString(),
         role: 'assistant',
         content: 'Desculpe, ocorreu um erro ao processar sua mensagem. Por favor, tente novamente.',
-        timestamp: new Date()
+        timestamp: new Date(),
       }
-      
+
       setMessages(prev => [...prev, errorMessage])
     } finally {
       setIsLoading(false)
@@ -210,10 +221,8 @@ const HomeNew: React.FC = () => {
 
         {/* GPTs List */}
         <div className="flex-1 overflow-y-auto px-2">
-          <div className="mb-2 px-3 py-2 text-xs font-semibold text-gray-500 uppercase">
-            GPTs
-          </div>
-          
+          <div className="mb-2 px-3 py-2 text-xs font-semibold text-gray-500 uppercase">GPTs</div>
+
           {GPT_PRESETS.map(gpt => (
             <button
               key={gpt.id}
@@ -235,7 +244,9 @@ const HomeNew: React.FC = () => {
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-full bg-purple-600 flex items-center justify-center">
               <span className="text-sm font-semibold">
-                {activeProfile ? activeProfile.name.charAt(0) : user?.email?.charAt(0).toUpperCase() || 'N'}
+                {activeProfile
+                  ? activeProfile.name.charAt(0)
+                  : user?.email?.charAt(0).toUpperCase() || 'N'}
               </span>
             </div>
             <div className="flex-1">
@@ -254,11 +265,7 @@ const HomeNew: React.FC = () => {
         <div className="h-16 border-b border-gray-800 flex items-center justify-between px-6">
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-full overflow-hidden">
-              <img
-                src="/logo-noa-triangulo.gif"
-                alt="Nôa"
-                className="w-full h-full object-cover"
-              />
+              <img src="/logo-noa-triangulo.gif" alt="Nôa" className="w-full h-full object-cover" />
             </div>
             <div>
               <h1 className="text-lg font-semibold">
@@ -300,13 +307,13 @@ const HomeNew: React.FC = () => {
                   className="w-full h-full object-cover"
                 />
               </div>
-              
+
               <h2 className="text-2xl font-semibold mb-2">
                 {activeProfile ? activeProfile.name : 'Nôa Esperanza – Mentora'}
               </h2>
               <p className="text-gray-400 text-center mb-6 max-w-md">
-                {activeProfile 
-                  ? activeProfile.function 
+                {activeProfile
+                  ? activeProfile.function
                   : 'Apresenta a plataforma Nôa Esperanza de forma técnica e simbólica'}
               </p>
 
@@ -346,22 +353,22 @@ const HomeNew: React.FC = () => {
                     {message.role === 'user' && (
                       <div className="w-8 h-8 rounded-full bg-purple-600 flex items-center justify-center flex-shrink-0">
                         <span className="text-sm font-semibold">
-                          {activeProfile ? activeProfile.name.charAt(0) : user?.email?.charAt(0).toUpperCase() || 'U'}
+                          {activeProfile
+                            ? activeProfile.name.charAt(0)
+                            : user?.email?.charAt(0).toUpperCase() || 'U'}
                         </span>
                       </div>
                     )}
-                    
+
                     <div className="flex-1">
                       <div className="prose prose-invert max-w-none">
-                        <div className="whitespace-pre-wrap text-gray-100">
-                          {message.content}
-                        </div>
+                        <div className="whitespace-pre-wrap text-gray-100">{message.content}</div>
                       </div>
                     </div>
                   </div>
                 </div>
               ))}
-              
+
               {isLoading && (
                 <div className="flex gap-4 mb-6">
                   <div className="w-8 h-8 rounded-full overflow-hidden flex-shrink-0">
@@ -373,12 +380,18 @@ const HomeNew: React.FC = () => {
                   </div>
                   <div className="flex items-center gap-2">
                     <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce"></div>
-                    <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                    <div className="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                    <div
+                      className="w-2 h-2 bg-gray-500 rounded-full animate-bounce"
+                      style={{ animationDelay: '0.1s' }}
+                    ></div>
+                    <div
+                      className="w-2 h-2 bg-gray-500 rounded-full animate-bounce"
+                      style={{ animationDelay: '0.2s' }}
+                    ></div>
                   </div>
                 </div>
               )}
-              
+
               <div ref={messagesEndRef} />
             </div>
           )}
@@ -391,17 +404,17 @@ const HomeNew: React.FC = () => {
               <button className="p-2 hover:bg-gray-800 rounded-lg transition-colors">
                 <i className="fas fa-plus text-gray-400"></i>
               </button>
-              
+
               <input
                 type="text"
                 value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && !e.shiftKey && handleSendMessage()}
+                onChange={e => setInput(e.target.value)}
+                onKeyPress={e => e.key === 'Enter' && !e.shiftKey && handleSendMessage()}
                 placeholder="Pergunte alguma coisa"
                 className="flex-1 bg-[#2f2f2f] rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-gray-600"
                 disabled={isLoading}
               />
-              
+
               <button
                 onClick={handleSendMessage}
                 disabled={!input.trim() || isLoading}
@@ -409,7 +422,7 @@ const HomeNew: React.FC = () => {
               >
                 <i className="fas fa-microphone text-gray-400"></i>
               </button>
-              
+
               <button
                 onClick={handleSendMessage}
                 disabled={!input.trim() || isLoading}

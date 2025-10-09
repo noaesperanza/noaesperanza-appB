@@ -1,262 +1,178 @@
 /**
  * Serviço de Carregamento do Prompt Mestre da Nôa Esperanza
- * Integra o prompt técnico completo baseado no Documento Mestre
+ * Centraliza perfis, modos e variáveis de sessão para o Codex
  */
 
 import { getNoaSystemPrompt } from '../config/noaSystemPrompt'
+import { personalizedProfilesService } from './personalizedProfilesService'
+
+export type NoaModule = 'clinico' | 'pedagogico' | 'narrativo' | 'comunitario' | 'juridico'
 
 export interface NoaPromptConfig {
-  masterPrompt: string
   userContext?: {
     name?: string
     role?: string
     specialty?: string
     recognizedAs?: string
-    profileId?: string
+    sessionId?: string
+    userId?: string
+    route?: string
   }
+  profileId?: string
   consentimentoObtido?: boolean
-  modulo?: 'clinico' | 'pedagogico' | 'narrativo' | 'comunitario' | 'juridico'
+  modulo?: NoaModule
+  extraInstructions?: string
+  metadata?: Record<string, unknown>
 }
 
-/**
- * Prompt Mestre Completo - Baseado no Documento de Transferência Simbólica
- */
-export const MASTER_PROMPT = `
-═══════════════════════════════════════════════════════════════════════════════
-🧠 NÔA ESPERANZA - INSTÂNCIA SIMBÓLICA DE INTELIGÊNCIA ARTIFICIAL
-Fundada na Arte da Entrevista Clínica
-═══════════════════════════════════════════════════════════════════════════════
+const MODULE_INSTRUCTIONS: Record<NoaModule, string> = {
+  clinico: `## MODO ATIVO: CLÍNICO
+- Priorize coleta de indícios, progressão etapa a etapa e consentimento LGPD.
+- Registre sintomas, evolução, antecedentes, hábitos, medicações e fechamento consensual.
+- Se necessário, gere bloco JSON com campos clínicos padronizados.`,
+  pedagogico: `## MODO ATIVO: PEDAGÓGICO
+- Atue como mentora educacional.
+- Reforce práticas reflexivas, plano de estudo e feedback construtivo.`,
+  narrativo: `## MODO ATIVO: NARRATIVO
+- Organize respostas com Harmony Format, proponha próximos passos e co-crie soluções.
+- Mantenha tom colaborativo e transparente.`,
+  comunitario: `## MODO ATIVO: COMUNITÁRIO
+- Valorize determinantes sociais, recursos coletivos e linguagem acessível.
+- Incentive articulação comunitária e segurança cultural.`,
+  juridico: `## MODO ATIVO: JURÍDICO
+- Consulte protocolos legais e éticos.
+- Mantenha linguagem clara, registrar fundamentos legais e garantir sigilo.`,
+}
 
-Você é Nôa Esperanza, uma instância simbólica de inteligência artificial embebida na Arte da Entrevista Clínica. Sua função é escutar com ética, técnica e presença os usuários de uma plataforma de saúde, educação e equidade.
+export const ROUTE_TO_MODULE: Record<string, NoaModule> = {
+  chat: 'narrativo',
+  triagem: 'clinico',
+  'avaliacao-inicial': 'clinico',
+}
 
-═══════════════════════════════════════════════════════════════════════════════
-⚙️ TOM DE VOZ E POSTURA
-═══════════════════════════════════════════════════════════════════════════════
+function buildProfileSection(profileId?: string): string {
+  if (!profileId) return ''
 
-- Acolhedor, pausado e profundo
-- Respeita o tempo do outro
-- Evita respostas automáticas ou impacientes
-- Usa linguagem simbólica quando apropriado
-- Reconhece e nomeia a presença do interlocutor
+  const profile = personalizedProfilesService.getProfile(profileId)
+  if (!profile) return ''
 
-═══════════════════════════════════════════════════════════════════════════════
-🎯 PRINCÍPIOS NORTEADORES
-═══════════════════════════════════════════════════════════════════════════════
+  const focus = profile.personality?.focus?.length
+    ? `Áreas de foco: ${profile.personality.focus.join(', ')}.`
+    : ''
 
-1. SEMIOSE INFINITA
-   - Cada fala é um indício, não um dado fixo
-   - O significado se constrói no processo de escuta
-   - Nada está completamente determinado antes da relação
+  return `## PERFIL ATIVO
+- Nome: ${profile.name}
+- Função: ${profile.function}
+- Tom recomendado: ${profile.personality?.tone ?? 'acolhedor'}
+- Linguagem: ${profile.personality?.language ?? 'português brasileiro'}
+${focus ? `- ${focus}` : ''}
 
-2. HETEROGENEIDADE ENUNCIATIVA
-   - Escuta múltiplas vozes presentes no discurso
-   - Reconhece tensões entre o dito e o não dito
-   - Identifica quem fala através de quem
+Regras específicas do perfil:
+${profile.systemPrompt}`
+}
 
-3. ECONOMIA POLÍTICA DO SIGNIFICANTE
-   - Respeita o contexto histórico e social da linguagem
-   - Reconhece que palavras têm peso diferente para cada pessoa
-   - Considera os atravessamentos de poder na fala
+function buildMetadataSection(metadata?: Record<string, unknown>): string {
+  if (!metadata || Object.keys(metadata).length === 0) return ''
 
-═══════════════════════════════════════════════════════════════════════════════
-🩺 MODO DE ESCUTA CLÍNICA (TRIÁXIAL)
-═══════════════════════════════════════════════════════════════════════════════
+  const formatted = JSON.stringify(metadata, null, 2)
+  return `## METADADOS DA SESSÃO
+${formatted}`
+}
 
-ETAPA 1: ABERTURA EXPONENCIAL
-- Pergunta: "O que trouxe você até aqui?"
-- Postura: Silêncio respeitoso após a pergunta
-- Objetivo: Deixar o espaço se organizar a partir do outro
-
-ETAPA 2: LISTA INDICIÁRIA
-- Pergunta: "O que mais?"
-- Repetir até o fechamento natural da lista
-- Detectar sinais de esgotamento: "só isso", "mais nada", "é isso"
-- NUNCA forçar além do que o outro pode dizer
-
-ETAPA 3: DESENVOLVIMENTO INDICIÁRIO
-Para cada item da lista:
-- "Como é?"
-- "Quando começou?"
-- "Onde dói/acontece?"
-- "O que melhora?"
-- "O que piora?"
-
-ETAPA 4: FECHAMENTO CONSENSUAL
-- "Você concorda com o que construímos juntos?"
-- Apresentar síntese narrativa
-- Aguardar validação do interlocutor
-
-═══════════════════════════════════════════════════════════════════════════════
-⚡ RESTRIÇÕES ÉTICAS (INVIOLÁVEIS)
-═══════════════════════════════════════════════════════════════════════════════
-
-❌ NUNCA:
-- Interpretar sem antes registrar a fala original
-- Presumir dados clínicos não mencionados
-- Emitir juízo sem fechamento consensual
-- Acelerar o tempo do outro
-- Usar jargões técnicos sem tradução
-- Dar diagnóstico sem co-construção
-
-✅ SEMPRE:
-- Perguntar: "O que posso melhorar no meu entendimento?"
-- Registrar literalmente o que foi dito
-- Respeitar pausas e silêncios
-- Validar com o interlocutor
-- Obter consentimento explícito para dados sensíveis
-
-═══════════════════════════════════════════════════════════════════════════════
-🔐 RECONHECIMENTO DE PERFIS
-═══════════════════════════════════════════════════════════════════════════════
-
-Dr. Ricardo Valença:
-- Código: "Olá, Nôa. Ricardo Valença, aqui"
-- Saudação: "Olá, Dr. Ricardo! Sou a Nôa Esperanza, sua mentora e parceira de desenvolvimento."
-- NUNCA usar "Usuário Local" - SEMPRE "Dr. Ricardo" ou "Dr. Ricardo Valença"
-
-Dr. Eduardo Faveret:
-- Código: "Olá, Nôa. Eduardo Faveret, aqui"
-- Saudação: "Olá, Dr. Eduardo! Sou a Nôa Esperanza, sua parceira de desenvolvimento."
-
-Rosa:
-- Código: "Olá, Nôa. Rosa aqui."
-- Função: Assistência neuropsicológica
-- Ferramentas: Estimulação de atenção, memória
-
-Dr. Fernando:
-- Código: "Olá, Nôa. Dr. Fernando aqui."
-- Função: Simulação para ensino clínico
-
-Dr. Alexandre:
-- Código: "Olá, Nôa. Dr. Alexandre aqui."
-- Função: Laudo clínico narrativo
-
-Yalorixá:
-- Código: "Olá, Nôa. Yalorixá aqui."
-- Função: Escuta ancestral afrodescendente
-
-Gabriela:
-- Código: "Olá, Nôa. Gabriela aqui."
-- Função: Planejamento de estudos
-
-═══════════════════════════════════════════════════════════════════════════════
-🎯 MISSÃO FINAL
-═══════════════════════════════════════════════════════════════════════════════
-
-"Promover paz, sustentabilidade e equidade através da escuta clínica profunda, integrando sabedoria ancestral e tecnologias modernas. Escutar é o primeiro ato de cura."
-
-═══════════════════════════════════════════════════════════════════════════════
-`
-
-/**
- * Carrega o prompt completo da Nôa com contexto do usuário
- */
 export function loadNoaPrompt(config: Partial<NoaPromptConfig> = {}): string {
-  let fullPrompt = MASTER_PROMPT
-  
-  // Adicionar contexto base do sistema
-  fullPrompt += '\n\n' + getNoaSystemPrompt(config.userContext)
-  
-  // Adicionar informações do módulo ativo
+  const sections: string[] = []
+
+  sections.push(getNoaSystemPrompt(config.userContext))
+
+  if (config.profileId) {
+    sections.push(buildProfileSection(config.profileId))
+  }
+
   if (config.modulo) {
-    fullPrompt += `\n\n## MÓDULO ATIVO: ${config.modulo.toUpperCase()}\n`
+    sections.push(MODULE_INSTRUCTIONS[config.modulo])
   }
-  
-  // Adicionar status de consentimento
+
   if (config.consentimentoObtido !== undefined) {
-    fullPrompt += `\n## CONSENTIMENTO LGPD: ${config.consentimentoObtido ? 'OBTIDO' : 'PENDENTE'}\n`
-    if (!config.consentimentoObtido) {
-      fullPrompt += `\n**ATENÇÃO: Antes de qualquer avaliação clínica, você DEVE obter consentimento explícito.**\n`
-    }
+    sections.push(`## CONSENTIMENTO LGPD
+Status: ${config.consentimentoObtido ? 'OBTIDO' : 'PENDENTE'}
+${config.consentimentoObtido ? 'Você pode prosseguir com procedimentos clínicos.' : 'NÃO avance em etapas clínicas até registrar consentimento explícito.'}`)
   }
-  
-  return fullPrompt
+
+  if (config.extraInstructions) {
+    sections.push(`## INSTRUÇÕES COMPLEMENTARES
+${config.extraInstructions}`)
+  }
+
+  if (config.metadata) {
+    sections.push(buildMetadataSection(config.metadata))
+  }
+
+  return sections.join('\n\n')
 }
 
-/**
- * Valida se o consentimento foi obtido antes de procedimentos clínicos
- */
-export function validateConsent(config: NoaPromptConfig): boolean {
-  if (config.modulo === 'clinico' && !config.consentimentoObtido) {
-    console.warn('⚠️ Tentativa de avaliação clínica sem consentimento')
+export function validateConsent(config: Partial<NoaPromptConfig>): boolean {
+  if (config.modulo === 'clinico' && config.consentimentoObtido === false) {
+    console.warn('⚠️ Tentativa de avaliação clínica sem consentimento registrado')
     return false
   }
   return true
 }
 
-/**
- * Gera prompt específico para reconhecimento de perfil
- */
 export function getProfileRecognitionPrompt(message: string): string {
-  return `
-${MASTER_PROMPT}
-
-## INSTRUÇÃO ESPECÍFICA:
-Analise a mensagem do usuário e identifique se contém um código de ativação de perfil.
-
+  return loadNoaPrompt({
+    modulo: 'narrativo',
+    extraInstructions: `Analise a mensagem do usuário a seguir e identifique se ela contém um código de ativação de perfil.
 Mensagem: "${message}"
 
-Se identificar um perfil:
-1. Retorne a saudação personalizada
-2. Ative as ferramentas específicas
-3. Ajuste o tom de voz
-
-Se NÃO identificar:
-1. Responda normalmente
-2. Mantenha postura acolhedora
-`
+Responda com:
+- Perfil reconhecido (se houver) e saudação apropriada.
+- Indicadores das ferramentas que devem ser ativadas.
+- Orientação para registros de log.`,
+  })
 }
 
-/**
- * Gera prompt específico para avaliação clínica
- */
-export function getClinicalAssessmentPrompt(etapa: string): string {
-  return `
-${MASTER_PROMPT}
-
-## ETAPA ATUAL DA AVALIAÇÃO CLÍNICA: ${etapa}
-
-Siga o roteiro triaxial da Arte da Entrevista Clínica.
-Respeite o tempo do paciente.
-Detecte sinais de fechamento natural ("só isso", "mais nada").
-`
+export function getClinicalAssessmentPrompt(
+  etapa: string,
+  metadata?: Record<string, unknown>
+): string {
+  return loadNoaPrompt({
+    modulo: 'clinico',
+    consentimentoObtido: true,
+    extraInstructions: `Estamos conduzindo a Avaliação Clínica Inicial. Continue seguindo o método triaxial.
+Etapa atual: ${etapa}.`,
+    metadata,
+  })
 }
 
-/**
- * Checagem de pré-carregamento
- */
 export function checkPromptIntegrity(): {
   loaded: boolean
   size: number
   modules: string[]
 } {
+  const sample = loadNoaPrompt({ modulo: 'narrativo' })
   return {
     loaded: true,
-    size: MASTER_PROMPT.length,
-    modules: ['clinico', 'pedagogico', 'narrativo', 'comunitario', 'juridico']
+    size: sample.length,
+    modules: Object.keys(MODULE_INSTRUCTIONS),
   }
 }
 
-/**
- * Log de inicialização
- */
-export function logPromptInitialization() {
+export function logPromptInitialization(route: string, profileId?: string) {
+  const profile = profileId ? personalizedProfilesService.getProfile(profileId) : null
   console.log('═══════════════════════════════════════════════════════════════')
-  console.log('🧠 NÔA ESPERANZA - PROMPT MESTRE CARREGADO')
-  console.log('═══════════════════════════════════════════════════════════════')
-  console.log('📚 Base: Documento Mestre de Transferência Simbólica')
-  console.log('👨‍⚕️ Criador: Dr. Ricardo Valença')
-  console.log('🎯 Modo: Arte da Entrevista Clínica')
-  console.log('✅ Status: Operacional')
+  console.log('🧠 NÔA ESPERANZA - PROMPT CARREGADO VIA CODEX')
+  console.log(`📍 Rota: ${route}`)
+  if (profile) {
+    console.log(`👤 Perfil ativo: ${profile.name}`)
+  }
   console.log('═══════════════════════════════════════════════════════════════')
 }
 
 export default {
-  MASTER_PROMPT,
   loadNoaPrompt,
   validateConsent,
   getProfileRecognitionPrompt,
   getClinicalAssessmentPrompt,
   checkPromptIntegrity,
-  logPromptInitialization
+  logPromptInitialization,
 }
