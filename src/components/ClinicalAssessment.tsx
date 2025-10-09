@@ -1,14 +1,22 @@
 import React, { useState, useEffect } from 'react'
-import { clinicalAssessmentService, ClinicalAssessmentData, AssessmentStage } from '../services/clinicalAssessmentService'
+import {
+  clinicalAssessmentService,
+  ClinicalAssessmentData,
+  AssessmentStage,
+} from '../services/clinicalAssessmentService'
 
 interface ClinicalAssessmentProps {
   onComplete?: (report: any, nftHash: string) => void
   onUpdateKPIs?: (stats: any) => void
+  userId?: string
+  sessionId?: string
 }
 
-export const ClinicalAssessment: React.FC<ClinicalAssessmentProps> = ({ 
-  onComplete, 
-  onUpdateKPIs 
+export const ClinicalAssessment: React.FC<ClinicalAssessmentProps> = ({
+  onComplete,
+  onUpdateKPIs,
+  userId,
+  sessionId,
 }) => {
   const [assessment, setAssessment] = useState<ClinicalAssessmentData | null>(null)
   const [currentQuestion, setCurrentQuestion] = useState<string>('')
@@ -17,10 +25,21 @@ export const ClinicalAssessment: React.FC<ClinicalAssessmentProps> = ({
   const [showReport, setShowReport] = useState<boolean>(false)
   const [report, setReport] = useState<any>(null)
   const [nftHash, setNftHash] = useState<string>('')
+  const [assessmentSessionId] = useState<string>(() => sessionId || `assessment_${Date.now()}`)
 
   // Iniciar avaliação
   const startAssessment = () => {
-    const newAssessment = clinicalAssessmentService.startAssessment('user_001')
+    let resolvedUserId = userId
+
+    if (!resolvedUserId) {
+      resolvedUserId = localStorage.getItem('noa_guest_id') || `guest_${crypto.randomUUID()}`
+      localStorage.setItem('noa_guest_id', resolvedUserId)
+    }
+
+    const newAssessment = clinicalAssessmentService.startAssessment(
+      resolvedUserId,
+      assessmentSessionId
+    )
     setAssessment(newAssessment)
     setCurrentQuestion(clinicalAssessmentService.getNextQuestion())
     setIsWaitingForAnswer(true)
@@ -56,14 +75,14 @@ export const ClinicalAssessment: React.FC<ClinicalAssessmentProps> = ({
 
     // Registrar resposta
     clinicalAssessmentService.recordResponse(currentQuestion, userAnswer, category)
-    
+
     // Obter próxima pergunta
     const nextQuestion = clinicalAssessmentService.getNextQuestion()
-    
+
     // Atualizar estado
     setCurrentQuestion(nextQuestion)
     setUserAnswer('')
-    
+
     // Atualizar KPIs
     if (onUpdateKPIs) {
       onUpdateKPIs(clinicalAssessmentService.getAssessmentStats())
@@ -82,11 +101,11 @@ export const ClinicalAssessment: React.FC<ClinicalAssessmentProps> = ({
     try {
       const result = await clinicalAssessmentService.completeAssessment()
       setNftHash(result.nftHash)
-      
+
       if (onComplete) {
         onComplete(result.report, result.nftHash)
       }
-      
+
       if (onUpdateKPIs) {
         onUpdateKPIs(clinicalAssessmentService.getAssessmentStats())
       }
@@ -100,17 +119,17 @@ export const ClinicalAssessment: React.FC<ClinicalAssessmentProps> = ({
     if (!assessment) return null
 
     const stageNames: Record<AssessmentStage, string> = {
-      'identification': 'Identificação',
-      'complaints_list': 'Lista de Queixas',
-      'main_complaint': 'Queixa Principal',
-      'complaint_development': 'Desenvolvimento da Queixa',
-      'medical_history': 'História Médica',
-      'family_history': 'História Familiar',
-      'lifestyle_habits': 'Hábitos de Vida',
-      'medications_allergies': 'Medicações e Alergias',
-      'review': 'Revisão',
-      'final_report': 'Relatório Final',
-      'completed': 'Concluído'
+      identification: 'Identificação',
+      complaints_list: 'Lista de Queixas',
+      main_complaint: 'Queixa Principal',
+      complaint_development: 'Desenvolvimento da Queixa',
+      medical_history: 'História Médica',
+      family_history: 'História Familiar',
+      lifestyle_habits: 'Hábitos de Vida',
+      medications_allergies: 'Medicações e Alergias',
+      review: 'Revisão',
+      final_report: 'Relatório Final',
+      completed: 'Concluído',
     }
 
     return (
@@ -129,9 +148,7 @@ export const ClinicalAssessment: React.FC<ClinicalAssessmentProps> = ({
         </div>
 
         <div className="bg-slate-700 rounded-lg p-4 mb-4">
-          <pre className="text-white text-sm whitespace-pre-wrap font-mono">
-            {report.summary}
-          </pre>
+          <pre className="text-white text-sm whitespace-pre-wrap font-mono">{report.summary}</pre>
         </div>
 
         <div className="flex gap-3">
@@ -152,7 +169,8 @@ export const ClinicalAssessment: React.FC<ClinicalAssessmentProps> = ({
         {nftHash && (
           <div className="mt-4 p-3 bg-green-900 rounded-lg">
             <p className="text-green-300 text-sm">
-              🎉 NFT gerado com sucesso! Hash: <code className="bg-green-800 px-2 py-1 rounded">{nftHash}</code>
+              🎉 NFT gerado com sucesso! Hash:{' '}
+              <code className="bg-green-800 px-2 py-1 rounded">{nftHash}</code>
             </p>
           </div>
         )}
@@ -164,9 +182,7 @@ export const ClinicalAssessment: React.FC<ClinicalAssessmentProps> = ({
     return (
       <div className="bg-slate-800 rounded-lg p-6 border border-slate-600">
         <div className="text-center">
-          <h3 className="text-xl font-semibold text-white mb-4">
-            📋 Avaliação Clínica Inicial
-          </h3>
+          <h3 className="text-xl font-semibold text-white mb-4">📋 Avaliação Clínica Inicial</h3>
           <p className="text-gray-400 mb-6">
             Processo estruturado de entrevista clínica inicial para consultas médicas
           </p>
@@ -184,9 +200,7 @@ export const ClinicalAssessment: React.FC<ClinicalAssessmentProps> = ({
   return (
     <div className="bg-slate-800 rounded-lg p-6 border border-slate-600">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-xl font-semibold text-white">
-          🏥 Avaliação Clínica Inicial
-        </h3>
+        <h3 className="text-xl font-semibold text-white">🏥 Avaliação Clínica Inicial</h3>
         {renderStage()}
       </div>
 
@@ -196,9 +210,7 @@ export const ClinicalAssessment: React.FC<ClinicalAssessmentProps> = ({
             <span className="text-white text-sm font-bold">N</span>
           </div>
           <div className="flex-1">
-            <p className="text-white text-sm">
-              {currentQuestion}
-            </p>
+            <p className="text-white text-sm">{currentQuestion}</p>
           </div>
         </div>
       </div>
@@ -207,12 +219,12 @@ export const ClinicalAssessment: React.FC<ClinicalAssessmentProps> = ({
         <div className="space-y-3">
           <textarea
             value={userAnswer}
-            onChange={(e) => setUserAnswer(e.target.value)}
+            onChange={e => setUserAnswer(e.target.value)}
             placeholder="Digite sua resposta..."
             className="w-full bg-slate-700 border border-slate-600 rounded-lg p-3 text-white placeholder-gray-400 focus:outline-none focus:border-blue-500"
             rows={3}
           />
-          
+
           <button
             onClick={submitAnswer}
             disabled={!userAnswer.trim()}
@@ -230,7 +242,7 @@ export const ClinicalAssessment: React.FC<ClinicalAssessmentProps> = ({
           <span>{assessment.responses.length} respostas</span>
         </div>
         <div className="w-full bg-slate-700 rounded-full h-2">
-          <div 
+          <div
             className="bg-blue-600 h-2 rounded-full transition-all duration-300"
             style={{ width: `${(assessment.responses.length / 20) * 100}%` }}
           />
