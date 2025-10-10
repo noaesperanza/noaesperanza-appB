@@ -1,3 +1,4 @@
+import React, { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { Specialty } from '../App'
 import Sidebar from '../components/Sidebar'
@@ -39,6 +40,21 @@ const DashboardMedico = ({ currentSpecialty, addNotification }: DashboardMedicoP
 
   const handleActionClick = (action: string) => {
     addNotification(`Ação "${action}" executada para ${currentData.name}`, 'success')
+  }
+
+  const handleDocumentCreation = () => {
+    console.log('Iniciando criação de documentos...')
+    // Lógica para criação de documentos
+  }
+
+  const handleExamAnalysis = () => {
+    console.log('Iniciando análise de exames por IA...')
+    // Lógica para análise de exames
+  }
+
+  const handleResearchProject = () => {
+    console.log('Iniciando projeto de pesquisa...')
+    // Lógica para gestão de projetos de pesquisa
   }
 
   // Itens da sidebar para médicos
@@ -110,18 +126,25 @@ const DashboardMedico = ({ currentSpecialty, addNotification }: DashboardMedicoP
             
             <div className="flex gap-1">
               <button
-                onClick={() => handleActionClick('Novo Paciente')}
+                onClick={handleDocumentCreation}
                 className="premium-button flex items-center gap-1 text-xs px-2 py-1"
               >
-                <i className="fas fa-plus text-xs"></i>
-                <span className="text-xs">Novo</span>
+                <i className="fas fa-file-alt text-xs"></i>
+                <span className="text-xs">Elaborar Documentos</span>
               </button>
               <button
-                onClick={() => handleActionClick('Relatório')}
+                onClick={handleExamAnalysis}
                 className="premium-button flex items-center gap-1 text-xs px-2 py-1"
               >
-                <i className="fas fa-chart-line text-xs"></i>
-                <span className="text-xs">Relatório</span>
+                <i className="fas fa-vials text-xs"></i>
+                <span className="text-xs">Análise de Exames</span>
+              </button>
+              <button
+                onClick={handleResearchProject}
+                className="premium-button flex items-center gap-1 text-xs px-2 py-1"
+              >
+                <i className="fas fa-flask text-xs"></i>
+                <span className="text-xs">Projeto de Pesquisa</span>
               </button>
             </div>
           </div>
