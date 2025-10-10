@@ -2,6 +2,10 @@
 // Gerencia documentos mestres, configurações da Nôa e reconhecimento de usuários
 
 import { supabase } from '../integrations/supabase/client'
+import fs from 'fs'
+import path from 'path'
+
+const KNOWLEDGE_BASE_PATH = path.resolve(__dirname, '../../knowledge_base')
 
 export interface DocumentMaster {
   id: string
@@ -488,6 +492,11 @@ export class GPTBuilderService {
       console.error('Erro na sincronização com IA Learning:', error)
       throw error
     }
+  }
+
+  // Obter documentos da base de conhecimento
+  getKnowledgeBaseDocuments() {
+    return fs.readdirSync(KNOWLEDGE_BASE_PATH).map(file => path.join(KNOWLEDGE_BASE_PATH, file));
   }
 }
 

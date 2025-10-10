@@ -1,82 +1,76 @@
-import { Routes, Route, Navigate } from 'react-router-dom'
-import { useState, useEffect, useCallback, lazy, Suspense } from 'react'
-import { AuthProvider, useAuth } from './contexts/AuthContext'
-import ErrorBoundary from './components/ErrorBoundary'
-import Header from './components/Header'
-// Sidebar removido - chat limpo sem sidebar
-import HomeFooter from './components/HomeFooter'
-import LandingPage from './pages/LandingPage'
-import LoginPage from './pages/LoginPage'
-import RegisterPage from './pages/RegisterPage'
+import { Routes, Route, Navigate } from 'react-router-dom';
+import { useState, useEffect, useCallback, lazy, Suspense } from 'react';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
+import ErrorBoundary from './components/ErrorBoundary';
+import Header from './components/Header';
+import HomeFooter from './components/HomeFooter';
+import LandingPage from './pages/LandingPage';
+import LoginPage from './pages/LoginPage';
+import RegisterPage from './pages/RegisterPage';
+import NotFound from './pages/NotFound';
+import MeusExames from './pages/MeusExames';
+import Prescricoes from './pages/Prescricoes';
+import Prontuario from './pages/Prontuario';
+import PagamentosPaciente from './pages/PagamentosPaciente';
+import Ensino from './pages/Ensino';
+import Pesquisa from './pages/Pesquisa';
+import MedCannLab from './pages/MedCannLab';
+import GPTBuilder from '@/pages/GPTBuilder';
+import AgentResidente from './pages/AgentResidente';
+import Alunos from './pages/Alunos';
+import AvaliacaoClinicaInicial from './pages/AvaliacaoClinicaInicial';
+import TriagemClinica from './pages/triagem';
 
-// Lazy load components for better code splitting
-const HomeNew = lazy(() => import('./pages/HomeNew'))
-const DashboardMedico = lazy(() => import('./pages/DashboardMedico'))
-const DashboardPaciente = lazy(() => import('./pages/DashboardPaciente'))
-const DashboardProfissional = lazy(() => import('./pages/DashboardProfissional'))
-const AdminDashboard = lazy(() => import('./pages/AdminDashboard'))
-const IntegratedIDE = lazy(() => import('./components/IntegratedIDE'))
-const RelatorioNarrativo = lazy(() => import('./pages/RelatorioNarrativo'))
-const Configuracoes = lazy(() => import('./pages/Configuracoes'))
-const Perfil = lazy(() => import('./pages/Perfil'))
-const PaymentPage = lazy(() => import('./pages/PaymentPage'))
-const CheckoutPage = lazy(() => import('./pages/CheckoutPage'))
-const NotFound = lazy(() => import('./pages/NotFound'))
-const MeusExames = lazy(() => import('./pages/MeusExames'))
-const Prescricoes = lazy(() => import('./pages/Prescricoes'))
-const Prontuario = lazy(() => import('./pages/Prontuario'))
-const PagamentosPaciente = lazy(() => import('./pages/PagamentosPaciente'))
-const Ensino = lazy(() => import('./pages/Ensino'))
-const Pesquisa = lazy(() => import('./pages/Pesquisa'))
-const MedCannLab = lazy(() => import('./pages/MedCannLab'))
-const AvaliacaoClinicaInicial = lazy(() => import('./pages/AvaliacaoClinicaInicial'))
-const TriagemClinica = lazy(() => import('./pages/triagem'))
+const HomeNew = lazy(() => import('./pages/HomeNew'));
+const DashboardMedico = lazy(() => import('./pages/DashboardMedico'));
+const DashboardPaciente = lazy(() => import('./pages/DashboardPaciente'));
+const DashboardProfissional = lazy(() => import('./pages/DashboardProfissional'));
+const AdminDashboard = lazy(() => import('./pages/AdminDashboard'));
+const RelatorioNarrativo = lazy(() => import('./pages/RelatorioNarrativo'));
+const Configuracoes = lazy(() => import('./pages/Configuracoes'));
+const Perfil = lazy(() => import('./pages/Perfil'));
+const PaymentPage = lazy(() => import('./pages/PaymentPage'));
+const CheckoutPage = lazy(() => import('./pages/CheckoutPage'));
 
-export type Specialty = 'rim' | 'neuro' | 'cannabis'
+export type Specialty = 'rim' | 'neuro' | 'cannabis';
 
 // Componente para rotas protegidas
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { user, loading } = useAuth()
+  const { user, loading } = useAuth();
 
   if (loading) {
     return (
-      <div
-        className="h-screen flex items-center justify-center"
-        style={{
-          background:
-            'linear-gradient(135deg, #000000 0%, #011d15 25%, #022f43 50%, #022f43 70%, #450a0a 85%, #78350f 100%)',
-        }}
-      >
+      <div className="h-screen flex items-center justify-center">
         <div className="text-white text-xl">Carregando...</div>
       </div>
-    )
+    );
   }
 
   if (!user) {
-    return <Navigate to="/landing" replace />
+    return <Navigate to="/landing" replace />;
   }
 
-  return <>{children}</>
-}
+  return <>{children}</>;
+};
 
 // Loading fallback component
 const LoadingFallback = () => (
   <div className="h-screen flex items-center justify-center">
     <div className="text-white text-xl">Carregando...</div>
   </div>
-)
+);
 
 function App() {
-  const [currentSpecialty, setCurrentSpecialty] = useState<Specialty>('rim')
-  const [isVoiceListening, setIsVoiceListening] = useState(false)
+  const [currentSpecialty, setCurrentSpecialty] = useState<Specialty>('rim');
+  const [isVoiceListening, setIsVoiceListening] = useState(false);
   const [notifications, setNotifications] = useState<
     Array<{
-      id: string
-      message: string
-      type: 'info' | 'success' | 'warning' | 'error'
-      timestamp: Date
+      id: string;
+      message: string;
+      type: 'info' | 'success' | 'warning' | 'error';
+      timestamp: Date;
     }>
-  >([])
+  >([]);
 
   // Adiciona notificação (memoizada para evitar re-renders desnecessários)
   const addNotification = useCallback(
@@ -86,23 +80,23 @@ function App() {
         message,
         type,
         timestamp: new Date(),
-      }
-      setNotifications(prev => [newNotification, ...prev.slice(0, 2)]) // Máximo 3 notificações
+      };
+      setNotifications((prev) => [newNotification, ...prev.slice(0, 2)]); // Máximo 3 notificações
 
       // Auto-remove notificação após 4 segundos (exceto erros)
       if (type !== 'error') {
         setTimeout(() => {
-          removeNotification(newNotification.id)
-        }, 4000)
+          removeNotification(newNotification.id);
+        }, 4000);
       }
     },
     []
-  )
+  );
 
   // Remove notificação
   const removeNotification = (id: string) => {
-    setNotifications(prev => prev.filter(notif => notif.id !== id))
-  }
+    setNotifications((prev) => prev.filter((notif) => notif.id !== id));
+  };
 
   // Removido: Notificações automáticas que poluíam a tela
   // Agora apenas notificações importantes são mostradas
@@ -116,7 +110,7 @@ function App() {
     notifications,
     addNotification,
     removeNotification,
-  }
+  };
 
   return (
     <ErrorBoundary>
@@ -168,74 +162,57 @@ function App() {
                         <Route path="/" element={<Navigate to="/app/paciente" replace />} />
 
                         {/* Páginas específicas */}
-
-                        <Route
-                          path="/medico"
-                          element={
-                            <DashboardMedico
-                              currentSpecialty={currentSpecialty}
-                              addNotification={addNotification}
-                            />
-                          }
-                        />
-
-                        <Route
-                          path="/paciente"
-                          element={
-                            <DashboardPaciente
-                              currentSpecialty={currentSpecialty}
-                              addNotification={addNotification}
-                            />
-                          }
-                        />
-
-                        <Route
-                          path="/profissional"
-                          element={
-                            <DashboardProfissional
-                              currentSpecialty={currentSpecialty}
-                              addNotification={addNotification}
-                            />
-                          }
-                        />
-
-                        <Route
-                          path="/admin"
-                          element={<AdminDashboard addNotification={addNotification} />}
-                        />
-                        <Route path="/ide" element={<IntegratedIDE />} />
-                        <Route
-                          path="/patient-dashboard"
-                          element={<Navigate to="/app/paciente" replace />}
-                        />
-                        <Route path="/patient" element={<Navigate to="/app/paciente" replace />} />
-
-                        <Route path="/payment" element={<PaymentPage />} />
-
-                        <Route
-                          path="/checkout"
-                          element={<CheckoutPage addNotification={addNotification} />}
-                        />
-
-                        <Route
-                          path="/relatorio"
-                          element={
-                            <RelatorioNarrativo
-                              currentSpecialty={currentSpecialty}
-                              addNotification={addNotification}
-                            />
-                          }
-                        />
-
-                        <Route
-                          path="/config"
-                          element={<Configuracoes addNotification={addNotification} />}
-                        />
-
-                        <Route
-                          path="/perfil"
-                          element={<Perfil addNotification={addNotification} />}
-                        />
+                        
+                        <Route path="/medico" element={
+                          <DashboardMedico 
+                            currentSpecialty={currentSpecialty}
+                            addNotification={addNotification}
+                          />
+                        } />
+                        
+                        <Route path="/paciente" element={
+                          <DashboardPaciente 
+                            currentSpecialty={currentSpecialty}
+                            addNotification={addNotification}
+                          />
+                        } />
+                        
+                        <Route path="/profissional" element={
+                          <DashboardProfissional 
+                            currentSpecialty={currentSpecialty}
+                            addNotification={addNotification}
+                          />
+                        } />
+                        
+                        <Route path="/admin" element={
+                          <AdminDashboard addNotification={addNotification} />
+                        } />
+                        
+                        <Route path="/admin/chat" element={<GPTBuilder />} />
+                        <Route path="/user/chat" element={<AgentResidente />} />
+                        
+                        <Route path="/payment" element={
+                          <PaymentPage />
+                        } />
+                        
+                        <Route path="/checkout" element={
+                          <CheckoutPage addNotification={addNotification} />
+                        } />
+                        
+                        <Route path="/relatorio" element={
+                          <RelatorioNarrativo 
+                            currentSpecialty={currentSpecialty}
+                            addNotification={addNotification}
+                          />
+                        } />
+                        
+                        <Route path="/config" element={
+                          <Configuracoes addNotification={addNotification} />
+                        } />
+                        
+                        <Route path="/perfil" element={
+                          <Perfil addNotification={addNotification} />
+                        } />
 
                         {/* Páginas do Paciente */}
                         <Route path="/exames" element={<MeusExames />} />
