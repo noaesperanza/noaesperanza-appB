@@ -7,7 +7,6 @@ import Header from './components/Header'
 import Footer from './components/Footer'
 import HomeFooter from './components/HomeFooter'
 import PremiumBackground from './components/PremiumBackground'
-import Home from './pages/Home'
 import DashboardMedico from './pages/DashboardMedico'
 import DashboardPaciente from './pages/DashboardPaciente'
 import DashboardProfissional from './pages/DashboardProfissional'
@@ -180,8 +179,8 @@ function App() {
                       <AdminDashboard addNotification={addNotification} />
                     } />
                     
-                    <Route path="/admin/chat" element={<GPTBuilder />} />
-                    
+                    <Route path="/admin/chat" element={<GPTBuilder userType="admin" />} />
+                                                                        
                     <Route path="/payment" element={
                       <PaymentPage />
                     } />

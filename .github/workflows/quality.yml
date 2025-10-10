@@ -53,15 +53,11 @@ jobs:
         wait-on: 'http://localhost:3016'
         browser: chrome
         record: true
-      env:
-        CYPRESS_RECORD_KEY: ${{ secrets.CYPRESS_RECORD_KEY }}
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         
     - name: SonarQube Scan
       uses: SonarSource/sonarqube-scan-action@v2
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         
     - name: Build application
       run: npm run build
@@ -93,8 +89,6 @@ jobs:
       
     - name: Run Snyk security scan
       uses: snyk/actions/node@master
-      env:
-        SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
       with:
         args: --severity-threshold=high
         
