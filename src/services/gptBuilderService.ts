@@ -2,11 +2,9 @@
 // Gerencia documentos mestres, configurações da Nôa e reconhecimento de usuários
 
 import { supabase } from '../integrations/supabase/client'
-import fs from 'fs'
-import path from 'path'
 
-const KNOWLEDGE_BASE_PATH = path.resolve(__dirname, '../../knowledge_base')
-
+// Defina o caminho como uma string estática ou adapte para ambiente browser
+const KNOWLEDGE_BASE_PATH = '/knowledge_base'
 export interface DocumentMaster {
   id: string
   title: string
@@ -245,9 +243,9 @@ export class GPTBuilderService {
 
       if (error && error.code !== 'PGRST116') throw error
       if (!data || typeof data !== 'object' || 'error' in data) {
-        return null
+        return null;
       }
-      return data as UserRecognition
+      return data as UserRecognition;
     } catch (error) {
       console.error('Erro ao reconhecer usuário:', error)
       throw error
@@ -494,13 +492,19 @@ export class GPTBuilderService {
     }
   }
 
-  // Obter documentos da base de conhecimento
-  getKnowledgeBaseDocuments() {
-    return fs.readdirSync(KNOWLEDGE_BASE_PATH).map(file => path.join(KNOWLEDGE_BASE_PATH, file));
+  // Obter documentos da base de conhecimento via API (browser-safe)
+  async getKnowledgeBaseDocuments(): Promise<string[]> {
+    try {
+      const response = await fetch('/api/knowledge-base-documents');
+      if (!response.ok) throw new Error('Failed to fetch knowledge base documents');
+      return await response.json();
+    } catch (error) {
+      console.error('Erro ao obter documentos da base de conhecimento:', error);
+      return [];
+    }
   }
 }
 
-// Instância global do serviço
 export const gptBuilderService = new GPTBuilderService()
 
 // 🌀 GPT BUILDER V2 - ENRIQUECIMENTO COM GRAMÁTICA NOA

@@ -67,7 +67,7 @@ jobs:
       run: npm run build
       
     - name: Upload build artifacts
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: build-files
         path: dist/
@@ -114,6 +114,9 @@ jobs:
     - name: Install dependencies
       run: npm ci
       
+    - name: Install Lighthouse CI
+      run: npm install -g @lhci/cli
+
     - name: Build application
       run: npm run build
       
