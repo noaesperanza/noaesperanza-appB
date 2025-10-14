@@ -80,8 +80,9 @@ class MercadoPagoService {
   private baseURL = 'https://api.mercadopago.com'
 
   constructor() {
-    this.accessToken = import.meta.env.VITE_MERCADO_PAGO_KEY
-    if (!this.accessToken) {
+    const token = import.meta.env.VITE_MERCADO_PAGO_KEY
+    this.accessToken = token ?? ''
+    if (!token) {
       console.error('Mercado Pago Access Token não encontrado')
     }
   }
@@ -111,52 +112,54 @@ class MercadoPagoService {
           category_id: 'health',
           quantity: item.quantity,
           currency_id: 'BRL',
-          unit_price: item.unit_price
+          unit_price: item.unit_price,
         })),
         payer: {
           name: payer.name,
           surname: '',
           email: payer.email,
-          phone: payer.phone ? {
-            area_code: '55',
-            number: payer.phone.replace(/\D/g, '')
-          } : undefined,
+          phone: payer.phone
+            ? {
+                area_code: '55',
+                number: payer.phone.replace(/\D/g, ''),
+              }
+            : undefined,
           identification: {
             type: 'CPF',
-            number: '12345678901' // Será preenchido pelo usuário
+            number: '12345678901', // Será preenchido pelo usuário
           },
           address: {
             street_name: 'Rua Exemplo',
             street_number: 123,
-            zip_code: '01234567'
-          }
+            zip_code: '01234567',
+          },
         },
         back_urls: {
           success: `${window.location.origin}/payment/success`,
           failure: `${window.location.origin}/payment/failure`,
-          pending: `${window.location.origin}/payment/pending`
+          pending: `${window.location.origin}/payment/pending`,
         },
         auto_return: 'approved',
         payment_methods: {
           excluded_payment_methods: [],
           excluded_payment_types: [],
-          installments: 12
+          installments: 12,
         },
         notification_url: `${window.location.origin}/api/webhook/mercadopago`,
         statement_descriptor: 'NOA ESPERANZA',
         external_reference: externalReference,
         expires: true,
         expiration_date_from: new Date().toISOString(),
-        expiration_date_to: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString() // 24 horas
+        expiration_date_to: new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(), // 24 horas
       }
 
       const response = await fetch(`${this.baseURL}/checkout/preferences`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${this.accessToken}`
+          Authorization: `Bearer ${this.accessToken}`,
         },
-        body: JSON.stringify(preference)
+        body: JSON.stringify(preference),
       })
 
       if (!response.ok) {
@@ -166,7 +169,6 @@ class MercadoPagoService {
 
       const data = await response.json()
       return data
-
     } catch (error) {
       console.error('Erro ao criar preferência de pagamento:', error)
       throw error
@@ -179,8 +181,8 @@ class MercadoPagoService {
       const response = await fetch(`${this.baseURL}/v1/payments/${paymentId}`, {
         method: 'GET',
         headers: {
-          'Authorization': `Bearer ${this.accessToken}`
-        }
+          Authorization: `Bearer ${this.accessToken}`,
+        },
       })
 
       if (!response.ok) {
@@ -190,7 +192,6 @@ class MercadoPagoService {
 
       const data = await response.json()
       return data
-
     } catch (error) {
       console.error('Erro ao obter pagamento:', error)
       throw error
@@ -210,19 +211,19 @@ class MercadoPagoService {
         description: description,
         payment_method_id: 'pix',
         payer: {
-          email: payerEmail
+          email: payerEmail,
         },
         external_reference: externalReference,
-        notification_url: `${window.location.origin}/api/webhook/mercadopago`
+        notification_url: `${window.location.origin}/api/webhook/mercadopago`,
       }
 
       const response = await fetch(`${this.baseURL}/v1/payments`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${this.accessToken}`
+          Authorization: `Bearer ${this.accessToken}`,
         },
-        body: JSON.stringify(payment)
+        body: JSON.stringify(payment),
       })
 
       if (!response.ok) {
@@ -232,7 +233,6 @@ class MercadoPagoService {
 
       const data = await response.json()
       return data
-
     } catch (error) {
       console.error('Erro ao criar pagamento PIX:', error)
       throw error
@@ -254,19 +254,19 @@ class MercadoPagoService {
   async processWebhook(webhookData: any) {
     try {
       const { type, data } = webhookData
-      
+
       if (type === 'payment') {
         const payment = await this.getPayment(data.id)
-        
+
         // Aqui você pode atualizar o status no seu banco de dados
         return {
           paymentId: payment.id,
           status: payment.status,
           amount: payment.amount,
-          externalReference: payment.external_reference
+          externalReference: payment.external_reference,
         }
       }
-      
+
       return null
     } catch (error) {
       console.error('Erro ao processar webhook:', error)
@@ -285,32 +285,35 @@ class MercadoPagoService {
       basic: {
         title: 'Plano Básico - NOA Esperanza',
         description: 'Consulta Online, Suporte por Chat, Relatórios Básicos',
-        price: 97
+        price: 97,
       },
       premium: {
         title: 'Plano Premium - NOA Esperanza',
-        description: 'Consultas Ilimitadas, Suporte Prioritário, Relatórios Avançados, Telemedicina',
-        price: 197
+        description:
+          'Consultas Ilimitadas, Suporte Prioritário, Relatórios Avançados, Telemedicina',
+        price: 197,
       },
       enterprise: {
         title: 'Plano Enterprise - NOA Esperanza',
         description: 'Tudo do Premium, Consultoria Personalizada, API Access, Suporte 24/7',
-        price: 397
-      }
+        price: 397,
+      },
     }
 
     const selectedPlan = plans[plan]
 
     return this.createPaymentPreference(
-      [{
-        title: selectedPlan.title,
-        description: selectedPlan.description,
-        quantity: 1,
-        unit_price: selectedPlan.price
-      }],
+      [
+        {
+          title: selectedPlan.title,
+          description: selectedPlan.description,
+          quantity: 1,
+          unit_price: selectedPlan.price,
+        },
+      ],
       {
         name: userName,
-        email: userEmail
+        email: userEmail,
       },
       externalReference
     )
