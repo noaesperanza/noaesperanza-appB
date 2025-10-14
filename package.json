@@ -1,20 +1,14 @@
 {
-<<<<<<< HEAD
-  "name": "ia-medica-premium-noa",
-  "version": "3.0.0",
-  "private": true,
-  "type": "module",
-=======
   "name": "noaesperanza-appB",
   "version": "1.0.0",
   "description": "App B com estrutura clínica e rotas públicas do appC",
   "main": "src/main.tsx",
->>>>>>> 6712a9d (chore: adiciona package.json com scripts de teste para CI)
+  "private": true,
+  "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-<<<<<<< HEAD
     "serve": "node server.js",
     "test": "vitest",
     "test:ui": "vitest --ui",
@@ -86,19 +80,8 @@
     "postcss": "^8.4.24",
     "prettier": "^3.2.5",
     "sonar-scanner": "^3.1.0",
-    "typescript": "^5.2.2",
+    "typescript": "^5.3.0",
     "vite": "^7.1.7",
     "vitest": "^3.2.4"
-=======
-    "test:ui": "echo \"No UI tests configured\" && exit 0",
-    "test:e2e": "echo \"No E2E tests configured\" && exit 0"
-  },
-  "dependencies": {
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0"
-  },
-  "devDependencies": {
-    "vite": "^4.0.0"
->>>>>>> 6712a9d (chore: adiciona package.json com scripts de teste para CI)
   }
 }
