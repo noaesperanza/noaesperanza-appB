@@ -126,6 +126,7 @@ function App() {
               </ProtectedRoute>
             }
           />
+          <Route path="/app/chat" element={<Navigate to="/chat" replace />} />
 
           {/* Rotas do app - COM header/footer - PROTEGIDAS */}
           <Route
