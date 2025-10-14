@@ -2,10 +2,17 @@
 
 interface ImportMetaEnv {
   readonly VITE_OPENAI_API_KEY: string
-  readonly VITE_ELEVEN_API_KEY: string
+  readonly VITE_ELEVEN_API_KEY?: string
   readonly VITE_SUPABASE_URL: string
-  readonly VITE_SUPABASE_ANON_KEY: string
-  // more env variables...
+  readonly VITE_SUPABASE_PUBLISHABLE_KEY: string
+  readonly VITE_MERCADO_PAGO_KEY?: string
+  readonly VITE_SUPPORT_EMAIL?: string
+  readonly VITE_CONTACT_PHONE?: string
+  readonly VITE_CLINIC_RICARDO_WHATSAPP?: string
+  readonly VITE_CLINIC_EDUARDO_WHATSAPP?: string
+  readonly VITE_SITE_BASE_URL?: string
+  readonly VITE_APP_ENVIRONMENT?: string
+  readonly VITE_APP_VERSION?: string
 }
 
 interface ImportMeta {
