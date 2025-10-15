@@ -1,6 +1,10 @@
 import React, { useState, useEffect } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { clinicalAgentService, PatientContext, ClinicalSession } from '../services/clinicalAgentService'
+import {
+  clinicalAgentService,
+  PatientContext,
+  ClinicalSession,
+} from '../services/clinicalAgentService'
 import { ClinicalAssessment } from '../components/ClinicalAssessment'
 import { logger } from '../utils/logger'
 
@@ -20,17 +24,19 @@ interface ChatMessage {
 
 const PatientDashboard: React.FC<PatientDashboardProps> = ({ userEmail, onLogout }) => {
   // Estados principais
-  const [activeTab, setActiveTab] = useState<'chat' | 'assessment' | 'profile' | 'security'>('assessment')
+  const [activeTab, setActiveTab] = useState<'chat' | 'assessment' | 'profile' | 'security'>(
+    'assessment'
+  )
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([])
   const [currentMessage, setCurrentMessage] = useState('')
   const [isTyping, setIsTyping] = useState(false)
-  
+
   // Estados de contexto do paciente
   const [patientContext, setPatientContext] = useState<PatientContext | null>(null)
   const [currentSession, setCurrentSession] = useState<ClinicalSession | null>(null)
   const [consentGiven, setConsentGiven] = useState(false)
   const [lgpdAccepted, setLgpdAccepted] = useState(false)
-  
+
   // Estados de segurança
   const [sessionId] = useState(`patient_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`)
   const [patientName, setPatientName] = useState('')
@@ -56,12 +62,12 @@ const PatientDashboard: React.FC<PatientDashboardProps> = ({ userEmail, onLogout
           canAccessClinicalData: consentGiven && lgpdAccepted,
           canGenerateReports: consentGiven && lgpdAccepted,
           canCreateNFT: consentGiven && lgpdAccepted,
-          lgpdCompliant: lgpdAccepted
-        }
+          lgpdCompliant: lgpdAccepted,
+        },
       }
 
       setPatientContext(context)
-      
+
       // Inicializar sessão se tiver permissões
       if (context.permissions.canAccessClinicalData) {
         await initializeClinicalSession(context)
@@ -88,7 +94,7 @@ const PatientDashboard: React.FC<PatientDashboardProps> = ({ userEmail, onLogout
     try {
       const session = await clinicalAgentService.initializePatientSession(context)
       setCurrentSession(session)
-      
+
       // Mensagem de boas-vindas
       const welcomeMessage: ChatMessage = {
         id: Date.now().toString(),
@@ -103,7 +109,7 @@ Estou aqui para conduzir sua avaliação clínica inicial de forma segura e conf
 
 Como posso ajudá-lo hoje?`,
         timestamp: new Date(),
-        action: 'welcome_message'
+        action: 'welcome_message',
       }
 
       setChatMessages([welcomeMessage])
@@ -116,7 +122,7 @@ Como posso ajudá-lo hoje?`,
   const handleConsentAccept = () => {
     setConsentGiven(true)
     setLgpdAccepted(true)
-    
+
     // Re-inicializar contexto com permissões
     setTimeout(() => {
       initializePatientContext()
@@ -130,7 +136,7 @@ Como posso ajudá-lo hoje?`,
       id: Date.now().toString(),
       role: 'user',
       content: currentMessage,
-      timestamp: new Date()
+      timestamp: new Date(),
     }
 
     setChatMessages(prev => [...prev, userMessage])
@@ -151,7 +157,7 @@ Como posso ajudá-lo hoje?`,
         content: response.response,
         timestamp: new Date(),
         action: response.action,
-        data: response.data
+        data: response.data,
       }
 
       setChatMessages(prev => [...prev, assistantMessage])
@@ -161,7 +167,6 @@ Como posso ajudá-lo hoje?`,
         setConsentGiven(false)
         setLgpdAccepted(false)
       }
-
     } catch (error) {
       logger.error('❌ Erro ao processar mensagem', error)
       const errorMessage: ChatMessage = {
@@ -169,7 +174,7 @@ Como posso ajudá-lo hoje?`,
         role: 'assistant',
         content: 'Desculpe, ocorreu um erro interno. Tente novamente.',
         timestamp: new Date(),
-        action: 'error'
+        action: 'error',
       }
       setChatMessages(prev => [...prev, errorMessage])
     } finally {
@@ -181,7 +186,7 @@ Como posso ajudá-lo hoje?`,
     if (currentSession) {
       await clinicalAgentService.completeClinicalSession(currentSession.id, report, nftHash)
       setNftHash(nftHash)
-      
+
       // Adicionar mensagem de conclusão
       const completionMessage: ChatMessage = {
         id: Date.now().toString(),
@@ -195,7 +200,7 @@ Como posso ajudá-lo hoje?`,
 Obrigado por confiar na Nôa Esperanza para sua avaliação inicial!`,
         timestamp: new Date(),
         action: 'assessment_completed',
-        data: { report, nftHash }
+        data: { report, nftHash },
       }
 
       setChatMessages(prev => [...prev, completionMessage])
@@ -216,31 +221,47 @@ Obrigado por confiar na Nôa Esperanza para sua avaliação inicial!`,
               <i className="fas fa-shield-alt text-white text-2xl"></i>
             </div>
             <h2 className="text-2xl font-bold text-white mb-2">Consentimento LGPD</h2>
-            <p className="text-gray-400">Para usar a Nôa Esperanza, precisamos do seu consentimento</p>
+            <p className="text-gray-400 mb-2">
+              Para usar a Nôa Esperanza, precisamos do seu consentimento.
+            </p>
+            <div className="bg-green-900/10 border border-green-500/30 rounded-lg p-4 mb-4">
+              <h3 className="text-green-400 text-lg font-semibold mb-2">Campanha Escute-se</h3>
+              <ul className="text-left text-gray-300 text-sm space-y-2">
+                <li>• Respeito à escuta ativa e acolhimento do paciente</li>
+                <li>• Privacidade, segurança e autonomia dos dados</li>
+                <li>• Consentimento informado e transparente</li>
+                <li>• Valorização da relação médico-paciente</li>
+                <li>• Ética, empatia e humanização do cuidado</li>
+              </ul>
+              <p className="text-xs text-gray-400 mt-3">
+                Ao continuar, você concorda com os valores da campanha Escute-se e com o termo de
+                consentimento LGPD.
+              </p>
+            </div>
           </div>
 
           <div className="space-y-4 mb-6">
             <div className="bg-slate-700 rounded-lg p-4">
               <h3 className="text-white font-semibold mb-2">📋 Finalidade dos Dados</h3>
               <p className="text-gray-300 text-sm">
-                Coletamos seus dados para conduzir avaliação clínica inicial, 
-                otimizar sua consulta médica e gerar relatórios personalizados.
+                Coletamos seus dados para conduzir avaliação clínica inicial, otimizar sua consulta
+                médica e gerar relatórios personalizados.
               </p>
             </div>
 
             <div className="bg-slate-700 rounded-lg p-4">
               <h3 className="text-white font-semibold mb-2">🔒 Proteção de Dados</h3>
               <p className="text-gray-300 text-sm">
-                Seus dados são criptografados, armazenados com segurança e 
-                utilizados exclusivamente para fins médicos autorizados.
+                Seus dados são criptografados, armazenados com segurança e utilizados exclusivamente
+                para fins médicos autorizados.
               </p>
             </div>
 
             <div className="bg-slate-700 rounded-lg p-4">
               <h3 className="text-white font-semibold mb-2">⏰ Retenção</h3>
               <p className="text-gray-300 text-sm">
-                Mantemos seus dados por 1 ano após sua última interação, 
-                conforme exigências médicas e legais.
+                Mantemos seus dados por 1 ano após sua última interação, conforme exigências médicas
+                e legais.
               </p>
             </div>
           </div>
@@ -275,10 +296,12 @@ Obrigado por confiar na Nôa Esperanza para sua avaliação inicial!`,
             </div>
             <div>
               <h1 className="text-xl font-bold text-white">Dashboard do Paciente</h1>
-              <p className="text-sm text-gray-400">Nôa Esperanza - Assistente Clínica Especializada</p>
+              <p className="text-sm text-gray-400">
+                Nôa Esperanza - Assistente Clínica Especializada
+              </p>
             </div>
           </div>
-          
+
           <div className="flex items-center gap-3">
             <span className="text-sm text-gray-400">{userEmail}</span>
             <button
@@ -366,7 +389,7 @@ Obrigado por confiar na Nôa Esperanza para sua avaliação inicial!`,
                   </div>
                 ) : (
                   <div className="space-y-4">
-                    {chatMessages.map((message) => (
+                    {chatMessages.map(message => (
                       <div
                         key={message.id}
                         className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}
@@ -385,14 +408,20 @@ Obrigado por confiar na Nôa Esperanza para sua avaliação inicial!`,
                         </div>
                       </div>
                     ))}
-                    
+
                     {isTyping && (
                       <div className="flex justify-start">
                         <div className="bg-slate-700 text-white px-4 py-2 rounded-lg">
                           <div className="flex items-center space-x-1">
                             <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"></div>
-                            <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                            <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                            <div
+                              className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
+                              style={{ animationDelay: '0.1s' }}
+                            ></div>
+                            <div
+                              className="w-2 h-2 bg-gray-400 rounded-full animate-bounce"
+                              style={{ animationDelay: '0.2s' }}
+                            ></div>
                           </div>
                         </div>
                       </div>
@@ -406,8 +435,8 @@ Obrigado por confiar na Nôa Esperanza para sua avaliação inicial!`,
                 <input
                   type="text"
                   value={currentMessage}
-                  onChange={(e) => setCurrentMessage(e.target.value)}
-                  onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
+                  onChange={e => setCurrentMessage(e.target.value)}
+                  onKeyPress={e => e.key === 'Enter' && sendMessage()}
                   placeholder="Digite sua mensagem para Nôa Esperanza..."
                   className="flex-1 bg-slate-700 border border-slate-600 rounded-lg px-4 py-3 text-white placeholder-gray-400 focus:outline-none focus:border-blue-500"
                   disabled={!patientContext || !currentSession}
@@ -449,21 +478,17 @@ Obrigado por confiar na Nôa Esperanza para sua avaliação inicial!`,
                 <h2 className="text-xl font-bold text-white mb-4">Meu Perfil</h2>
                 <div className="space-y-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">
-                      Nome
-                    </label>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">Nome</label>
                     <input
                       type="text"
                       value={patientName}
-                      onChange={(e) => setPatientName(e.target.value)}
+                      onChange={e => setPatientName(e.target.value)}
                       className="w-full bg-slate-700 border border-slate-600 rounded-lg px-3 py-2 text-white focus:outline-none focus:border-blue-500"
                       placeholder="Digite seu nome"
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-300 mb-2">
-                      Email
-                    </label>
+                    <label className="block text-sm font-medium text-gray-300 mb-2">Email</label>
                     <input
                       type="email"
                       value={userEmail}
@@ -486,13 +511,19 @@ Obrigado por confiar na Nôa Esperanza para sua avaliação inicial!`,
                   )}
                   {lastAssessmentReport && (
                     <div className="mt-4 p-3 bg-green-900/20 border border-green-500/30 rounded-lg">
-                      <h3 className="text-green-400 text-sm font-semibold mb-2">📄 Relatório da Avaliação Clínica Inicial</h3>
-                      <pre className="text-xs text-gray-200 whitespace-pre-wrap font-mono max-h-64 overflow-y-auto">{lastAssessmentReport}</pre>
+                      <h3 className="text-green-400 text-sm font-semibold mb-2">
+                        📄 Relatório da Avaliação Clínica Inicial
+                      </h3>
+                      <pre className="text-xs text-gray-200 whitespace-pre-wrap font-mono max-h-64 overflow-y-auto">
+                        {lastAssessmentReport}
+                      </pre>
                       <div className="flex items-center gap-2 mt-2">
                         <button
                           className="px-3 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-xs"
                           onClick={() => {
-                            const blob = new Blob([lastAssessmentReport], { type: 'text/plain;charset=utf-8' })
+                            const blob = new Blob([lastAssessmentReport], {
+                              type: 'text/plain;charset=utf-8',
+                            })
                             const url = URL.createObjectURL(blob)
                             const a = document.createElement('a')
                             a.href = url
@@ -532,7 +563,7 @@ Obrigado por confiar na Nôa Esperanza para sua avaliação inicial!`,
                       <p className="text-gray-400 text-sm">Você autorizou o uso de seus dados</p>
                     </div>
                   </div>
-                  
+
                   <div className="flex items-center gap-3 p-4 bg-blue-900/20 border border-blue-500/30 rounded-lg">
                     <i className="fas fa-shield-alt text-blue-400 text-xl"></i>
                     <div>
@@ -540,7 +571,7 @@ Obrigado por confiar na Nôa Esperanza para sua avaliação inicial!`,
                       <p className="text-gray-400 text-sm">Seus dados estão protegidos</p>
                     </div>
                   </div>
-                  
+
                   <div className="flex items-center gap-3 p-4 bg-purple-900/20 border border-purple-500/30 rounded-lg">
                     <i className="fas fa-clock text-purple-400 text-xl"></i>
                     <div>

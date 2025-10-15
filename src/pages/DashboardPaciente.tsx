@@ -1,10 +1,8 @@
-import React, { useState, useEffect, useMemo } from 'react'
+import React, { useState, useMemo, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { Specialty } from '../App'
-import GPTPBuilder from '../components/GPTPBuilder'
 import ClinicalAssessmentChat from '../components/ClinicalAssessmentChat'
 import { useAuth } from '../contexts/AuthContext'
-import { ClinicalAssessment } from '../components/ClinicalAssessment'
 
 type NotificationType = 'info' | 'success' | 'warning' | 'error'
 
@@ -44,8 +42,8 @@ const DashboardPaciente = ({ currentSpecialty, addNotification }: DashboardPacie
 
   const profile = useMemo(() => specialtyCopy[currentSpecialty], [currentSpecialty])
 
-  const builderUserId = user?.id || 'noa-paciente-guest'
-  const builderUserName = userProfile?.name || user?.email || 'Paciente Nôa'
+  // const builderUserId = user?.id || 'noa-paciente-guest'
+  // const builderUserName = userProfile?.name || user?.email || 'Paciente Nôa'
 
   useEffect(() => {
     addNotification('Espaço do paciente conectado à Nôa Esperanza.', 'success')
@@ -169,7 +167,7 @@ const DashboardPaciente = ({ currentSpecialty, addNotification }: DashboardPacie
                       <div className="w-24 h-24 bg-gradient-to-r from-emerald-400 to-green-600 rounded-full mx-auto mb-4 flex items-center justify-center">
                         <i className="fas fa-user text-white text-2xl"></i>
                       </div>
-                      <h2 className="text-2xl font-bold text-white mb-2">{builderUserName}</h2>
+                      {/* <h2 className="text-2xl font-bold text-white mb-2">{builderUserName}</h2> */}
                       <p className="text-gray-400">{profile.title}</p>
                     </div>
 
@@ -243,16 +241,7 @@ const DashboardPaciente = ({ currentSpecialty, addNotification }: DashboardPacie
                   </div>
                 )}
 
-                {activeTab === 'chat' && (
-                  <div className="h-[600px]">
-                    <GPTPBuilder
-                      embedded
-                      userId={builderUserId}
-                      userName={builderUserName}
-                      userType="paciente"
-                    />
-                  </div>
-                )}
+                {/* KPIs de evolução clínica são exibidos apenas nos relatórios e progresso do paciente */}
 
                 {activeTab === 'reports' && (
                   <div className="space-y-6">
