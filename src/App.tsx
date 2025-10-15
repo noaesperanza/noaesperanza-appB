@@ -34,8 +34,7 @@ import GPTBuilder from './pages/GPTBuilder'
 import LoadingFallback from './components/LoadingFallback'
 import HomeNew from './pages/HomeNew'
 import AvaliacaoClinicaInicial from './pages/AvaliacaoClinicaInicial'
-import { lazy, Suspense } from 'react'
-const TriagemClinica = lazy(() => import('./pages/TriagemClinica'))
+import { Suspense } from 'react'
 
 export type Specialty = 'rim' | 'neuro' | 'cannabis'
 
@@ -195,16 +194,8 @@ function App() {
                         <Route path="/prescricoes" element={<Prescricoes />} />
                         <Route path="/prontuario" element={<Prontuario />} />
                         <Route path="/pagamentos-paciente" element={<PagamentosPaciente />} />
-                        {/* Rota correta: Avaliação Clínica Inicial via IMRE/Arte da Entrevista Clínica */}
-                        {/* <Route path="/avaliacao-inicial" element={<AvaliacaoClinicaInicial />} /> */}
-                        <Route
-                          path="/triagem"
-                          element={
-                            <Suspense fallback={<div>Carregando triagem...</div>}>
-                              <TriagemClinica />
-                            </Suspense>
-                          }
-                        />
+                        {/* Rota principal: Avaliação Clínica Inicial via IMRE/Arte da Entrevista Clínica */}
+                        <Route path="/avaliacao-inicial" element={<AvaliacaoClinicaInicial />} />
                         {/* Páginas de Ensino e Pesquisa */}
                         <Route path="/ensino" element={<Ensino />} />
                         <Route path="/pesquisa" element={<Pesquisa />} />
