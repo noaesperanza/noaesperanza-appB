@@ -15,27 +15,32 @@ interface DashboardPacienteProps {
 const specialtyCopy: Record<Specialty, { title: string; description: string; accent: string }> = {
   rim: {
     title: 'Programa de Cuidado Renal',
-    description: 'A Nôa acompanha a jornada nefrológica com monitoramento de exames, medicações e educação contínua.',
-    accent: 'from-emerald-400 to-green-600'
+    description:
+      'A Nôa acompanha a jornada nefrológica com monitoramento de exames, medicações e educação contínua.',
+    accent: 'from-emerald-400 to-green-600',
   },
   neuro: {
     title: 'Programa de Neurologia Integrada',
-    description: 'Assistência inteligente para acompanhamento de sintomas neurológicos, planos terapêuticos e suporte familiar.',
-    accent: 'from-sky-400 to-blue-600'
+    description:
+      'Assistência inteligente para acompanhamento de sintomas neurológicos, planos terapêuticos e suporte familiar.',
+    accent: 'from-sky-400 to-blue-600',
   },
   cannabis: {
     title: 'Programa de Cannabis Medicinal',
-    description: 'Orientações personalizadas sobre titulação, adesão terapêutica e telemonitoramento com equipe especializada.',
-    accent: 'from-lime-400 to-emerald-500'
-  }
+    description:
+      'Orientações personalizadas sobre titulação, adesão terapêutica e telemonitoramento com equipe especializada.',
+    accent: 'from-lime-400 to-emerald-500',
+  },
 }
 
 const DashboardPaciente = ({ currentSpecialty, addNotification }: DashboardPacienteProps) => {
   const { user, userProfile } = useAuth()
-  const [activeTab, setActiveTab] = useState<'profile' | 'assessment' | 'chat' | 'reports'>('profile')
+  const [activeTab, setActiveTab] = useState<'profile' | 'assessment' | 'chat' | 'reports'>(
+    'profile'
+  )
   const [clinicalReport, setClinicalReport] = useState<any>(null)
   const [nftHash, setNftHash] = useState<string>('')
-  
+
   const profile = useMemo(() => specialtyCopy[currentSpecialty], [currentSpecialty])
 
   const builderUserId = user?.id || 'noa-paciente-guest'
@@ -43,7 +48,7 @@ const DashboardPaciente = ({ currentSpecialty, addNotification }: DashboardPacie
 
   useEffect(() => {
     addNotification('Espaço do paciente conectado à Nôa Esperanza.', 'success')
-    
+
     // Carregar último relatório salvo
     try {
       const lastReport = localStorage.getItem('last_clinical_report')
@@ -61,7 +66,7 @@ const DashboardPaciente = ({ currentSpecialty, addNotification }: DashboardPacie
     setClinicalReport(report)
     setNftHash(nftHash)
     addNotification('Avaliação Clínica concluída e relatório gerado!', 'success')
-    
+
     // Salvar localmente
     try {
       const reportData = { ...report, nftHash, timestamp: new Date().toISOString() }
@@ -77,7 +82,7 @@ const DashboardPaciente = ({ currentSpecialty, addNotification }: DashboardPacie
 
   const downloadReport = () => {
     if (!clinicalReport) return
-    
+
     const reportText = clinicalReport.summary || 'Relatório não disponível'
     const blob = new Blob([reportText], { type: 'text/plain' })
     const url = URL.createObjectURL(blob)
@@ -88,7 +93,7 @@ const DashboardPaciente = ({ currentSpecialty, addNotification }: DashboardPacie
     a.click()
     document.body.removeChild(a)
     URL.revokeObjectURL(url)
-    
+
     addNotification('Relatório baixado com sucesso!', 'success')
   }
 
@@ -99,13 +104,16 @@ const DashboardPaciente = ({ currentSpecialty, addNotification }: DashboardPacie
         <header className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between mb-6">
           <div className="flex items-center gap-3">
             <Link to="/" className="text-emerald-300 hover:text-emerald-200 transition-colors">
-              <i className="fas fa-arrow-left mr-2" />Voltar ao início
+              <i className="fas fa-arrow-left mr-2" />
+              Voltar ao início
             </Link>
             <span className="inline-flex items-center gap-2 rounded-xl bg-white/5 px-3 py-1 text-xs uppercase tracking-widest text-emerald-200">
               <i className="fas fa-user-md" /> Paciente
             </span>
           </div>
-          <div className={`rounded-2xl border border-white/10 bg-gradient-to-r ${profile.accent} px-4 py-3 shadow-lg`}> 
+          <div
+            className={`rounded-2xl border border-white/10 bg-gradient-to-r ${profile.accent} px-4 py-3 shadow-lg`}
+          >
             <h1 className="text-lg font-semibold uppercase tracking-widest">{profile.title}</h1>
             <p className="text-sm text-white/80">{profile.description}</p>
           </div>
@@ -127,17 +135,6 @@ const DashboardPaciente = ({ currentSpecialty, addNotification }: DashboardPacie
                 >
                   <i className="fas fa-user mr-2"></i>
                   Meu Perfil
-                </button>
-                <button
-                  onClick={() => setActiveTab('assessment')}
-                  className={`px-6 py-4 text-sm font-medium transition-colors ${
-                    activeTab === 'assessment'
-                      ? 'text-emerald-400 border-b-2 border-emerald-400 bg-emerald-400/10'
-                      : 'text-gray-400 hover:text-white hover:bg-white/5'
-                  }`}
-                >
-                  <i className="fas fa-clipboard-list mr-2"></i>
-                  Avaliação Clínica Inicial
                 </button>
                 <button
                   onClick={() => setActiveTab('chat')}
@@ -189,7 +186,9 @@ const DashboardPaciente = ({ currentSpecialty, addNotification }: DashboardPacie
                         {nftHash && (
                           <div className="mt-4 p-3 bg-slate-700/50 rounded-lg">
                             <p className="text-xs text-gray-400">NFT Hash:</p>
-                            <p className="text-emerald-400 font-mono text-xs break-all">{nftHash}</p>
+                            <p className="text-emerald-400 font-mono text-xs break-all">
+                              {nftHash}
+                            </p>
                           </div>
                         )}
                         <button
@@ -215,7 +214,9 @@ const DashboardPaciente = ({ currentSpecialty, addNotification }: DashboardPacie
                           </div>
                           <div className="flex justify-between text-sm">
                             <span className="text-gray-400">Última Atualização</span>
-                            <span className="text-white">{clinicalReport ? new Date().toLocaleDateString('pt-BR') : 'N/A'}</span>
+                            <span className="text-white">
+                              {clinicalReport ? new Date().toLocaleDateString('pt-BR') : 'N/A'}
+                            </span>
                           </div>
                         </div>
                       </div>
@@ -246,8 +247,8 @@ const DashboardPaciente = ({ currentSpecialty, addNotification }: DashboardPacie
 
                 {activeTab === 'chat' && (
                   <div className="h-[600px]">
-                    <GPTPBuilder 
-                      embedded 
+                    <GPTPBuilder
+                      embedded
                       userId={builderUserId}
                       userName={builderUserName}
                       userType="paciente"
@@ -258,7 +259,7 @@ const DashboardPaciente = ({ currentSpecialty, addNotification }: DashboardPacie
                 {activeTab === 'reports' && (
                   <div className="space-y-6">
                     <h2 className="text-2xl font-bold text-white">Relatórios Clínicos</h2>
-                    
+
                     {clinicalReport ? (
                       <div className="bg-slate-800/50 rounded-xl p-6 border border-emerald-400/20">
                         <div className="flex items-center justify-between mb-4">
@@ -270,7 +271,7 @@ const DashboardPaciente = ({ currentSpecialty, addNotification }: DashboardPacie
                             {new Date().toLocaleDateString('pt-BR')}
                           </span>
                         </div>
-                        
+
                         <div className="prose prose-invert max-w-none mb-6">
                           <pre className="whitespace-pre-wrap text-sm text-gray-300 leading-relaxed">
                             {clinicalReport.summary}
@@ -280,7 +281,9 @@ const DashboardPaciente = ({ currentSpecialty, addNotification }: DashboardPacie
                         {nftHash && (
                           <div className="mb-4 p-3 bg-slate-700/50 rounded-lg">
                             <p className="text-xs text-gray-400 mb-1">NFT Hash (Certificação):</p>
-                            <p className="text-emerald-400 font-mono text-xs break-all">{nftHash}</p>
+                            <p className="text-emerald-400 font-mono text-xs break-all">
+                              {nftHash}
+                            </p>
                           </div>
                         )}
 
@@ -295,8 +298,12 @@ const DashboardPaciente = ({ currentSpecialty, addNotification }: DashboardPacie
                     ) : (
                       <div className="text-center py-12">
                         <i className="fas fa-file-medical text-6xl text-gray-600 mb-4"></i>
-                        <h3 className="text-xl font-semibold text-gray-400 mb-2">Nenhum relatório disponível</h3>
-                        <p className="text-gray-500 mb-6">Complete uma avaliação clínica para gerar seu primeiro relatório.</p>
+                        <h3 className="text-xl font-semibold text-gray-400 mb-2">
+                          Nenhum relatório disponível
+                        </h3>
+                        <p className="text-gray-500 mb-6">
+                          Complete uma avaliação clínica para gerar seu primeiro relatório.
+                        </p>
                         <button
                           onClick={() => setActiveTab('assessment')}
                           className="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-3 rounded-lg font-medium transition-colors"

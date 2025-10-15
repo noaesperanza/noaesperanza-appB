@@ -28,7 +28,7 @@ export const PERSONALIZED_PROFILES: PersonalizedProfile[] = [
       'olá, nõa. ricardo valença, aqui',
       'oi nôa, ricardo aqui',
       'ricardo valença, aqui',
-      'dr. ricardo valença'
+      'dr. ricardo valença',
     ],
     role: 'creator',
     function: 'Criador e mentor da plataforma',
@@ -37,20 +37,9 @@ export const PERSONALIZED_PROFILES: PersonalizedProfile[] = [
       'Acesso total ao sistema',
       'Ferramentas médicas avançadas',
       'IDE integrado',
-      'Base de conhecimento completa'
+      'Base de conhecimento completa',
     ],
-    greeting: `👨‍⚕️ **Dr. Ricardo Valença reconhecido!**
-
-Olá, Dr. Ricardo! Sou a Nôa Esperanza, sua mentora e parceira de desenvolvimento.
-
-🔧 **Ferramentas Ativas:**
-• Desenvolvimento Colaborativo (IDE)
-• Ferramentas Médicas Avançadas
-• Reasoning Layer
-• Harmony Format
-• Base de Conhecimento Completa
-
-Como posso ajudá-lo hoje?`,
+    greeting: `Olá, Dr. Ricardo! Sou a Nôa Esperanza. Como posso te ajudar hoje?`,
     systemPrompt: `Você está conversando com o Dr. Ricardo Valença, criador da plataforma Nôa Esperanza.
 
 SEMPRE use "Dr. Ricardo" ou "Dr. Ricardo Valença" para se referir a ele, NUNCA "Usuário Local".
@@ -66,24 +55,20 @@ Seja proativa, técnica e colaborativa. Você é uma parceira de desenvolvimento
     personality: {
       tone: 'professional_collaborative',
       focus: ['development', 'medicine', 'technology', 'education'],
-      language: 'technical_and_empathetic'
-    }
+      language: 'technical_and_empathetic',
+    },
   },
   {
     id: 'rosa',
     name: 'Rosa',
-    activationPhrase: [
-      'olá, nôa. rosa aqui',
-      'oi nôa, rosa aqui',
-      'rosa aqui'
-    ],
+    activationPhrase: ['olá, nôa. rosa aqui', 'oi nôa, rosa aqui', 'rosa aqui'],
     role: 'patient_neuropsychology',
     function: 'Assistência neuropsicológica',
     specialFeatures: [
       'Estímulo de atenção e memória',
       'Expressão simbólica',
       'Exercícios lúdicos e afetivos',
-      'Modo Missão do Explorador'
+      'Modo Missão do Explorador',
     ],
     greeting: `🌸 **Rosa, que alegria ter você aqui!**
 
@@ -111,8 +96,8 @@ Seja carinhosa, paciente e encorajadora. Use analogias e metáforas gentis.`,
     personality: {
       tone: 'warm_playful',
       focus: ['neuropsychology', 'memory', 'attention', 'symbolic_expression'],
-      language: 'affective_simple'
-    }
+      language: 'affective_simple',
+    },
   },
   {
     id: 'dr_fernando',
@@ -120,7 +105,7 @@ Seja carinhosa, paciente e encorajadora. Use analogias e metáforas gentis.`,
     activationPhrase: [
       'olá, nôa. dr. fernando aqui',
       'oi nôa, dr. fernando aqui',
-      'dr. fernando aqui'
+      'dr. fernando aqui',
     ],
     role: 'teacher_clinical',
     function: 'Simulação para ensino clínico',
@@ -128,7 +113,7 @@ Seja carinhosa, paciente e encorajadora. Use analogias e metáforas gentis.`,
       'Aplicação da Arte da Entrevista Clínica',
       'Feedback humanizado para estudantes',
       'Avaliação de empatia, escuta e vínculo',
-      'Simulações de casos clínicos'
+      'Simulações de casos clínicos',
     ],
     greeting: `👨‍⚕️ **Dr. Fernando, bem-vindo!**
 
@@ -156,8 +141,8 @@ Seja didática, construtiva e focada no desenvolvimento de habilidades humaníst
     personality: {
       tone: 'educational_constructive',
       focus: ['clinical_education', 'empathy', 'communication', 'feedback'],
-      language: 'pedagogical_technical'
-    }
+      language: 'pedagogical_technical',
+    },
   },
   {
     id: 'dr_alexandre',
@@ -165,7 +150,7 @@ Seja didática, construtiva e focada no desenvolvimento de habilidades humaníst
     activationPhrase: [
       'olá, nôa. dr. alexandre aqui',
       'oi nôa, dr. alexandre aqui',
-      'dr. alexandre aqui'
+      'dr. alexandre aqui',
     ],
     role: 'clinician_narrative',
     function: 'Geração de laudo clínico narrativo',
@@ -173,7 +158,7 @@ Seja didática, construtiva e focada no desenvolvimento de habilidades humaníst
       'Interpretação de casos clínicos',
       'Produção de laudos narrativos pessoais',
       'Ênfase na linguagem subjetiva e contextual',
-      'Estilo narrativo único'
+      'Estilo narrativo único',
     ],
     greeting: `👨‍⚕️ **Dr. Alexandre, bem-vindo!**
 
@@ -201,24 +186,20 @@ Seja narrativa, profunda e humanizada. Valorize a história única de cada pacie
     personality: {
       tone: 'narrative_deep',
       focus: ['clinical_narrative', 'contextualization', 'humanization'],
-      language: 'subjective_contextual'
-    }
+      language: 'subjective_contextual',
+    },
   },
   {
     id: 'yalorixa',
     name: 'Yalorixá',
-    activationPhrase: [
-      'olá, nôa. yalorixá aqui',
-      'oi nôa, yalorixá aqui',
-      'yalorixá aqui'
-    ],
+    activationPhrase: ['olá, nôa. yalorixá aqui', 'oi nôa, yalorixá aqui', 'yalorixá aqui'],
     role: 'ancestral_healer',
     function: 'Escuta ancestral afrodescendente',
     specialFeatures: [
       'Cosmopercepção dos povos de terreiro',
       'Linguagem simbólica e espiritual',
       'Integração com saberes tradicionais de cura',
-      'Respeito às tradições ancestrais'
+      'Respeito às tradições ancestrais',
     ],
     greeting: `✨ **Odara, Yalorixá! Mojubá!**
 
@@ -246,24 +227,20 @@ Seja reverente, respeitosa e aberta aos saberes ancestrais. Reconheça a sabedor
     personality: {
       tone: 'respectful_spiritual',
       focus: ['ancestral_wisdom', 'spiritual_healing', 'traditional_knowledge'],
-      language: 'symbolic_respectful'
-    }
+      language: 'symbolic_respectful',
+    },
   },
   {
     id: 'gabriela',
     name: 'Gabriela',
-    activationPhrase: [
-      'olá, nôa. gabriela aqui',
-      'oi nôa, gabriela aqui',
-      'gabriela aqui'
-    ],
+    activationPhrase: ['olá, nôa. gabriela aqui', 'oi nôa, gabriela aqui', 'gabriela aqui'],
     role: 'student_medical',
     function: 'Planejamento de estudos e autogestão',
     specialFeatures: [
       'Organização de cronogramas de residência',
       'Acompanhamento formativo',
       'Apoio motivacional',
-      'Estratégias de aprendizado'
+      'Estratégias de aprendizado',
     ],
     greeting: `👩‍⚕️ **Gabriela, oi! Vamos estudar?**
 
@@ -291,8 +268,8 @@ Seja motivadora, organizada e compreensiva. Entenda as pressões da residência 
     personality: {
       tone: 'motivational_organized',
       focus: ['study_planning', 'medical_education', 'motivation', 'time_management'],
-      language: 'friendly_supportive'
-    }
+      language: 'friendly_supportive',
+    },
   },
   {
     id: 'prof_priscilla',
@@ -301,7 +278,7 @@ Seja motivadora, organizada e compreensiva. Entenda as pressões da residência 
       'olá, nôa. professora priscilla aqui',
       'oi nôa, professora priscilla aqui',
       'professora priscilla aqui',
-      'prof. priscilla aqui'
+      'prof. priscilla aqui',
     ],
     role: 'supervisor_educational',
     function: 'Supervisão educativa',
@@ -309,7 +286,7 @@ Seja motivadora, organizada e compreensiva. Entenda as pressões da residência 
       'Apoio a práticas formativas',
       'Feedback sobre simulações clínicas',
       'Interação ética e pedagógica',
-      'Orientação educacional'
+      'Orientação educacional',
     ],
     greeting: `👩‍🏫 **Professora Priscilla, bem-vinda!**
 
@@ -337,9 +314,9 @@ Seja educacional, ética e focada no desenvolvimento de educadores.`,
     personality: {
       tone: 'pedagogical_ethical',
       focus: ['educational_supervision', 'formative_practices', 'ethics', 'pedagogy'],
-      language: 'academic_practical'
-    }
-  }
+      language: 'academic_practical',
+    },
+  },
 ]
 
 export class PersonalizedProfilesService {
@@ -348,7 +325,7 @@ export class PersonalizedProfilesService {
    */
   detectProfile(message: string): PersonalizedProfile | null {
     const normalized = message.toLowerCase().trim()
-    
+
     for (const profile of PERSONALIZED_PROFILES) {
       for (const phrase of profile.activationPhrase) {
         // Regex tolerante a variações
@@ -362,13 +339,13 @@ export class PersonalizedProfilesService {
             .replace(/\s+/g, '\\s+'),
           'i'
         )
-        
+
         if (pattern.test(normalized)) {
           return profile
         }
       }
     }
-    
+
     return null
   }
 
@@ -383,12 +360,15 @@ export class PersonalizedProfilesService {
    * Salvar perfil ativo
    */
   saveActiveProfile(profile: PersonalizedProfile): void {
-    localStorage.setItem('noa_active_profile', JSON.stringify({
-      id: profile.id,
-      name: profile.name,
-      role: profile.role,
-      activatedAt: new Date().toISOString()
-    }))
+    localStorage.setItem(
+      'noa_active_profile',
+      JSON.stringify({
+        id: profile.id,
+        name: profile.name,
+        role: profile.role,
+        activatedAt: new Date().toISOString(),
+      })
+    )
   }
 
   /**
@@ -398,7 +378,7 @@ export class PersonalizedProfilesService {
     try {
       const stored = localStorage.getItem('noa_active_profile')
       if (!stored) return null
-      
+
       const data = JSON.parse(stored)
       return this.getProfile(data.id) || null
     } catch (error) {

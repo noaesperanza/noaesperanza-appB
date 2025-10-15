@@ -195,7 +195,8 @@ function App() {
                         <Route path="/prescricoes" element={<Prescricoes />} />
                         <Route path="/prontuario" element={<Prontuario />} />
                         <Route path="/pagamentos-paciente" element={<PagamentosPaciente />} />
-                        <Route path="/avaliacao-inicial" element={<AvaliacaoClinicaInicial />} />
+                        {/* Rota correta: Avaliação Clínica Inicial via IMRE/Arte da Entrevista Clínica */}
+                        {/* <Route path="/avaliacao-inicial" element={<AvaliacaoClinicaInicial />} /> */}
                         <Route
                           path="/triagem"
                           element={
