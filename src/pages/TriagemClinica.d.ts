@@ -1,4 +1,4 @@
-declare module 'pages/TriagemClinica' {
-  const TriagemClinica: React.FC;
-  export default TriagemClinica;
+declare module 'pages/AvaliacaoClinicaInicial' {
+  const AvaliacaoClinicaInicial: React.FC
+  export default AvaliacaoClinicaInicial
 }

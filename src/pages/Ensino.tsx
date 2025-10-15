@@ -18,7 +18,6 @@ import {
   X,
   CheckCircle,
 } from 'lucide-react'
-import GPTPBuilder from '../components/GPTPBuilder'
 import { useAuth } from '../contexts/AuthContext'
 
 const Ensino = () => {
@@ -239,9 +238,7 @@ const Ensino = () => {
         <Header />
         <main>
           <section className="px-4">
-            <div className="rounded-3xl border border-white/10 bg-black/40 shadow-xl backdrop-blur">
-              <GPTPBuilder userId={builderUserId} userName={builderUserName} userType="aluno" />
-            </div>
+            <div className="rounded-3xl border border-white/10 bg-black/40 shadow-xl backdrop-blur"></div>
           </section>
 
           <div className="flex gap-4 py-3 px-4">

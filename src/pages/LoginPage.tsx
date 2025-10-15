@@ -1,160 +1,78 @@
-import React, { useState, useEffect } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
-import { useAuth } from '../contexts/AuthContext'
+import React, { useState } from 'react'
 
 const LoginPage = () => {
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
+  const [input, setInput] = useState('')
+  const [response, setResponse] = useState('')
   const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
 
-  const { signIn, user, loading: authLoading } = useAuth()
-  const navigate = useNavigate()
-
-  // Redirecionar se já estiver logado
-  useEffect(() => {
-    if (user && !authLoading) {
-      navigate('/app/paciente')
-    }
-  }, [user, authLoading, navigate])
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-
-    if (!email || !password) {
-      setError('Por favor, preencha todos os campos')
-      return
-    }
-
-    try {
-      setError('')
-      setLoading(true)
-      await signIn(email, password)
-      navigate('/app/paciente')
-    } catch (error: any) {
-      setError(error.message || 'Erro ao fazer login')
-    } finally {
+  const handleSend = () => {
+    setLoading(true)
+    setTimeout(() => {
+      setResponse(
+        input ? `Nôa Esperanza escutou: "${input}"` : 'Por favor, escreva algo para começar.'
+      )
       setLoading(false)
-    }
-  }
-
-  // Mostrar loading enquanto verifica autenticação
-  if (authLoading) {
-    return (
-      <div className="h-full overflow-hidden flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-8 h-8 border-2 border-green-400 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-400">Verificando autenticação...</p>
-        </div>
-      </div>
-    )
+    }, 900)
   }
 
   return (
-    <div className="h-full overflow-hidden flex items-center justify-center">
-      <div className="max-w-md w-full mx-auto px-6">
-        <div className="premium-card p-8">
-          {/* Header */}
-          <div className="text-center mb-8">
-            <div className="w-16 h-16 bg-gradient-to-r from-blue-500 via-green-500 to-yellow-500 rounded-full mx-auto mb-4 flex items-center justify-center">
-              <img
-                src="/logo-noa-triangulo.gif"
-                alt="NOA Esperanza"
-                className="w-full h-full object-cover rounded-full"
-              />
-            </div>
-            <h1 className="text-2xl font-bold text-premium mb-2">Bem-vindo de volta</h1>
-            <p className="text-gray-400">Faça login na sua conta NOA Esperanza</p>
+    <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 animate-fadein">
+      <div className="flex flex-col items-center gap-6 mb-8">
+        <img
+          src="/logo-medcannlab.png"
+          alt="Logo MedCaNNLab"
+          className="w-44 h-44 mb-2 rounded-2xl shadow-2xl animate-float"
+        />
+        <img
+          src="/logo-noa-esperanza.png"
+          alt="Logo Nôa Esperanza"
+          className="w-44 h-44 mb-2 rounded-2xl shadow-2xl animate-float"
+        />
+        <img
+          src="/logo-noa-triangulo.gif"
+          alt="Triângulo animado"
+          className="w-32 h-32 mb-2 animate-spin-slow"
+        />
+      </div>
+      <div className="w-full max-w-md flex flex-col items-center mb-6">
+        <span className="block text-3xl font-extrabold text-emerald-400 text-center drop-shadow-lg tracking-tight animate-fadein">
+          O que trouxe você aqui hoje?
+        </span>
+      </div>
+      <div className="w-full max-w-md bg-black/70 rounded-2xl shadow-2xl p-8 flex flex-col items-center border border-emerald-700/30 animate-fadein">
+        <textarea
+          className="w-full h-24 px-4 py-3 bg-slate-800 border border-emerald-700 rounded-xl text-white placeholder-emerald-300 focus:outline-none focus:border-emerald-400 resize-none mb-4 text-lg transition-all duration-200"
+          placeholder="Digite sua mensagem..."
+          value={input}
+          onChange={e => setInput(e.target.value)}
+        />
+        <button
+          className="w-full bg-gradient-to-r from-emerald-600 via-emerald-500 to-emerald-700 hover:from-emerald-700 hover:to-emerald-600 text-white px-4 py-3 rounded-xl font-bold transition-all duration-200 text-lg mb-4 shadow-lg"
+          onClick={handleSend}
+          disabled={loading}
+        >
+          {loading ? <span className="animate-pulse">Enviando...</span> : <span>Enviar</span>}
+        </button>
+        {response && (
+          <div className="w-full bg-slate-900/80 rounded-xl p-5 text-emerald-300 text-lg mt-2 text-center shadow-md animate-fadein">
+            {response}
           </div>
-
-          {/* Form */}
-          <form onSubmit={handleSubmit} className="space-y-6">
-            {error && (
-              <div className="bg-red-500/20 border border-red-500/50 rounded-lg p-3">
-                <p className="text-red-400 text-sm">{error}</p>
-              </div>
-            )}
-
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-300 mb-2">
-                Email
-              </label>
-              <input
-                id="email"
-                type="email"
-                value={email}
-                onChange={e => setEmail(e.target.value)}
-                className="w-full px-4 py-3 bg-gray-800 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-green-400 focus:ring-1 focus:ring-green-400"
-                placeholder="seu@email.com"
-                required
-              />
-            </div>
-
-            <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-300 mb-2">
-                Senha
-              </label>
-              <input
-                id="password"
-                type="password"
-                value={password}
-                onChange={e => setPassword(e.target.value)}
-                className="w-full px-4 py-3 bg-gray-800 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:border-green-400 focus:ring-1 focus:ring-green-400"
-                placeholder="••••••••"
-                required
-              />
-            </div>
-
-            <button
-              type="submit"
-              disabled={loading}
-              className={`w-full py-3 rounded-lg font-semibold text-white transition-all ${
-                loading
-                  ? 'bg-gray-600 cursor-not-allowed'
-                  : 'bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 transform hover:scale-105'
-              }`}
-            >
-              {loading ? (
-                <div className="flex items-center justify-center gap-2">
-                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                  Entrando...
-                </div>
-              ) : (
-                'Entrar'
-              )}
-            </button>
-          </form>
-
-          {/* Footer */}
-          <div className="mt-8 text-center">
-            <p className="text-gray-400 text-sm">
-              Não tem uma conta?{' '}
-              <Link to="/register" className="text-green-400 hover:text-green-300 font-medium">
-                Cadastre-se
-              </Link>
-            </p>
-          </div>
-
-          {/* Demo Accounts */}
-          <div className="mt-6 p-4 bg-gray-800/50 rounded-lg">
-            <h3 className="text-sm font-medium text-gray-300 mb-3">Contas de Demonstração:</h3>
-            <div className="space-y-2 text-xs">
-              <div className="flex justify-between">
-                <span className="text-gray-400">Admin:</span>
-                <span className="text-yellow-400">phpg69@gmail.com / p6p7p8P9!</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-400">Médico:</span>
-                <span className="text-green-400">medico@noa.com / 123456</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-gray-400">Paciente:</span>
-                <span className="text-blue-400">paciente@noa.com / 123456</span>
-              </div>
-            </div>
-          </div>
+        )}
+        <div className="w-full text-center mt-6">
+          <span className="text-xs text-gray-400">
+            Seus dados são protegidos e usados apenas para sua jornada clínica.{' '}
+            <span className="text-emerald-400 font-semibold">Segurança garantida.</span>
+          </span>
         </div>
       </div>
+      <style>{`
+        .animate-fadein { animation: fadein 1s ease; }
+        @keyframes fadein { from { opacity: 0; } to { opacity: 1; } }
+        .animate-float { animation: float 3s ease-in-out infinite alternate; }
+        @keyframes float { from { transform: translateY(0); } to { transform: translateY(-12px); } }
+        .animate-spin-slow { animation: spin 8s linear infinite; }
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+      `}</style>
     </div>
   )
 }

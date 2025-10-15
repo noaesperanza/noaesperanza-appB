@@ -1,10 +1,9 @@
 import { Link } from 'react-router-dom'
 import { useState, useEffect } from 'react'
-import { Specialty } from '../App'
 import { supabase } from '../integrations/supabase/client'
 
 interface RelatorioNarrativoProps {
-  currentSpecialty: Specialty
+  // ...existing code...
   addNotification: (message: string, type?: 'info' | 'success' | 'warning' | 'error') => void
 }
 
@@ -18,7 +17,7 @@ interface Avaliacao {
   completed_at: string
 }
 
-const RelatorioNarrativo = ({ currentSpecialty, addNotification }: RelatorioNarrativoProps) => {
+const RelatorioNarrativo = ({ addNotification }: RelatorioNarrativoProps) => {
   const [avaliacoes, setAvaliacoes] = useState<Avaliacao[]>([])
   const [loading, setLoading] = useState(true)
   const [selectedAvaliacao, setSelectedAvaliacao] = useState<Avaliacao | null>(null)
@@ -69,7 +68,7 @@ const RelatorioNarrativo = ({ currentSpecialty, addNotification }: RelatorioNarr
     link.click()
     document.body.removeChild(link)
     URL.revokeObjectURL(url)
-    
+
     addNotification('Relatório baixado com sucesso', 'success')
   }
 
@@ -95,7 +94,6 @@ const RelatorioNarrativo = ({ currentSpecialty, addNotification }: RelatorioNarr
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-[calc(100vh-120px)]">
-          
           {/* Lista de Avaliações */}
           <div className="premium-card p-4">
             <h2 className="text-lg font-semibold text-premium mb-4">Avaliações Concluídas</h2>
@@ -106,7 +104,7 @@ const RelatorioNarrativo = ({ currentSpecialty, addNotification }: RelatorioNarr
                   <p>Nenhuma avaliação concluída</p>
                 </div>
               ) : (
-                avaliacoes.map((avaliacao) => (
+                avaliacoes.map(avaliacao => (
                   <div
                     key={avaliacao.id}
                     onClick={() => setSelectedAvaliacao(avaliacao)}
@@ -128,7 +126,7 @@ const RelatorioNarrativo = ({ currentSpecialty, addNotification }: RelatorioNarr
                       <div className="flex items-center gap-2">
                         <span className="text-green-400 text-xs">✓</span>
                         <button
-                          onClick={(e) => {
+                          onClick={e => {
                             e.stopPropagation()
                             downloadRelatorio(avaliacao)
                           }}
@@ -159,7 +157,7 @@ const RelatorioNarrativo = ({ currentSpecialty, addNotification }: RelatorioNarr
                 </button>
               )}
             </div>
-            
+
             <div className="max-h-[calc(100vh-200px)] overflow-y-auto">
               {selectedAvaliacao ? (
                 <div className="prose prose-invert max-w-none">
@@ -171,7 +169,9 @@ const RelatorioNarrativo = ({ currentSpecialty, addNotification }: RelatorioNarr
                 <div className="text-center text-gray-400 py-12">
                   <i className="fas fa-file-alt text-6xl mb-4"></i>
                   <p className="text-xl">Selecione uma avaliação</p>
-                  <p className="text-sm">Escolha uma avaliação da lista para visualizar o relatório</p>
+                  <p className="text-sm">
+                    Escolha uma avaliação da lista para visualizar o relatório
+                  </p>
                 </div>
               )}
             </div>

@@ -1,4 +1,4 @@
-import React from 'react';
+import React from 'react'
 
 const AgentResidente: React.FC = () => {
   return (
@@ -7,7 +7,7 @@ const AgentResidente: React.FC = () => {
       <p>Bem-vindo ao sistema de avaliação clínica inicial e IMRE.</p>
       {/* Adicione aqui o editor de texto e funcionalidades específicas */}
     </div>
-  );
-};
+  )
+}
 
-export default AgentResidente;
+export default AgentResidente

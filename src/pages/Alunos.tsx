@@ -1,4 +1,4 @@
-import React from 'react';
+import React from 'react'
 
 const Alunos: React.FC = () => {
   return (
@@ -7,7 +7,7 @@ const Alunos: React.FC = () => {
       <p>Bem-vindo ao curso e sistema de ensino contínuo.</p>
       {/* Adicione aqui funcionalidades como teste de nivelamento e formação contínua */}
     </div>
-  );
-};
+  )
+}
 
-export default Alunos;
+export default Alunos
