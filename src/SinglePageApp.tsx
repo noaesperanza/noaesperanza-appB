@@ -1,4 +1,5 @@
 import React, { useState } from 'react'
+import NoaAvatar from './components/NoaAvatar'
 
 const sections = [
   { key: 'login', label: 'Login' },
@@ -117,16 +118,27 @@ const SinglePageApp = () => {
       )}
       {section === 'dashboard' && (
         <div className="w-full max-w-md bg-black/70 rounded-2xl shadow-2xl p-8 flex flex-col items-center border border-emerald-700/30 animate-fadein">
-          <span className="block text-xl font-bold text-emerald-400 mb-4">Dashboard</span>
-          <div className="w-full text-emerald-300">
-            Bem-vindo ao dashboard inteligente. Navegue entre sessões acima.
+          <span className="block text-2xl font-bold text-emerald-400 mb-4">
+            Avaliação Inicial com Nôa Esperanza
+          </span>
+          <NoaAvatar />
+          <div className="mb-4 w-full mt-6">
+            <input
+              className="w-full px-4 py-2 rounded-lg bg-slate-800 border border-emerald-700 text-white mb-2"
+              value={input}
+              onChange={e => setInput(e.target.value)}
+              placeholder="Digite sua resposta..."
+            />
+            <button
+              className="w-full px-4 py-2 bg-emerald-600 text-white rounded-lg font-bold hover:bg-emerald-700"
+              onClick={handleSendChat}
+            >
+              Enviar
+            </button>
           </div>
+          <div className="w-full text-emerald-300 text-lg min-h-[32px]">{response}</div>
         </div>
       )}
-      <style>{`
-        .animate-fadein { animation: fadein 1s ease; }
-        @keyframes fadein { from { opacity: 0; } to { opacity: 1; } }
-      `}</style>
     </div>
   )
 }
