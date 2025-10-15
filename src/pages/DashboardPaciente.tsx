@@ -13,12 +13,6 @@ interface DashboardPacienteProps {
 }
 
 const specialtyCopy: Record<Specialty, { title: string; description: string; accent: string }> = {
-  neuro: {
-    title: 'Programa de Neurologia Integrada',
-    description:
-      'Assistência inteligente para acompanhamento de sintomas neurológicos, planos terapêuticos e suporte familiar.',
-    accent: 'from-sky-400 to-blue-600',
-  },
   cannabis: {
     title: 'Programa de Cannabis Medicinal',
     description:
@@ -130,17 +124,7 @@ const DashboardPaciente = ({ currentSpecialty, addNotification }: DashboardPacie
                   <i className="fas fa-user mr-2"></i>
                   Meu Perfil
                 </button>
-                <button
-                  onClick={() => setActiveTab('chat')}
-                  className={`px-6 py-4 text-sm font-medium transition-colors ${
-                    activeTab === 'chat'
-                      ? 'text-emerald-400 border-b-2 border-emerald-400 bg-emerald-400/10'
-                      : 'text-gray-400 hover:text-white hover:bg-white/5'
-                  }`}
-                >
-                  <i className="fas fa-comments mr-2"></i>
-                  Chat com Nôa
-                </button>
+                {/* Botão Chat com Nôa removido conforme solicitado */}
                 <button
                   onClick={() => setActiveTab('reports')}
                   className={`px-6 py-4 text-sm font-medium transition-colors ${
@@ -318,13 +302,7 @@ const DashboardPaciente = ({ currentSpecialty, addNotification }: DashboardPacie
                     <i className="fas fa-clipboard-list mr-2"></i>
                     Nova Avaliação
                   </button>
-                  <button
-                    onClick={() => setActiveTab('chat')}
-                    className="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-lg text-sm font-medium transition-colors text-left"
-                  >
-                    <i className="fas fa-comments mr-2"></i>
-                    Chat com Nôa
-                  </button>
+                  {/* Botão Chat com Nôa removido conforme solicitado */}
                   <button
                     onClick={() => setActiveTab('reports')}
                     className="w-full bg-purple-600 hover:bg-purple-700 text-white px-4 py-3 rounded-lg text-sm font-medium transition-colors text-left"

@@ -36,7 +36,7 @@ import HomeNew from './pages/HomeNew'
 import AvaliacaoClinicaInicial from './pages/AvaliacaoClinicaInicial'
 import { Suspense } from 'react'
 
-export type Specialty = 'neuro' | 'cannabis'
+export type Specialty = 'cannabis'
 
 // Componente para rotas protegidas
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -65,7 +65,7 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
 export default App
 
 function App() {
-  const [currentSpecialty, setCurrentSpecialty] = useState<Specialty>('neuro')
+  const [currentSpecialty, setCurrentSpecialty] = useState<Specialty>('cannabis')
   const [isVoiceListening, setIsVoiceListening] = useState(false)
   const [notifications, setNotifications] = useState<
     Array<{
