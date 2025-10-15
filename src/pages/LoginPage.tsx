@@ -1,9 +1,12 @@
 import React, { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 
 const LoginPage = () => {
   const [input, setInput] = useState('')
   const [response, setResponse] = useState('')
   const [loading, setLoading] = useState(false)
+  const [userType, setUserType] = useState('paciente')
+  const navigate = useNavigate()
 
   const handleSend = () => {
     setLoading(true)
@@ -12,6 +15,13 @@ const LoginPage = () => {
         input ? `Nôa Esperanza escutou: "${input}"` : 'Por favor, escreva algo para começar.'
       )
       setLoading(false)
+      // Redireciona conforme tipo de usuário
+      if (input) {
+        if (userType === 'paciente') navigate('/dashboard-paciente')
+        else if (userType === 'profissional') navigate('/dashboard-profissional')
+        else if (userType === 'aluno') navigate('/dashboard-aluno')
+        else if (userType === 'admin') navigate('/dashboard-admin')
+      }
     }, 900)
   }
 
@@ -38,6 +48,19 @@ const LoginPage = () => {
         <span className="block text-3xl font-extrabold text-emerald-400 text-center drop-shadow-lg tracking-tight animate-fadein">
           O que trouxe você aqui hoje?
         </span>
+        <div className="w-full flex flex-col items-center mt-4">
+          <label className="text-base text-gray-300 mb-2">Selecione seu tipo de acesso:</label>
+          <select
+            className="w-full max-w-xs px-3 py-2 rounded-lg bg-slate-800 text-white border border-emerald-700 mb-2"
+            value={userType}
+            onChange={e => setUserType(e.target.value)}
+          >
+            <option value="paciente">Paciente</option>
+            <option value="profissional">Profissional</option>
+            <option value="aluno">Aluno</option>
+            <option value="admin">Admin</option>
+          </select>
+        </div>
       </div>
       <div className="w-full max-w-md bg-black/70 rounded-2xl shadow-2xl p-8 flex flex-col items-center border border-emerald-700/30 animate-fadein">
         <textarea
