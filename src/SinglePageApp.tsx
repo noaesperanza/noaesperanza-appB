@@ -1,146 +1,139 @@
-import React, { useState } from 'react'
+import React from 'react'
+import { useState } from 'react'
+import PremiumFrame from './components/PremiumFrame'
 import NoaAvatar from './components/NoaAvatar'
 
-const sections = [
-  { key: 'login', label: 'Login' },
-  { key: 'chat', label: 'Chat IMRE' },
-  { key: 'upload', label: 'Upload Documento' },
-  { key: 'knowledge', label: 'Base de Conhecimento' },
-  { key: 'dashboard', label: 'Dashboard' },
+const MENU = [
+  { key: 'clinica', label: 'Clínica' },
+  { key: 'cursos', label: 'Cursos' },
+  { key: 'pesquisa', label: 'Pesquisa' },
 ]
-
 const SinglePageApp = () => {
   const [section, setSection] = useState('login')
-  const [input, setInput] = useState('')
-  const [response, setResponse] = useState('')
-  const [uploadedFile, setUploadedFile] = useState<File | null>(null)
-  const [knowledge, setKnowledge] = useState<string[]>([
-    'Documento Mestre Institucional',
-    'Base de Conhecimento',
-    'Histórico de Desenvolvimento',
-  ])
+  const [ambiente, setAmbiente] = useState('clinica')
 
-  // Simula navegação inteligente
-  const handleLogin = () => {
-    setSection('chat')
-  }
+  // Menu superior
+  const renderMenu = () => (
+    <nav className="w-full flex justify-center items-center py-4 gap-8 bg-gradient-to-r from-gray-900 via-purple-900 to-amber-600 shadow-lg">
+      {MENU.map(item => (
+        <button
+          key={item.key}
+          className={`px-6 py-2 rounded-2xl font-bold text-lg transition shadow-md ${ambiente === item.key ? 'bg-green-700 text-white' : 'bg-gray-800 text-yellow-200 hover:bg-green-800'}`}
+          onClick={() => setAmbiente(item.key)}
+        >
+          {item.label}
+        </button>
+      ))}
+    </nav>
+  )
 
-  const handleSendChat = () => {
-    setResponse(
-      input ? `Nôa Esperanza escutou: "${input}"` : 'Por favor, escreva algo para começar.'
-    )
-    setInput('')
-  }
-
-  const handleUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      setUploadedFile(e.target.files[0])
-      setKnowledge([...knowledge, e.target.files[0].name])
-    }
-  }
-
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 text-white flex flex-col items-center justify-center p-4">
-      <nav className="flex gap-4 mb-8">
-        {sections.map(s => (
-          <button
-            key={s.key}
-            className={`px-4 py-2 rounded-lg font-bold transition-colors ${section === s.key ? 'bg-emerald-600 text-white' : 'bg-slate-800 text-emerald-300 hover:bg-emerald-700'}`}
-            onClick={() => setSection(s.key)}
-          >
-            {s.label}
-          </button>
-        ))}
-      </nav>
-      {section === 'login' && (
-        <div className="w-full max-w-md bg-black/70 rounded-2xl shadow-2xl p-8 flex flex-col items-center border border-emerald-700/30 animate-fadein">
-          <span className="block text-2xl font-bold text-emerald-400 mb-4">
-            O que trouxe você aqui hoje?
-          </span>
-          <input
-            className="w-full px-4 py-2 mb-4 rounded-lg bg-slate-800 border border-emerald-700 text-white"
-            placeholder="Digite sua mensagem..."
-            value={input}
-            onChange={e => setInput(e.target.value)}
+  // Login decide ambiente
+  if (section === 'login') {
+    return (
+      <div
+        className="min-h-screen flex flex-col items-center justify-center p-0"
+        style={{
+          background: 'linear-gradient(120deg, #0f172a 0%, #0e7490 40%, #9333ea 80%, #f59e0b 100%)',
+        }}
+      >
+        {renderMenu()}
+        <div className="w-full flex flex-col items-center justify-center min-h-[60vh]">
+          <img
+            src="/logo-noa-triangulo.gif"
+            alt="Logo Nôa Esperanza"
+            className="w-44 h-44 mb-8 rounded-full shadow-[0_0_40px_10px_rgba(245,158,11,0.3)] border-4 border-yellow-400"
           />
-          <button
-            className="w-full bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg font-bold"
-            onClick={handleLogin}
-          >
-            Entrar
-          </button>
-        </div>
-      )}
-      {section === 'chat' && (
-        <div className="w-full max-w-md bg-black/70 rounded-2xl shadow-2xl p-8 flex flex-col items-center border border-emerald-700/30 animate-fadein">
-          <span className="block text-xl font-bold text-emerald-400 mb-4">Chat IMRE</span>
-          <textarea
-            className="w-full h-20 px-4 py-2 mb-4 rounded-lg bg-slate-800 border border-emerald-700 text-white"
-            placeholder="Digite sua dúvida ou relato..."
-            value={input}
-            onChange={e => setInput(e.target.value)}
-          />
-          <button
-            className="w-full bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg font-bold mb-2"
-            onClick={handleSendChat}
-          >
-            Enviar
-          </button>
-          {response && (
-            <div className="w-full bg-slate-900/80 rounded-xl p-4 text-emerald-300 text-base mt-2 text-center">
-              {response}
-            </div>
-          )}
-        </div>
-      )}
-      {section === 'upload' && (
-        <div className="w-full max-w-md bg-black/70 rounded-2xl shadow-2xl p-8 flex flex-col items-center border border-emerald-700/30 animate-fadein">
-          <span className="block text-xl font-bold text-emerald-400 mb-4">Upload Documento</span>
-          <input type="file" className="mb-4" onChange={handleUpload} />
-          {uploadedFile && (
-            <div className="text-emerald-300">Arquivo enviado: {uploadedFile.name}</div>
-          )}
-        </div>
-      )}
-      {section === 'knowledge' && (
-        <div className="w-full max-w-md bg-black/70 rounded-2xl shadow-2xl p-8 flex flex-col items-center border border-emerald-700/30 animate-fadein">
-          <span className="block text-xl font-bold text-emerald-400 mb-4">
-            Base de Conhecimento
+          <span className="block text-5xl font-extrabold text-green-400 mb-4 tracking-tight drop-shadow-lg">
+            MEDCANLAB
           </span>
-          <ul className="w-full text-left text-emerald-300">
-            {knowledge.map((doc, idx) => (
-              <li key={idx} className="mb-2">
-                {doc}
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
-      {section === 'dashboard' && (
-        <div className="w-full max-w-md bg-black/70 rounded-2xl shadow-2xl p-8 flex flex-col items-center border border-emerald-700/30 animate-fadein">
-          <span className="block text-2xl font-bold text-emerald-400 mb-4">
-            Avaliação Inicial com Nôa Esperanza
+          <span className="block text-lg font-semibold text-white mb-6">
+            MedCanLab @ Power By Nôa Esperanza
+            <br />A revolução da medicina digital com inteligência artificial especializada
           </span>
-          <NoaAvatar />
-          <div className="mb-4 w-full mt-6">
-            <input
-              className="w-full px-4 py-2 rounded-lg bg-slate-800 border border-emerald-700 text-white mb-2"
-              value={input}
-              onChange={e => setInput(e.target.value)}
-              placeholder="Digite sua resposta..."
-            />
+          <div className="flex gap-6 mb-8">
             <button
-              className="w-full px-4 py-2 bg-emerald-600 text-white rounded-lg font-bold hover:bg-emerald-700"
-              onClick={handleSendChat}
+              className="px-6 py-4 rounded-2xl bg-blue-700 text-white font-bold text-xl shadow-lg hover:scale-105 transition"
+              onClick={() => setSection(ambiente)}
             >
-              Enviar
+              Entrar
             </button>
           </div>
-          <div className="w-full text-emerald-300 text-lg min-h-[32px]">{response}</div>
         </div>
-      )}
-    </div>
-  )
+      </div>
+    )
+  }
+
+  // Dashboard do paciente (Clínica)
+  if (section === 'clinica') {
+    return (
+      <div
+        className="min-h-screen flex flex-col items-center justify-center p-0"
+        style={{
+          background: 'linear-gradient(120deg, #0f172a 0%, #0e7490 40%, #9333ea 80%, #f59e0b 100%)',
+        }}
+      >
+        {renderMenu()}
+        <PremiumFrame>
+          <div className="w-full flex flex-col items-center justify-center mt-6">
+            <span className="block text-2xl font-bold text-green-400 mb-4">
+              Avaliação Clínica Inicial
+            </span>
+            {/* NoaAvatar aqui, integrando roteiro TriagemClinica */}
+            <NoaAvatar />
+          </div>
+        </PremiumFrame>
+      </div>
+    )
+  }
+
+  // Dashboard Cursos
+  if (section === 'cursos') {
+    return (
+      <div
+        className="min-h-screen flex flex-col items-center justify-center p-0"
+        style={{
+          background: 'linear-gradient(120deg, #0f172a 0%, #0e7490 40%, #9333ea 80%, #f59e0b 100%)',
+        }}
+      >
+        {renderMenu()}
+        <PremiumFrame>
+          <div className="w-full flex flex-col items-center justify-center mt-6">
+            <span className="block text-2xl font-bold text-yellow-400 mb-4">
+              Ambiente de Cursos
+            </span>
+            <div className="text-white text-lg">
+              Em breve: cursos, lições e progresso educacional.
+            </div>
+          </div>
+        </PremiumFrame>
+      </div>
+    )
+  }
+
+  // Dashboard Pesquisa
+  if (section === 'pesquisa') {
+    return (
+      <div
+        className="min-h-screen flex flex-col items-center justify-center p-0"
+        style={{
+          background: 'linear-gradient(120deg, #0f172a 0%, #0e7490 40%, #9333ea 80%, #f59e0b 100%)',
+        }}
+      >
+        {renderMenu()}
+        <PremiumFrame>
+          <div className="w-full flex flex-col items-center justify-center mt-6">
+            <span className="block text-2xl font-bold text-purple-400 mb-4">
+              Ambiente de Pesquisa
+            </span>
+            <div className="text-white text-lg">
+              Em breve: projetos, relatórios e ferramentas de pesquisa.
+            </div>
+          </div>
+        </PremiumFrame>
+      </div>
+    )
+  }
+  return null
 }
 
 export default SinglePageApp

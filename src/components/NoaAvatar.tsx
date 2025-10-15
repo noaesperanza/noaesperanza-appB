@@ -45,21 +45,62 @@ export const NoaAvatar: React.FC = () => {
   const [lipOpen, setLipOpen] = useState(false)
   const [respostas, setRespostas] = useState<string[]>([])
   const [input, setInput] = useState('')
+  const [isListening, setIsListening] = useState(false)
+  const recognitionRef = useRef<any>(null)
   const [queixas, setQueixas] = useState<string[]>([])
   const [relatorio, setRelatorio] = useState('')
 
-  // Fala e animação labial
+  // Fala e animação labial com voz feminina
   const speak = (texto: string) => {
     setIsSpeaking(true)
     setLipOpen(true)
     const utter = new window.SpeechSynthesisUtterance(texto)
-    let interval = setInterval(() => setLipOpen(l => !l), 250)
+    const voices = window.speechSynthesis.getVoices()
+    const noaVoice = voices.find(
+      v => v.name.toLowerCase().includes('noa') || v.name.toLowerCase().includes('esperanza')
+    )
+    const femaleVoice =
+      noaVoice ||
+      voices.find(v => v.lang.startsWith('pt') && v.name.toLowerCase().includes('fem')) ||
+      voices.find(v => v.lang.startsWith('pt'))
+    if (femaleVoice) utter.voice = femaleVoice
+    utter.lang = femaleVoice?.lang || 'pt-BR'
+    let interval = setInterval(() => setLipOpen(l => !l), 180)
     utter.onend = () => {
       clearInterval(interval)
       setIsSpeaking(false)
       setLipOpen(false)
+      // Após fala, inicia escuta se etapa requer resposta
+      if ([1, 2, 3, 4, 5, 6].includes(etapa)) startListening()
     }
     window.speechSynthesis.speak(utter)
+  }
+
+  // Reconhecimento de voz (Web Speech API)
+  const startListening = () => {
+    if (!('webkitSpeechRecognition' in window)) return
+    setIsListening(true)
+    const recognition = new (window as any).webkitSpeechRecognition()
+    recognition.lang = 'pt-BR'
+    recognition.interimResults = false
+    recognition.maxAlternatives = 1
+    recognition.onresult = (event: any) => {
+      const transcript = event.results[0][0].transcript
+      setInput(transcript)
+      setIsListening(false)
+    }
+    recognition.onerror = () => setIsListening(false)
+    recognition.onend = () => setIsListening(false)
+    recognitionRef.current = recognition
+    recognition.start()
+  }
+
+  // Parar escuta manualmente
+  const stopListening = () => {
+    if (recognitionRef.current) {
+      recognitionRef.current.stop()
+      setIsListening(false)
+    }
   }
 
   React.useEffect(() => {
@@ -106,32 +147,42 @@ export const NoaAvatar: React.FC = () => {
 
   return (
     <div className="flex flex-col items-center justify-center p-4">
-      <div className="relative w-40 h-40 mb-4">
+      <div className="relative w-56 h-56 mb-4">
         <img
           src={AVATAR_IMG}
           alt="Nôa Esperanza Avatar"
           className="rounded-full w-full h-full object-cover border-4 border-blue-300 shadow-lg"
         />
-        {/* SVG lábios animados */}
+        {/* SVG lábios animados, mais sutil */}
         <svg
           className="absolute left-1/2 top-2/3 transform -translate-x-1/2 -translate-y-1/2"
-          width="60"
-          height="30"
-          viewBox="0 0 60 30"
+          width="80"
+          height="36"
+          viewBox="0 0 80 36"
         >
-          <ellipse cx="30" cy="15" rx="18" ry={lipOpen ? 10 : 4} fill="#e57373" opacity="0.8" />
+          <ellipse cx="40" cy="18" rx="22" ry={lipOpen ? 7 : 3.5} fill="#e57373" opacity="0.7" />
         </svg>
       </div>
       <div className="text-lg font-semibold text-blue-900 mb-2">{roteiro[etapa].texto}</div>
       {/* Input para etapas interativas */}
       {(etapa === 1 || etapa === 2 || etapa === 3 || etapa === 4 || etapa === 5 || etapa === 6) && (
-        <input
-          className="mt-2 px-4 py-2 rounded-lg border border-blue-300 text-blue-900 w-full"
-          value={input}
-          onChange={e => setInput(e.target.value)}
-          placeholder="Digite sua resposta..."
-          disabled={isSpeaking}
-        />
+        <div className="w-full flex flex-col items-center gap-2">
+          <input
+            className="mt-2 px-4 py-2 rounded-lg border border-blue-300 text-blue-900 w-full"
+            value={input}
+            onChange={e => setInput(e.target.value)}
+            placeholder={isListening ? 'Fale sua resposta...' : 'Digite ou fale sua resposta...'}
+            disabled={isSpeaking}
+          />
+          <button
+            className={`px-4 py-2 rounded bg-green-600 text-white font-bold shadow hover:bg-green-700 transition ${isListening ? 'animate-pulse' : ''}`}
+            type="button"
+            onClick={isListening ? stopListening : startListening}
+            disabled={isSpeaking}
+          >
+            {isListening ? 'Parar escuta' : 'Responder por voz'}
+          </button>
+        </div>
       )}
       {/* Botão para avançar etapas */}
       {etapa < roteiro.length - 1 && (
