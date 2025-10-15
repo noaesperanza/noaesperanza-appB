@@ -2,6 +2,7 @@ import React, { useState, useMemo, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import { Specialty } from '../App'
 import ClinicalAssessmentChat from '../components/ClinicalAssessmentChat'
+import { ClinicalAssessment } from '../components/ClinicalAssessment'
 import { useAuth } from '../contexts/AuthContext'
 
 type NotificationType = 'info' | 'success' | 'warning' | 'error'
@@ -12,12 +13,6 @@ interface DashboardPacienteProps {
 }
 
 const specialtyCopy: Record<Specialty, { title: string; description: string; accent: string }> = {
-  rim: {
-    title: 'Programa de Cuidado Renal',
-    description:
-      'A Nôa acompanha a jornada nefrológica com monitoramento de exames, medicações e educação contínua.',
-    accent: 'from-emerald-400 to-green-600',
-  },
   neuro: {
     title: 'Programa de Neurologia Integrada',
     description:
@@ -237,7 +232,7 @@ const DashboardPaciente = ({ currentSpecialty, addNotification }: DashboardPacie
 
                 {activeTab === 'assessment' && (
                   <div className="h-[600px]">
-                    <ClinicalAssessmentChat userRole="patient" />
+                    <ClinicalAssessment onComplete={handleAssessmentComplete} />
                   </div>
                 )}
 

@@ -68,7 +68,7 @@ const steps: Step[] = [
   },
 ]
 
-const TriagemClinica: React.FC = () => {
+const AvaliacaoClinicaInicial: React.FC = () => {
   const [currentStep, setCurrentStep] = useState(0)
   const [answers, setAnswers] = useState<any>({})
   const [chat, setChat] = useState<Array<{ from: 'noa' | 'user'; text: string }>>([
@@ -119,16 +119,19 @@ const TriagemClinica: React.FC = () => {
     if (steps[nextIdx]?.key === 'fechamento') {
       const resumo = gerarResumo(newAnswers)
       setFinalReport(resumo)
+      let fechamentoPrompt: string = ''
+      const fechamentoRaw = steps[nextIdx].prompt
+      if (typeof fechamentoRaw === 'function') {
+        fechamentoPrompt = fechamentoRaw(newAnswers)
+      } else if (typeof fechamentoRaw === 'string') {
+        fechamentoPrompt = fechamentoRaw
+      } else {
+        fechamentoPrompt = ''
+      }
       setChat([
         ...chat,
         { from: 'user', text: answer },
-        {
-          from: 'noa',
-          text:
-            typeof steps[nextIdx].prompt === 'function'
-              ? steps[nextIdx].prompt(newAnswers)
-              : steps[nextIdx].prompt,
-        },
+        { from: 'noa', text: fechamentoPrompt },
         { from: 'noa', text: resumo },
       ])
       setCurrentStep(nextIdx)
@@ -138,17 +141,16 @@ const TriagemClinica: React.FC = () => {
 
     // Validação do entendimento
     if (steps[nextIdx]?.key === 'validacao') {
-      setChat([
-        ...chat,
-        { from: 'user', text: answer },
-        {
-          from: 'noa',
-          text:
-            typeof steps[nextIdx].prompt === 'function'
-              ? steps[nextIdx].prompt(newAnswers)
-              : steps[nextIdx].prompt,
-        },
-      ])
+      let validacaoPrompt: string = ''
+      const validacaoRaw = steps[nextIdx].prompt
+      if (typeof validacaoRaw === 'function') {
+        validacaoPrompt = validacaoRaw(newAnswers)
+      } else if (typeof validacaoRaw === 'string') {
+        validacaoPrompt = validacaoRaw
+      } else {
+        validacaoPrompt = ''
+      }
+      setChat([...chat, { from: 'user', text: answer }, { from: 'noa', text: validacaoPrompt }])
       setCurrentStep(nextIdx)
       setInput('')
       return
@@ -170,10 +172,15 @@ const TriagemClinica: React.FC = () => {
     }
 
     // Próxima pergunta
-    const nextPrompt =
-      typeof steps[nextIdx].prompt === 'function'
-        ? steps[nextIdx].prompt(newAnswers)
-        : steps[nextIdx].prompt
+    let nextPrompt: string = ''
+    const nextRaw = steps[nextIdx]?.prompt
+    if (typeof nextRaw === 'function') {
+      nextPrompt = nextRaw(newAnswers)
+    } else if (typeof nextRaw === 'string') {
+      nextPrompt = nextRaw
+    } else {
+      nextPrompt = ''
+    }
     setChat([...chat, { from: 'user', text: answer }, { from: 'noa', text: nextPrompt }])
     setCurrentStep(nextIdx)
     setInput('')
@@ -284,4 +291,4 @@ const TriagemClinica: React.FC = () => {
   )
 }
 
-export default TriagemClinica
+export default AvaliacaoClinicaInicial

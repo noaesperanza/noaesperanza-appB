@@ -9,7 +9,7 @@ import { useAuth } from '../contexts/AuthContext'
 const LandingPage = () => {
   const [currentFeature, setCurrentFeature] = useState(0)
   const [isVisible, setIsVisible] = useState(false)
-  const [currentSpecialty, setCurrentSpecialty] = useState<Specialty>('rim')
+  const [currentSpecialty, setCurrentSpecialty] = useState<Specialty>('neuro')
   const [showAuthModal, setShowAuthModal] = useState(false)
   const [authMode, setAuthMode] = useState<'login' | 'register'>('login')
 
