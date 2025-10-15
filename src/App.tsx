@@ -5,6 +5,9 @@ import ErrorBoundary from './components/ErrorBoundary'
 import Header from './components/Header'
 // Sidebar removido - chat limpo sem sidebar
 import Footer from './components/Footer'
+import DrRicardoConsultorio from './pages/DrRicardoConsultorio'
+import DrEduardoConsultorio from './pages/DrEduardoConsultorio'
+import Alunos from './pages/Alunos'
 import HomeFooter from './components/HomeFooter'
 import PremiumBackground from './components/PremiumBackground'
 import DashboardMedico from './pages/DashboardMedico'
@@ -60,6 +63,7 @@ const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) =
 
   return <>{children}</>
 }
+export default App
 
 function App() {
   const [currentSpecialty, setCurrentSpecialty] = useState<Specialty>('rim')
@@ -99,32 +103,16 @@ function App() {
     setNotifications(prev => prev.filter(notif => notif.id !== id))
   }
 
-  // Removido: Notificações automáticas que poluíam a tela
-  // Agora apenas notificações importantes são mostradas
-
-  // Contexto global da aplicação
-  const appContext = {
-    currentSpecialty,
-    setCurrentSpecialty,
-    isVoiceListening,
-    setIsVoiceListening,
-    notifications,
-    addNotification,
-    removeNotification,
-  }
-
   return (
     <ErrorBoundary>
       <AuthProvider>
         <Routes>
           {/* Rota inicial - LandingPage */}
           <Route path="/" element={<LandingPage />} />
-
           {/* Rotas de autenticação - SEM header/footer */}
           <Route path="/login" element={<LoginPage />} />
           <Route path="/register" element={<RegisterPage />} />
           <Route path="/landing" element={<LandingPage />} />
-
           {/* Home New - Layout completo estilo ChatGPT - PROTEGIDA */}
           <Route
             path="/chat"
@@ -136,7 +124,6 @@ function App() {
               </ProtectedRoute>
             }
           />
-
           {/* Rotas do app - COM header/footer - PROTEGIDAS */}
           <Route
             path="/app/*"
@@ -150,30 +137,14 @@ function App() {
                   }}
                 >
                   {/* Header */}
-                  <Header
-                    currentSpecialty={currentSpecialty}
-                    setCurrentSpecialty={setCurrentSpecialty}
-                  />
-
+                  <Header />
                   {/* Container Principal */}
                   <div className="pt-16 pb-20 h-full overflow-hidden">
                     <Suspense fallback={<LoadingFallback />}>
                       <Routes>
                         {/* Página inicial do app - REDIRECT para /app/paciente */}
                         <Route path="/" element={<Navigate to="/app/paciente" replace />} />
-
                         {/* Páginas específicas */}
-
-                        <Route
-                          path="/medico"
-                          element={
-                            <DashboardMedico
-                              currentSpecialty={currentSpecialty}
-                              addNotification={addNotification}
-                            />
-                          }
-                        />
-
                         <Route
                           path="/paciente"
                           element={
@@ -183,7 +154,6 @@ function App() {
                             />
                           }
                         />
-
                         <Route
                           path="/profissional"
                           element={
@@ -193,21 +163,16 @@ function App() {
                             />
                           }
                         />
-
                         <Route
                           path="/admin"
                           element={<AdminDashboard addNotification={addNotification} />}
                         />
-
                         <Route path="/admin/chat" element={<GPTBuilder userType="admin" />} />
-
                         <Route path="/payment" element={<PaymentPage />} />
-
                         <Route
                           path="/checkout"
                           element={<CheckoutPage addNotification={addNotification} />}
                         />
-
                         <Route
                           path="/relatorio"
                           element={
@@ -217,17 +182,14 @@ function App() {
                             />
                           }
                         />
-
                         <Route
                           path="/config"
                           element={<Configuracoes addNotification={addNotification} />}
                         />
-
                         <Route
                           path="/perfil"
                           element={<Perfil addNotification={addNotification} />}
                         />
-
                         {/* Páginas do Paciente */}
                         <Route path="/exames" element={<MeusExames />} />
                         <Route path="/prescricoes" element={<Prescricoes />} />
@@ -242,18 +204,20 @@ function App() {
                             </Suspense>
                           }
                         />
-
                         {/* Páginas de Ensino e Pesquisa */}
                         <Route path="/ensino" element={<Ensino />} />
                         <Route path="/pesquisa" element={<Pesquisa />} />
                         <Route path="/medcann-lab" element={<MedCannLab />} />
-
+                        {/* Consultórios dos médicos */}
+                        <Route path="/consultorio/ricardo" element={<DrRicardoConsultorio />} />
+                        <Route path="/consultorio/eduardo" element={<DrEduardoConsultorio />} />
+                        {/* Rota para Alunos */}
+                        <Route path="/aluno" element={<Alunos />} />
                         {/* 404 */}
                         <Route path="*" element={<NotFound />} />
                       </Routes>
                     </Suspense>
                   </div>
-
                   {/* Footer Compacto para Home - Fixo na parte inferior */}
                   <div className="fixed bottom-0 left-0 right-0 z-30">
                     <HomeFooter />
@@ -263,7 +227,6 @@ function App() {
             }
           />
         </Routes>
-
         {/* Notificações Toast - Mais discretas */}
         <div className="fixed top-20 right-4 z-50 space-y-2">
           {notifications.slice(0, 3).map(notification => (
@@ -301,5 +264,3 @@ function App() {
     </ErrorBoundary>
   )
 }
-
-export default App

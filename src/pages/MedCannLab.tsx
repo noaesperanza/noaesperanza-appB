@@ -1,12 +1,12 @@
-import { useEffect } from "react";
-import { Helmet } from "../components/Helmet";
-import { useToast } from "../hooks/use-toast";
-import { useIsClient } from "../hooks/useIsClient";
-import Header from "../components/Header";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../components/ui/card";
+import { useEffect } from 'react'
+import { Helmet } from '../components/Helmet'
+import { useToast } from '../hooks/use-toast'
+import { useIsClient } from '../hooks/useIsClient'
+import Header from '../components/Header'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card'
 // import { Badge } from "../components/ui/badge";
-import { Progress } from "../components/ui/progress";
-import { Button } from "../components/ui/button";
+import { Progress } from '../components/ui/progress'
+import { Button } from '../components/ui/button'
 import {
   Brain,
   Stethoscope,
@@ -22,115 +22,114 @@ import {
   TrendingUp,
   BookOpen,
   Microscope,
-  Users
-} from "lucide-react";
+  Users,
+} from 'lucide-react'
 
 const MedCannLab = () => {
-  const { toast } = useToast();
-  const isClient = useIsClient();
+  const { toast } = useToast()
+  const isClient = useIsClient()
 
   useEffect(() => {
-    if (!isClient) return;
+    if (!isClient) return
 
-    const urlParams = new URLSearchParams(window.location.search);
-    const message = urlParams.get("message");
+    const urlParams = new URLSearchParams(window.location.search)
+    const message = urlParams.get('message')
 
-    if (message === "auth_success") {
+    if (message === 'auth_success') {
       toast({
-        title: "Login realizado com sucesso!",
-        description: "Bem-vindo à plataforma Nôa Esperanza."
-      });
+        title: 'Login realizado com sucesso!',
+        description: 'Bem-vindo à plataforma Nôa Esperanza.',
+      })
     }
-  }, [toast, isClient]);
+  }, [toast, isClient])
 
   if (!isClient) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="animate-pulse text-muted-foreground">Carregando...</div>
       </div>
-    );
+    )
   }
-
 
   const researchAreas = [
     {
-      title: "Escuta Clínica Nefrológica",
-      description: "Análise simbólica com foco em função renal e cannabis",
+      title: 'Escuta Clínica Nefrológica',
+      description: 'Análise simbólica com foco em função renal e cannabis',
       icon: Stethoscope,
       progress: 85,
       details: [
-        "Protocolos de avaliação renal integrada",
-        "Correlação entre sintomas e estágios CKD",
-        "Impacto da cannabis na qualidade de vida",
+        'Protocolos de avaliação renal integrada',
+        'Correlação entre sintomas e estágios CKD',
+        'Impacto da cannabis na qualidade de vida',
       ],
     },
     {
-      title: "Classificação por Estágios Renais",
-      description: "Estratificação de usuários conforme função renal",
+      title: 'Classificação por Estágios Renais',
+      description: 'Estratificação de usuários conforme função renal',
       icon: Target,
       progress: 78,
       details: [
-        "Algoritmos de classificação automática",
-        "Marcadores semiológicos específicos",
-        "Integração com exames laboratoriais",
+        'Algoritmos de classificação automática',
+        'Marcadores semiológicos específicos',
+        'Integração com exames laboratoriais',
       ],
     },
     {
-      title: "Deep Learning Biomarcadores",
-      description: "IA para análise de marcadores de função renal",
+      title: 'Deep Learning Biomarcadores',
+      description: 'IA para análise de marcadores de função renal',
       icon: Brain,
       progress: 92,
       details: [
-        "Análise de creatinina e eGFR",
-        "Predição de progressão da doença",
-        "Otimização de dosagens",
+        'Análise de creatinina e eGFR',
+        'Predição de progressão da doença',
+        'Otimização de dosagens',
       ],
     },
     {
-      title: "Integração Dispositivos Médicos",
-      description: "Conectividade com equipamentos de monitoramento",
+      title: 'Integração Dispositivos Médicos',
+      description: 'Conectividade com equipamentos de monitoramento',
       icon: Cpu,
       progress: 65,
       details: [
-        "Sincronização com monitores de pressão",
-        "Integração com balanças inteligentes",
-        "Alertas automáticos de risco",
+        'Sincronização com monitores de pressão',
+        'Integração com balanças inteligentes',
+        'Alertas automáticos de risco',
       ],
     },
-  ];
+  ]
 
   const methodologies = [
     {
-      title: "Metodologia AEC",
-      description: "Arte da Entrevista Clínica aplicada à cannabis medicinal",
+      title: 'Metodologia AEC',
+      description: 'Arte da Entrevista Clínica aplicada à cannabis medicinal',
       icon: Heart,
       features: [
-        "Escuta ativa e humanizada",
-        "Análise triaxial da consulta",
-        "Protocolos de prescrição baseados em evidência",
+        'Escuta ativa e humanizada',
+        'Análise triaxial da consulta',
+        'Protocolos de prescrição baseados em evidência',
       ],
     },
     {
-      title: "Pesquisa Clínica",
-      description: "Estudos controlados e observacionais",
+      title: 'Pesquisa Clínica',
+      description: 'Estudos controlados e observacionais',
       icon: Microscope,
       features: [
-        "Ensaios clínicos randomizados",
-        "Estudos de coorte prospectivos",
-        "Análise de dados em tempo real",
+        'Ensaios clínicos randomizados',
+        'Estudos de coorte prospectivos',
+        'Análise de dados em tempo real',
       ],
     },
     {
-      title: "Tecnologia Avançada",
-      description: "IA e machine learning para análise de dados",
+      title: 'Tecnologia Avançada',
+      description: 'IA e machine learning para análise de dados',
       icon: Database,
       features: [
-        "Algoritmos de predição",
-        "Análise de padrões clínicos",
-        "Otimização de tratamentos",
+        'Algoritmos de predição',
+        'Análise de padrões clínicos',
+        'Otimização de tratamentos',
       ],
     },
-  ];
+  ]
 
   return (
     <>
@@ -148,7 +147,7 @@ const MedCannLab = () => {
       </Helmet>
 
       <div className="min-h-screen premium-background">
-        <Header currentSpecialty="cannabis" setCurrentSpecialty={() => {}} />
+        <Header />
         <main>
           {/* Layout Principal com Sidebar */}
           <div className="flex gap-4 py-1 px-4">
@@ -156,17 +155,16 @@ const MedCannLab = () => {
             <div className="w-72 flex-shrink-0">
               <div className="premium-card p-2 sticky top-4 h-[calc(100vh-8rem)] overflow-y-auto z-10">
                 <div className="mb-2">
-                  <h2 className="text-xs font-bold mb-0.5 text-premium">
-                    Áreas de Pesquisa
-                  </h2>
-                  <p className="text-xs text-gray-300">
-                    Focos de investigação do MedCann Lab
-                  </p>
+                  <h2 className="text-xs font-bold mb-0.5 text-premium">Áreas de Pesquisa</h2>
+                  <p className="text-xs text-gray-300">Focos de investigação do MedCann Lab</p>
                 </div>
 
                 <div className="space-y-1">
                   {researchAreas.map((area, index) => (
-                    <div key={index} className="premium-card p-1 group hover:bg-gray-800 transition-all duration-300">
+                    <div
+                      key={index}
+                      className="premium-card p-1 group hover:bg-gray-800 transition-all duration-300"
+                    >
                       <div className="flex items-start space-x-1 mb-1">
                         <div className="p-0.5 rounded bg-gradient-to-r from-green-500 to-blue-500 text-white flex-shrink-0">
                           <area.icon className="w-2 h-2" />
@@ -175,9 +173,7 @@ const MedCannLab = () => {
                           <h3 className="text-xs font-bold text-premium group-hover:text-green-400 transition-colors mb-0.5">
                             {area.title}
                           </h3>
-                          <p className="text-xs text-gray-400 mb-0.5">
-                            {area.description}
-                          </p>
+                          <p className="text-xs text-gray-400 mb-0.5">{area.description}</p>
                         </div>
                       </div>
 
@@ -188,7 +184,7 @@ const MedCannLab = () => {
                           <span className="text-premium font-bold">{area.progress}%</span>
                         </div>
                         <div className="w-full bg-gray-700 rounded-full h-0.5">
-                          <div 
+                          <div
                             className="bg-gradient-to-r from-green-500 to-blue-500 h-0.5 rounded-full transition-all duration-300"
                             style={{ width: `${area.progress}%` }}
                           ></div>
@@ -219,8 +215,8 @@ const MedCannLab = () => {
                     Cannabis Medicinal & Nefrologia
                   </h1>
                   <p className="text-xs text-gray-300 leading-tight">
-                    Integração pioneira da cannabis medicinal com nefrologia e neurologia, 
-                    aplicada pela metodologia Arte da Entrevista Clínica.
+                    Integração pioneira da cannabis medicinal com nefrologia e neurologia, aplicada
+                    pela metodologia Arte da Entrevista Clínica.
                   </p>
                 </div>
               </section>
@@ -228,9 +224,7 @@ const MedCannLab = () => {
               {/* Metodologias Integradas */}
               <section className="mb-2">
                 <div className="text-center mb-1">
-                  <h2 className="text-xs font-bold text-premium mb-0.5">
-                    Metodologias Integradas
-                  </h2>
+                  <h2 className="text-xs font-bold text-premium mb-0.5">Metodologias Integradas</h2>
                   <p className="text-xs text-gray-300 leading-tight">
                     Abordagens metodológicas aplicadas na pesquisa
                   </p>
@@ -238,7 +232,10 @@ const MedCannLab = () => {
 
                 <div className="grid md:grid-cols-3 gap-1">
                   {methodologies.map((method, index) => (
-                    <div key={index} className="premium-card p-1 group hover:bg-gray-800 transition-all duration-300">
+                    <div
+                      key={index}
+                      className="premium-card p-1 group hover:bg-gray-800 transition-all duration-300"
+                    >
                       <div className="flex items-start space-x-1 mb-1">
                         <div className="p-0.5 rounded bg-gradient-to-r from-green-500 to-blue-500 text-white flex-shrink-0">
                           <method.icon className="w-2 h-2" />
@@ -247,9 +244,7 @@ const MedCannLab = () => {
                           <h3 className="text-xs font-bold text-premium group-hover:text-green-400 transition-colors mb-0.5">
                             {method.title}
                           </h3>
-                          <p className="text-xs text-gray-400 mb-0.5">
-                            {method.description}
-                          </p>
+                          <p className="text-xs text-gray-400 mb-0.5">{method.description}</p>
                         </div>
                       </div>
 
@@ -271,8 +266,8 @@ const MedCannLab = () => {
                 <div className="premium-card p-1 text-center">
                   <h3 className="text-xs font-bold mb-1 text-premium">Participe da Pesquisa</h3>
                   <p className="text-xs text-gray-300 mb-2">
-                    Seja parte desta revolução no cuidado em saúde. Participe de nossos 
-                    estudos e contribua para o avanço da cannabis medicinal na nefrologia.
+                    Seja parte desta revolução no cuidado em saúde. Participe de nossos estudos e
+                    contribua para o avanço da cannabis medicinal na nefrologia.
                   </p>
                   <div className="flex gap-1 justify-center">
                     <button className="premium-button text-xs px-1 py-0.5">
@@ -291,7 +286,7 @@ const MedCannLab = () => {
         </main>
       </div>
     </>
-  );
-};
+  )
+}
 
-export default MedCannLab;
+export default MedCannLab
