@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import { Specialty } from '../App'
 import GPTPBuilder from '../components/GPTPBuilder'
+import ClinicalAssessmentChat from '../components/ClinicalAssessmentChat'
 import { useAuth } from '../contexts/AuthContext'
 import { ClinicalAssessment } from '../components/ClinicalAssessment'
 
@@ -238,10 +239,7 @@ const DashboardPaciente = ({ currentSpecialty, addNotification }: DashboardPacie
 
                 {activeTab === 'assessment' && (
                   <div className="h-[600px]">
-                    <ClinicalAssessment
-                      onComplete={handleAssessmentComplete}
-                      onUpdateKPIs={handleUpdateKPIs}
-                    />
+                    <ClinicalAssessmentChat userRole="patient" />
                   </div>
                 )}
 
