@@ -43,7 +43,7 @@
     "csv-parser": "^3.2.0",
     "dotenv": "^17.2.2",
     "framer-motion": "^12.23.22",
-    "lucide-react": "^0.344.0",
+    "lucide-react": "^0.544.0",
     "mammoth": "^1.11.0",
     "pdf-parse": "^2.1.1",
     "react": "^18.3.1",
