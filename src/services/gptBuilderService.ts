@@ -1,7 +1,11 @@
 // 🧠 SERVIÇO GPT BUILDER - GERENCIAMENTO DA BASE DE CONHECIMENTO
 // Gerencia documentos mestres, configurações da Nôa e reconhecimento de usuários
 
-import { supabase } from '../integrations/supabase/client'
+import { supabase, isSupabaseConfigured } from '../integrations/supabase/client'
+
+const warnOffline = (operation: string) => {
+  console.warn(`⚠️ Supabase não configurado - ${operation} executado em modo local.`)
+}
 
 // Defina o caminho como uma string estática ou adapte para ambiente browser
 const KNOWLEDGE_BASE_PATH = '/knowledge_base'
@@ -57,6 +61,10 @@ export class GPTBuilderService {
 
   // Buscar todos os documentos
   async getDocuments(): Promise<DocumentMaster[]> {
+    if (!isSupabaseConfigured) {
+      warnOffline('getDocuments')
+      return []
+    }
     try {
       const { data, error } = await supabase
         .from('documentos_mestres')
@@ -73,6 +81,10 @@ export class GPTBuilderService {
 
   // Buscar documentos por tipo
   async getDocumentsByType(type: string): Promise<DocumentMaster[]> {
+    if (!isSupabaseConfigured) {
+      warnOffline('getDocumentsByType')
+      return []
+    }
     try {
       const { data, error } = await supabase
         .from('documentos_mestres')
@@ -93,6 +105,10 @@ export class GPTBuilderService {
   async createDocument(
     document: Omit<DocumentMaster, 'id' | 'created_at' | 'updated_at'>
   ): Promise<DocumentMaster> {
+    if (!isSupabaseConfigured) {
+      warnOffline('createDocument')
+      throw new Error('Supabase não configurado')
+    }
     try {
       const { data, error } = await supabase
         .from('documentos_mestres')
@@ -114,6 +130,10 @@ export class GPTBuilderService {
 
   // Atualizar documento
   async updateDocument(id: string, updates: Partial<DocumentMaster>): Promise<DocumentMaster> {
+    if (!isSupabaseConfigured) {
+      warnOffline('updateDocument')
+      throw new Error('Supabase não configurado')
+    }
     try {
       const { data, error } = await supabase
         .from('documentos_mestres')
@@ -135,6 +155,10 @@ export class GPTBuilderService {
 
   // Deletar documento (soft delete)
   async deleteDocument(id: string): Promise<void> {
+    if (!isSupabaseConfigured) {
+      warnOffline('deleteDocument')
+      return
+    }
     try {
       const { error } = await supabase
         .from('documentos_mestres')
@@ -152,6 +176,20 @@ export class GPTBuilderService {
 
   // Obter configuração atual da Nôa
   async getNoaConfig(): Promise<NoaConfig> {
+    if (!isSupabaseConfigured) {
+      warnOffline('getNoaConfig')
+      return {
+        personality: '',
+        greeting: '',
+        expertise: '',
+        tone: 'professional',
+        recognition: {
+          drRicardoValenca: true,
+          autoGreeting: true,
+          personalizedResponse: true,
+        },
+      }
+    }
     try {
       const { data, error } = await supabase
         .from('noa_config')
@@ -210,6 +248,10 @@ export class GPTBuilderService {
 
   // Salvar configuração da Nôa
   async saveNoaConfig(config: NoaConfig): Promise<void> {
+    if (!isSupabaseConfigured) {
+      warnOffline('saveNoaConfig')
+      return
+    }
     try {
       const { error } = await supabase.from('noa_config').upsert({
         id: 'main',
@@ -228,6 +270,10 @@ export class GPTBuilderService {
 
   // Buscar usuário por email
   async recognizeUser(email: string): Promise<UserRecognition | null> {
+    if (!isSupabaseConfigured) {
+      warnOffline('recognizeUser')
+      return null
+    }
     try {
       const { data, error } = await supabase
         .from('user_recognition')
@@ -254,6 +300,10 @@ export class GPTBuilderService {
 
   // Adicionar/atualizar reconhecimento de usuário
   async upsertUserRecognition(recognition: Partial<UserRecognition>): Promise<UserRecognition> {
+    if (!isSupabaseConfigured) {
+      warnOffline('upsertUserRecognition')
+      throw new Error('Supabase não configurado')
+    }
     try {
       const { data, error } = await supabase
         .from('user_recognition')
@@ -276,6 +326,10 @@ export class GPTBuilderService {
 
   // Buscar prompts mestres
   async getMasterPrompts(): Promise<MasterPrompt[]> {
+    if (!isSupabaseConfigured) {
+      warnOffline('getMasterPrompts')
+      return []
+    }
     try {
       const { data, error } = await supabase
         .from('master_prompts')
@@ -295,6 +349,10 @@ export class GPTBuilderService {
   async createMasterPrompt(
     prompt: Omit<MasterPrompt, 'id' | 'created_at' | 'updated_at'>
   ): Promise<MasterPrompt> {
+    if (!isSupabaseConfigured) {
+      warnOffline('createMasterPrompt')
+      throw new Error('Supabase não configurado')
+    }
     try {
       const { data, error } = await supabase
         .from('master_prompts')
@@ -323,6 +381,15 @@ export class GPTBuilderService {
     totalPrompts: number
     lastUpdate: string
   }> {
+    if (!isSupabaseConfigured) {
+      warnOffline('getKnowledgeStats')
+      return {
+        totalDocuments: 0,
+        documentsByType: {},
+        totalPrompts: 0,
+        lastUpdate: new Date().toISOString(),
+      }
+    }
     try {
       const [documents, prompts] = await Promise.all([this.getDocuments(), this.getMasterPrompts()])
 
@@ -359,6 +426,10 @@ export class GPTBuilderService {
 
   // Buscar documentos por conteúdo
   async searchDocuments(query: string): Promise<DocumentMaster[]> {
+    if (!isSupabaseConfigured) {
+      warnOffline('searchDocuments')
+      return []
+    }
     try {
       console.log('🔍 Buscando documentos com query:', query)
 
@@ -457,6 +528,10 @@ export class GPTBuilderService {
 
   // Sincronizar documentos com o sistema de aprendizados
   async syncWithAILearning(): Promise<void> {
+    if (!isSupabaseConfigured) {
+      warnOffline('syncWithAILearning')
+      return
+    }
     try {
       const documents = await this.getDocuments()
       const knowledgeDocs = documents.filter(doc => doc.type === 'knowledge' && doc.is_active)
